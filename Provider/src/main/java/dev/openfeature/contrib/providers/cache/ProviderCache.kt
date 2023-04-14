@@ -25,7 +25,11 @@ interface ProviderCache {
         val reason: ResolveReason
     )
 
+<<<<<<< HEAD
     sealed interface CacheResolveResult {
+=======
+    sealed interface CacheResolveResult{
+>>>>>>> 43375cb (Transfer codebase)
         data class Found(val entry: CacheResolveEntry) : CacheResolveResult
         object NotFound : CacheResolveResult
         object Stale : CacheResolveResult

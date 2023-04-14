@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 @file:OptIn(
     ExperimentalCoroutinesApi::class,
     ExperimentalCoroutinesApi::class,
@@ -18,10 +19,18 @@ import dev.openfeature.contrib.providers.client.Flags
 import dev.openfeature.contrib.providers.client.ResolveFlags
 import dev.openfeature.contrib.providers.client.ResolveReason
 import dev.openfeature.contrib.providers.client.ResolvedFlag
+=======
+package dev.openfeature.contrib.providers
+
+import android.content.Context
+import dev.openfeature.contrib.providers.cache.InMemoryCache
+import dev.openfeature.contrib.providers.client.*
+>>>>>>> 43375cb (Transfer codebase)
 import dev.openfeature.sdk.MutableContext
 import dev.openfeature.sdk.MutableStructure
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
+<<<<<<< HEAD
 import dev.openfeature.sdk.exceptions.OpenFeatureError.FlagNotFoundError
 import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
 import junit.framework.TestCase.assertEquals
@@ -54,6 +63,24 @@ internal class ConfidenceFeatureProviderTests {
     private val mockClient: ConfidenceClient = mock()
     private val mockContext: Context = mock()
     private val instant = Instant.parse("2023-03-01T14:01:46.645Z")
+=======
+import dev.openfeature.sdk.exceptions.OpenFeatureError.*
+import junit.framework.TestCase.assertEquals
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
+import org.junit.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
+import java.time.Instant
+
+internal class ConfidenceFeatureProviderTests {
+    private val mockClient: ConfidenceClient = mock()
+    private val mockContext: Context = mock()
+    private val instant = Instant.parse("2023-03-01T14:01:46Z")
+>>>>>>> 43375cb (Transfer codebase)
     private val resolvedValueAsMap = mutableMapOf(
         "mystring" to Value.String("red"),
         "myboolean" to Value.Boolean(false),
@@ -67,6 +94,7 @@ internal class ConfidenceFeatureProviderTests {
         ),
         "mynull" to Value.Null
     )
+<<<<<<< HEAD
     private val resolvedFlags = Flags(
         listOf(
             ResolvedFlag(
@@ -109,12 +137,56 @@ internal class ConfidenceFeatureProviderTests {
 
         advanceUntilIdle()
         verify(mockClient, times(1)).apply(any(), eq("token1"))
+=======
+    private val resolvedFlags = listOf(
+        ResolvedFlag(
+            "fdema-kotlin-flag-1",
+            "flags/fdema-kotlin-flag-1/variants/variant-1",
+            MutableStructure(resolvedValueAsMap),
+            SchemaType.SchemaStruct(mapOf(
+                "mystring" to SchemaType.StringSchema,
+                "myboolean" to SchemaType.BoolSchema,
+                "myinteger" to SchemaType.IntSchema,
+                "mydouble" to SchemaType.DoubleSchema,
+                "mydate" to SchemaType.StringSchema,
+                "mystruct" to SchemaType.SchemaStruct(mapOf(
+                    "innerString" to SchemaType.StringSchema
+                )),
+                "mynull" to SchemaType.StringSchema
+            )),
+            ResolveReason.RESOLVE_REASON_MATCH
+        )
+    )
+
+    @Test
+    fun testMatching() {
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
+            .cache(InMemoryCache())
+            .client(mockClient)
+            .build()
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+        runBlocking {
+            confidenceFeatureProvider.initialize(MutableContext("foo"))
+        }
+        val evalString = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default")
+        val evalBool = confidenceFeatureProvider.getBooleanEvaluation("fdema-kotlin-flag-1.myboolean", true)
+        val evalInteger = confidenceFeatureProvider.getIntegerEvaluation("fdema-kotlin-flag-1.myinteger", 1)
+        val evalDouble = confidenceFeatureProvider.getDoubleEvaluation("fdema-kotlin-flag-1.mydouble", 7.28)
+        val evalDate = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mydate", "error")
+        val evalObject = confidenceFeatureProvider.getObjectEvaluation("fdema-kotlin-flag-1.mystruct", Value.Structure(mapOf()))
+        val evalNested = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystruct.innerString", "error")
+        val evalNull = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mynull", "error")
+>>>>>>> 43375cb (Transfer codebase)
 
         assertEquals("red", evalString.value)
         assertEquals(false, evalBool.value)
         assertEquals(7, evalInteger.value)
         assertEquals(3.14, evalDouble.value)
+<<<<<<< HEAD
         assertEquals("2023-03-01T14:01:46.645Z", evalDate.value)
+=======
+        assertEquals("2023-03-01T14:01:46Z", evalDate.value)
+>>>>>>> 43375cb (Transfer codebase)
         assertEquals(Value.Structure(mapOf("innerString" to Value.String("innerValue"))), evalObject.value)
         assertEquals("innerValue", evalNested.value)
         assertEquals("error", evalNull.value)
@@ -157,6 +229,7 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
+<<<<<<< HEAD
     fun testDelayedApply() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
@@ -462,6 +535,18 @@ internal class ConfidenceFeatureProviderTests {
             confidenceFeatureProvider.initialize(MutableContext("foo"))
         }
         val evalRootObject = confidenceFeatureProvider.getObjectEvaluation("fdema-kotlin-flag-1", Value.Structure(mapOf()), MutableContext("foo"))
+=======
+    fun testMatchingRootObject() {
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
+            .cache(InMemoryCache())
+            .client(mockClient)
+            .build()
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+        runBlocking {
+            confidenceFeatureProvider.initialize(MutableContext("foo"))
+        }
+        val evalRootObject = confidenceFeatureProvider.getObjectEvaluation("fdema-kotlin-flag-1", Value.Structure(mapOf()))
+>>>>>>> 43375cb (Transfer codebase)
 
         assertEquals(resolvedValueAsMap, evalRootObject.value.asStructure())
         assertEquals(Reason.TARGETING_MATCH.toString(), evalRootObject.reason)
@@ -471,6 +556,7 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
+<<<<<<< HEAD
     fun testStale() = runTest {
         val cache = InMemoryCache()
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
@@ -492,6 +578,30 @@ internal class ConfidenceFeatureProviderTests {
         val evalObject = confidenceFeatureProvider.getObjectEvaluation("fdema-kotlin-flag-1.mystruct", Value.Structure(mapOf()), MutableContext("user2"))
         val evalNested = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystruct.innerString", "default2", MutableContext("user2"))
         val evalNull = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mynull", "default3", MutableContext("user2"))
+=======
+    fun testStale() {
+        val cache = InMemoryCache()
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
+            .cache(cache)
+            .client(mockClient)
+            .build()
+
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+        runBlocking {
+            confidenceFeatureProvider.initialize(MutableContext("user2"))
+        }
+        // Simulate a case where the context in the cache is not synced with the evaluation's context
+        cache.refresh(resolvedFlags, "token2", MutableContext("user1"))
+
+        val evalString = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default")
+        val evalBool = confidenceFeatureProvider.getBooleanEvaluation("fdema-kotlin-flag-1.myboolean", true)
+        val evalInteger = confidenceFeatureProvider.getIntegerEvaluation("fdema-kotlin-flag-1.myinteger", 1)
+        val evalDouble = confidenceFeatureProvider.getDoubleEvaluation("fdema-kotlin-flag-1.mydouble", 7.28)
+        val evalDate = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mydate", "default1")
+        val evalObject = confidenceFeatureProvider.getObjectEvaluation("fdema-kotlin-flag-1.mystruct", Value.Structure(mapOf()))
+        val evalNested = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystruct.innerString", "default2")
+        val evalNull = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mynull", "default3")
+>>>>>>> 43375cb (Transfer codebase)
 
         assertEquals("default", evalString.value)
         assertEquals(true, evalBool.value)
@@ -540,6 +650,7 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
+<<<<<<< HEAD
     fun testNonMatching() = runTest {
         val cache = InMemoryCache()
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
@@ -560,11 +671,34 @@ internal class ConfidenceFeatureProviderTests {
             )
         )
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedNonMatchingFlags, "token1"))
+=======
+    fun testNonMatching() {
+        val cache = InMemoryCache()
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
+            .cache(cache)
+            .client(mockClient)
+            .build()
+
+        val resolvedNonMatchingFlags = listOf(
+            ResolvedFlag(
+                "fdema-kotlin-flag-1",
+                "",
+                MutableStructure(mutableMapOf()),
+                SchemaType.SchemaStruct(mapOf( )),
+                ResolveReason.RESOLVE_REASON_NO_TREATMENT_MATCH
+            )
+        )
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedNonMatchingFlags, "token1"))
+>>>>>>> 43375cb (Transfer codebase)
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("user1"))
         }
 
+<<<<<<< HEAD
         val evalString = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default", MutableContext("user1"))
+=======
+        val evalString = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default")
+>>>>>>> 43375cb (Transfer codebase)
 
         assertNull(evalString.errorMessage)
         assertNull(evalString.errorCode)
@@ -574,6 +708,7 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
+<<<<<<< HEAD
     fun testFlagNotFound() = runTest {
         val cache = InMemoryCache()
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
@@ -589,11 +724,31 @@ internal class ConfidenceFeatureProviderTests {
         cache.refresh(resolvedFlags.list, "token2", MutableContext("user1"))
         val ex = assertThrows(FlagNotFoundError::class.java) {
             confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-2.mystring", "default", MutableContext("user2"))
+=======
+    fun testFlagNotFound() {
+        val cache = InMemoryCache()
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
+            .cache(cache)
+            .client(mockClient)
+            .build()
+
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+        runBlocking {
+            confidenceFeatureProvider.initialize(MutableContext("user2"))
+        }
+        // Simulate a case where the context in the cache is not synced with the evaluation's context
+        // This shouldn't have an effect in this test, given that not found values are priority over stale values
+        cache.refresh(resolvedFlags, "token2", MutableContext("user1"))
+        // TODO Should flagNotFound throw?
+        val ex = assertThrows(FlagNotFoundError::class.java) {
+            confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-2.mystring", "default")
+>>>>>>> 43375cb (Transfer codebase)
         }
         assertEquals("Could not find flag named: fdema-kotlin-flag-2", ex.message)
     }
 
     @Test
+<<<<<<< HEAD
     fun testErrorInNetwork() = runTest {
         val cache = InMemoryCache()
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
@@ -602,17 +757,33 @@ internal class ConfidenceFeatureProviderTests {
             cache = cache,
             client = mockClient
         )
+=======
+    fun testErrorInNetwork() {
+        val cache = InMemoryCache()
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
+            .cache(cache)
+            .client(mockClient)
+            .build()
+
+>>>>>>> 43375cb (Transfer codebase)
         whenever(mockClient.resolve(eq(listOf()), any())).thenThrow(Error())
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("user1"))
         }
+<<<<<<< HEAD
         val ex = assertThrows(FlagNotFoundError::class.java) {
             confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-2.mystring", "default", MutableContext("user1"))
+=======
+        // TODO Should flagNotFound throw?
+        val ex = assertThrows(FlagNotFoundError::class.java) {
+            confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-2.mystring", "default")
+>>>>>>> 43375cb (Transfer codebase)
         }
         assertEquals("Could not find flag named: fdema-kotlin-flag-2", ex.message)
     }
 
     @Test
+<<<<<<< HEAD
     fun testValueNotFound() = runTest {
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
@@ -621,20 +792,34 @@ internal class ConfidenceFeatureProviderTests {
             client = mockClient
         )
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
+=======
+    fun testValueNotFound() {
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
+            .cache(InMemoryCache())
+            .client(mockClient)
+            .build()
+
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+>>>>>>> 43375cb (Transfer codebase)
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("user2"))
         }
         val ex = assertThrows(ParseError::class.java) {
             confidenceFeatureProvider.getStringEvaluation(
                 "fdema-kotlin-flag-1.wrongid",
+<<<<<<< HEAD
                 "default",
                 MutableContext("user2")
+=======
+                "default"
+>>>>>>> 43375cb (Transfer codebase)
             )
         }
         assertEquals("Unable to parse flag value: wrongid", ex.message)
     }
 
     @Test
+<<<<<<< HEAD
     fun testValueNotFoundLongPath() = runTest {
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
@@ -643,14 +828,27 @@ internal class ConfidenceFeatureProviderTests {
             client = mockClient
         )
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
+=======
+    fun testValueNotFoundLongPath() {
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
+            .cache(InMemoryCache())
+            .client(mockClient)
+            .build()
+
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+>>>>>>> 43375cb (Transfer codebase)
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("user2"))
         }
         val ex = assertThrows(ParseError::class.java) {
             confidenceFeatureProvider.getStringEvaluation(
                 "fdema-kotlin-flag-1.mystring.extrapath",
+<<<<<<< HEAD
                 "default",
                 MutableContext("user2")
+=======
+                "default"
+>>>>>>> 43375cb (Transfer codebase)
             )
         }
         assertEquals("Unable to parse flag value: mystring/extrapath", ex.message)
