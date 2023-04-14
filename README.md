@@ -1,1 +1,34 @@
-# confidence-openfeature-provider-kotlin
+# OpenFeature Kotlin Confidence Provider
+
+Kotlin implementation of the Confidence feature provider, to be used in conjunction with the OpenFeature SDK.
+
+## Usage
+
+### Adding the package dependency
+
+Add the following dependency to your gradle file:
+```
+implementation("dev.openfeature.contrib.providers:confidence:<LATEST>")
+```
+
+Where `<LATEST>` is the most recent version of this SDK. Released versions can be found under "Releases" within this repository.
+
+
+### Enabling the provider, setting the evaluation context and resolving flags
+
+```kotlin
+runBlocking {
+    OpenFeatureAPI.setProvider(
+        ConfidenceFeatureProvider.Builder(
+            applicationContext,
+            "mysecret"
+        ).build(),
+        MutableContext(targetingKey = "myTargetingKey")
+    )
+}
+val result = client.getBooleanValue("flag.my-boolean", false)
+```
+
+Notes:
+- If a flag can't be resolved from cache, the provider doesn't automatically resort to calling remote: refreshing the cache from remote only happens when setting a new provider and/or evaluation context in the global OpenFeatureAPI
+- It's advised not to perform resolves while `setProvider` and `setEvaluationContext` are running: resolves might return the default value with reason `STALE` during such operations.
