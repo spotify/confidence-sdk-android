@@ -16,7 +16,7 @@ class ConfidenceFeatureProvider private constructor(
     override val metadata: Metadata,
     private val cache: ProviderCache,
     private val client: ConfidenceClient,
-    private val applyExecutor: ((String, String) -> Unit)? = { flagName: String, resolveToken: String ->
+    private val applyExecutor: ((String, String) -> Unit) = { flagName: String, resolveToken: String ->
         Thread {
             try {
                 client.apply(listOf(AppliedFlag(flagName, Instant.now())), resolveToken)
@@ -58,13 +58,26 @@ class ConfidenceFeatureProvider private constructor(
          * Used for testing, allows to inject custom logic for how to send the apply event
          */
         fun applyExecutor(applyExecutor: (String, String) -> Unit) = apply { this.applyExecutor = applyExecutor }
-        fun build() = ConfidenceFeatureProvider(
-            hooks,
-            metadata,
-            cache ?: StorageFileCache(context),
-            client ?: ConfidenceRemoteClient(clientSecret, region),
-            applyExecutor
-        )
+
+        fun build(): ConfidenceFeatureProvider {
+            val applyExecutorSnapshot = applyExecutor
+            if (applyExecutorSnapshot != null) {
+                return ConfidenceFeatureProvider(
+                    hooks,
+                    metadata,
+                    cache ?: StorageFileCache(context),
+                    client ?: ConfidenceRemoteClient(clientSecret, region),
+                    applyExecutorSnapshot
+                )
+            } else {
+                return ConfidenceFeatureProvider(
+                    hooks,
+                    metadata,
+                    cache ?: StorageFileCache(context),
+                    client ?: ConfidenceRemoteClient(clientSecret, region)
+                )
+            }
+        }
     }
 
     private var currEvaluationContext: EvaluationContext? = null
@@ -134,14 +147,14 @@ class ConfidenceFeatureProvider private constructor(
                     ResolveReason.RESOLVE_REASON_MATCH -> {
                         val resolvedValue: Value = findValueFromValuePath(resolvedFlag.value, parsedKey.valuePath)
                             ?: throw ParseError("Unable to parse flag value: ${parsedKey.valuePath.joinToString(separator = "/")}")
-                        applyExecutor?.invoke(parsedKey.flagName, resolvedFlag.resolveToken)
+                        applyExecutor.invoke(parsedKey.flagName, resolvedFlag.resolveToken)
                         ProviderEvaluation(
                             value = getTyped<T>(resolvedValue) ?: defaultValue,
                             variant = resolvedFlag.variant,
                             reason = Reason.TARGETING_MATCH.toString())
                     }
                     else -> {
-                        applyExecutor?.invoke(parsedKey.flagName, resolvedFlag.resolveToken)
+                        applyExecutor.invoke(parsedKey.flagName, resolvedFlag.resolveToken)
                         ProviderEvaluation(
                             value = defaultValue,
                             reason = Reason.DEFAULT.toString())
