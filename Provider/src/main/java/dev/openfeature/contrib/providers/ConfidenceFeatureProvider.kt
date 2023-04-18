@@ -9,11 +9,6 @@ import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient.*
 import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient.ConfidenceRegion.*
 import dev.openfeature.sdk.*
 import dev.openfeature.sdk.exceptions.OpenFeatureError.*
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import java.time.Instant
 
 class ConfidenceFeatureProvider private constructor(
@@ -21,7 +16,15 @@ class ConfidenceFeatureProvider private constructor(
     override val metadata: Metadata,
     private val cache: ProviderCache,
     private val client: ConfidenceClient,
-    private val coroutineDispatcher: CoroutineDispatcher
+    private val applyExecutor: ((String, String) -> Unit)? = { flagName: String, resolveToken: String ->
+        Thread {
+            try {
+                client.apply(listOf(AppliedFlag(flagName, Instant.now())), resolveToken)
+            } catch (_: Throwable) {
+                // Sending apply is best effort
+            }
+        }
+    }
 ) : FeatureProvider {
     data class Builder(
         val context: Context,
@@ -29,10 +32,10 @@ class ConfidenceFeatureProvider private constructor(
     ) {
         private var hooks: List<Hook<*>> = listOf()
         private var metadata: Metadata = ConfidenceMetadata()
+        private var cache: ProviderCache? = null
         private var region: ConfidenceRegion = EUROPE
         private var client: ConfidenceClient? = null
-        private var cache: ProviderCache? = null
-        private var coroutineDispatcher: CoroutineDispatcher = Dispatchers.Default
+        private var applyExecutor: ((String, String) -> Unit)? = null
         fun hooks(hooks: List<Hook<*>>) = apply { this.hooks = hooks }
         fun metadata(metadata: Metadata) = apply { this.metadata = metadata }
 
@@ -52,15 +55,15 @@ class ConfidenceFeatureProvider private constructor(
         fun cache(cache: ProviderCache) = apply { this.cache = cache }
 
         /**
-         * Used for testing.
+         * Used for testing, allows to inject custom logic for how to send the apply event
          */
-        fun coroutineContext(coroutineDispatcher: CoroutineDispatcher) = apply { this.coroutineDispatcher = coroutineDispatcher }
+        fun applyExecutor(applyExecutor: (String, String) -> Unit) = apply { this.applyExecutor = applyExecutor }
         fun build() = ConfidenceFeatureProvider(
             hooks,
             metadata,
             cache ?: StorageFileCache(context),
             client ?: ConfidenceRemoteClient(clientSecret, region),
-            coroutineDispatcher,
+            applyExecutor
         )
     }
 
@@ -131,18 +134,14 @@ class ConfidenceFeatureProvider private constructor(
                     ResolveReason.RESOLVE_REASON_MATCH -> {
                         val resolvedValue: Value = findValueFromValuePath(resolvedFlag.value, parsedKey.valuePath)
                             ?: throw ParseError("Unable to parse flag value: ${parsedKey.valuePath.joinToString(separator = "/")}")
-                        CoroutineScope(coroutineDispatcher).launch {
-                            processApplyAsync(parsedKey.flagName, resolvedFlag.resolveToken)
-                        }
+                        applyExecutor?.invoke(parsedKey.flagName, resolvedFlag.resolveToken)
                         ProviderEvaluation(
                             value = getTyped<T>(resolvedValue) ?: defaultValue,
                             variant = resolvedFlag.variant,
                             reason = Reason.TARGETING_MATCH.toString())
                     }
                     else -> {
-                        CoroutineScope(coroutineDispatcher).launch {
-                            processApplyAsync(parsedKey.flagName, resolvedFlag.resolveToken)
-                        }
+                        applyExecutor?.invoke(parsedKey.flagName, resolvedFlag.resolveToken)
                         ProviderEvaluation(
                             value = defaultValue,
                             reason = Reason.DEFAULT.toString())
@@ -153,14 +152,6 @@ class ConfidenceFeatureProvider private constructor(
                 value = defaultValue,
                 reason = Reason.STALE.toString())
             CacheResolveResult.NotFound -> throw FlagNotFoundError(parsedKey.flagName)
-        }
-    }
-
-    private suspend fun processApplyAsync(flagName: String, resolveToken: String) = coroutineScope {
-        try {
-            client.apply(listOf(AppliedFlag(flagName, Instant.now())), resolveToken)
-        } catch (_: Throwable) {
-            // Sending apply is best effort
         }
     }
 

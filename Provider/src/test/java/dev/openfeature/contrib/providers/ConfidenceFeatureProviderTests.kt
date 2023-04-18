@@ -1,12 +1,8 @@
-@file:OptIn(ExperimentalCoroutinesApi::class, ExperimentalCoroutinesApi::class,
-    ExperimentalCoroutinesApi::class, ExperimentalCoroutinesApi::class,
-    ExperimentalCoroutinesApi::class, ExperimentalCoroutinesApi::class
-)
-
 package dev.openfeature.contrib.providers
 
 import android.content.Context
 import dev.openfeature.contrib.providers.cache.InMemoryCache
+import dev.openfeature.contrib.providers.client.AppliedFlag
 import dev.openfeature.contrib.providers.client.ConfidenceClient
 import dev.openfeature.contrib.providers.client.ResolveFlagsResponse
 import dev.openfeature.contrib.providers.client.ResolveReason
@@ -19,11 +15,7 @@ import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.exceptions.OpenFeatureError.FlagNotFoundError
 import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
 import junit.framework.TestCase.assertEquals
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -35,7 +27,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.Instant
 
-@OptIn(ExperimentalCoroutinesApi::class)
 internal class ConfidenceFeatureProviderTests {
     private val mockClient: ConfidenceClient = mock()
     private val mockContext: Context = mock()
@@ -74,11 +65,12 @@ internal class ConfidenceFeatureProviderTests {
     )
 
     @Test
-    fun testMatching() = runTest {
-        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+    fun testMatching() {
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(InMemoryCache())
-            .coroutineContext(testDispatcher)
+            .applyExecutor { flagName: String, resolveToken: String ->
+                mockClient.apply(listOf(AppliedFlag(flagName, Instant.now())), resolveToken)
+            }
             .client(mockClient)
             .build()
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
@@ -95,7 +87,6 @@ internal class ConfidenceFeatureProviderTests {
         val evalNested = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystruct.innerString", "error")
         val evalNull = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mynull", "error")
 
-        advanceUntilIdle()
         verify(mockClient, times(8)).apply(any(), eq("token1"))
 
         assertEquals("red", evalString.value)
