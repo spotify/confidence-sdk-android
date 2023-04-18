@@ -1,24 +1,40 @@
+@file:OptIn(ExperimentalCoroutinesApi::class, ExperimentalCoroutinesApi::class,
+    ExperimentalCoroutinesApi::class, ExperimentalCoroutinesApi::class,
+    ExperimentalCoroutinesApi::class, ExperimentalCoroutinesApi::class
+)
+
 package dev.openfeature.contrib.providers
 
 import android.content.Context
 import dev.openfeature.contrib.providers.cache.InMemoryCache
-import dev.openfeature.contrib.providers.client.*
+import dev.openfeature.contrib.providers.client.ConfidenceClient
+import dev.openfeature.contrib.providers.client.ResolveFlagsResponse
+import dev.openfeature.contrib.providers.client.ResolveReason
+import dev.openfeature.contrib.providers.client.ResolvedFlag
+import dev.openfeature.contrib.providers.client.SchemaType
 import dev.openfeature.sdk.MutableContext
 import dev.openfeature.sdk.MutableStructure
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
-import dev.openfeature.sdk.exceptions.OpenFeatureError.*
+import dev.openfeature.sdk.exceptions.OpenFeatureError.FlagNotFoundError
+import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
 import junit.framework.TestCase.assertEquals
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.Instant
 
+@OptIn(ExperimentalCoroutinesApi::class)
 internal class ConfidenceFeatureProviderTests {
     private val mockClient: ConfidenceClient = mock()
     private val mockContext: Context = mock()
@@ -57,15 +73,17 @@ internal class ConfidenceFeatureProviderTests {
     )
 
     @Test
-    fun testMatching() {
+    fun testMatching() = runTest {
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(InMemoryCache())
+            .coroutineContext(coroutineContext)
             .client(mockClient)
             .build()
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("foo"))
         }
+        verify(mockClient, times(1)).resolve(any(), eq(MutableContext("foo")))
         val evalString = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default")
         val evalBool = confidenceFeatureProvider.getBooleanEvaluation("fdema-kotlin-flag-1.myboolean", true)
         val evalInteger = confidenceFeatureProvider.getIntegerEvaluation("fdema-kotlin-flag-1.myinteger", 1)
@@ -74,6 +92,9 @@ internal class ConfidenceFeatureProviderTests {
         val evalObject = confidenceFeatureProvider.getObjectEvaluation("fdema-kotlin-flag-1.mystruct", Value.Structure(mapOf()))
         val evalNested = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystruct.innerString", "error")
         val evalNull = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mynull", "error")
+
+        advanceUntilIdle()
+        verify(mockClient, times(8)).apply(any(), eq("token1"))
 
         assertEquals("red", evalString.value)
         assertEquals(false, evalBool.value)
