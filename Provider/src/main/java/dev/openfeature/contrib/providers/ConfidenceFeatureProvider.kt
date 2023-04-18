@@ -9,20 +9,20 @@ import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient.*
 import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient.ConfidenceRegion.*
 import dev.openfeature.sdk.*
 import dev.openfeature.sdk.exceptions.OpenFeatureError.*
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.time.Instant
-import kotlin.coroutines.CoroutineContext
 
 class ConfidenceFeatureProvider private constructor(
-    override val hooks: List<Hook<*>> = listOf(),
-    override val metadata: Metadata = ConfidenceMetadata(),
+    override val hooks: List<Hook<*>>,
+    override val metadata: Metadata,
     private val cache: ProviderCache,
     private val client: ConfidenceClient,
-    override val coroutineContext: CoroutineContext,
-) : FeatureProvider, CoroutineScope {
+    private val coroutineDispatcher: CoroutineDispatcher
+) : FeatureProvider {
     data class Builder(
         val context: Context,
         val clientSecret: String,
@@ -32,7 +32,7 @@ class ConfidenceFeatureProvider private constructor(
         private var region: ConfidenceRegion = EUROPE
         private var client: ConfidenceClient? = null
         private var cache: ProviderCache? = null
-        private var coroutineContext: CoroutineContext? = null
+        private var coroutineDispatcher: CoroutineDispatcher = Dispatchers.Default
         fun hooks(hooks: List<Hook<*>>) = apply { this.hooks = hooks }
         fun metadata(metadata: Metadata) = apply { this.metadata = metadata }
 
@@ -54,13 +54,14 @@ class ConfidenceFeatureProvider private constructor(
         /**
          * Used for testing.
          */
-        fun coroutineContext(coroutineContext: CoroutineContext) = apply { this.coroutineContext = coroutineContext}
+        fun coroutineContext(coroutineDispatcher: CoroutineDispatcher) = apply { this.coroutineDispatcher = coroutineDispatcher }
         fun build() = ConfidenceFeatureProvider(
             hooks,
             metadata,
             cache ?: StorageFileCache(context),
             client ?: ConfidenceRemoteClient(clientSecret, region),
-        coroutineContext ?: Dispatchers.Default)
+            coroutineDispatcher,
+        )
     }
 
     private var currEvaluationContext: EvaluationContext? = null
@@ -130,7 +131,7 @@ class ConfidenceFeatureProvider private constructor(
                     ResolveReason.RESOLVE_REASON_MATCH -> {
                         val resolvedValue: Value = findValueFromValuePath(resolvedFlag.value, parsedKey.valuePath)
                             ?: throw ParseError("Unable to parse flag value: ${parsedKey.valuePath.joinToString(separator = "/")}")
-                        CoroutineScope(coroutineContext).launch {
+                        CoroutineScope(coroutineDispatcher).launch {
                             processApplyAsync(parsedKey.flagName, resolvedFlag.resolveToken)
                         }
                         ProviderEvaluation(
@@ -139,7 +140,7 @@ class ConfidenceFeatureProvider private constructor(
                             reason = Reason.TARGETING_MATCH.toString())
                     }
                     else -> {
-                        CoroutineScope(coroutineContext).launch {
+                        CoroutineScope(coroutineDispatcher).launch {
                             processApplyAsync(parsedKey.flagName, resolvedFlag.resolveToken)
                         }
                         ProviderEvaluation(
@@ -156,11 +157,11 @@ class ConfidenceFeatureProvider private constructor(
     }
 
     private suspend fun processApplyAsync(flagName: String, resolveToken: String) = coroutineScope {
-            try {
-                client.apply(listOf(AppliedFlag(flagName, Instant.now())), resolveToken)
-            } catch (_: Throwable) {
-                // Sending apply is best effort
-            }
+        try {
+            client.apply(listOf(AppliedFlag(flagName, Instant.now())), resolveToken)
+        } catch (_: Throwable) {
+            // Sending apply is best effort
+        }
     }
 
     @Suppress("UNCHECKED_CAST")
