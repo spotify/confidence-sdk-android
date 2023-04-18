@@ -29,8 +29,8 @@ class ConfidenceRemoteClient : ConfidenceClient {
             "Accept", "application/json"
         )
         baseUrl = when (region) {
-            ConfidenceRegion.EUROPE -> "https://resolver.eu.konfidens.services"
-            ConfidenceRegion.USA -> "https://resolver.us.konfidens.services"
+            ConfidenceRegion.EUROPE -> "https://resolver.eu.confidence.dev"
+            ConfidenceRegion.USA -> "https://resolver.us.confidence.dev"
         }
         this.clock = Clock.systemUTC()
     }
