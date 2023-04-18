@@ -10,21 +10,16 @@ import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient.Confidenc
 import dev.openfeature.sdk.*
 import dev.openfeature.sdk.exceptions.OpenFeatureError.*
 import java.time.Instant
+import java.util.concurrent.Executors
+
+typealias FlagApplier = (String, String) -> Unit
 
 class ConfidenceFeatureProvider private constructor(
     override val hooks: List<Hook<*>>,
     override val metadata: Metadata,
     private val cache: ProviderCache,
     private val client: ConfidenceClient,
-    private val applyExecutor: ((String, String) -> Unit) = { flagName: String, resolveToken: String ->
-        Thread {
-            try {
-                client.apply(listOf(AppliedFlag(flagName, Instant.now())), resolveToken)
-            } catch (_: Throwable) {
-                // Sending apply is best effort
-            }
-        }
-    }
+    private val flagApplier: FlagApplier
 ) : FeatureProvider {
     data class Builder(
         val context: Context,
@@ -35,7 +30,7 @@ class ConfidenceFeatureProvider private constructor(
         private var cache: ProviderCache? = null
         private var region: ConfidenceRegion = EUROPE
         private var client: ConfidenceClient? = null
-        private var applyExecutor: ((String, String) -> Unit)? = null
+        private var flagApplier: FlagApplier? = null
         fun hooks(hooks: List<Hook<*>>) = apply { this.hooks = hooks }
         fun metadata(metadata: Metadata) = apply { this.metadata = metadata }
 
@@ -57,25 +52,29 @@ class ConfidenceFeatureProvider private constructor(
         /**
          * Used for testing, allows to inject custom logic for how to send the apply event
          */
-        fun applyExecutor(applyExecutor: (String, String) -> Unit) = apply { this.applyExecutor = applyExecutor }
+        fun flagApplier(flagApplier: FlagApplier) = apply { this.flagApplier = flagApplier }
 
         fun build(): ConfidenceFeatureProvider {
-            val applyExecutorSnapshot = applyExecutor
-            if (applyExecutorSnapshot != null) {
-                return ConfidenceFeatureProvider(
-                    hooks,
-                    metadata,
-                    cache ?: StorageFileCache(context),
-                    client ?: ConfidenceRemoteClient(clientSecret, region),
-                    applyExecutorSnapshot
-                )
-            } else {
-                return ConfidenceFeatureProvider(
-                    hooks,
-                    metadata,
-                    cache ?: StorageFileCache(context),
-                    client ?: ConfidenceRemoteClient(clientSecret, region)
-                )
+            val client = this.client ?: ConfidenceRemoteClient(clientSecret, region)
+            return ConfidenceFeatureProvider(
+                hooks,
+                metadata,
+                cache ?: StorageFileCache(context),
+                client,
+                flagApplier ?: defaultApplier(client)
+            )
+        }
+
+        private fun defaultApplier(client: ConfidenceClient): FlagApplier {
+            val executor = Executors.newSingleThreadExecutor()
+            return { flagName, resolveToken ->
+                executor.execute {
+                    try {
+                        client.apply(listOf(AppliedFlag(flagName, Instant.now())), resolveToken)
+                    } catch (_: Throwable) {
+                        // Sending apply is best effort
+                    }
+                }
             }
         }
     }
@@ -205,7 +204,8 @@ class ConfidenceFeatureProvider private constructor(
                 val splits = evalKey.split(".")
                 return FlagKey(
                     splits.getOrNull(0)!!,
-                    splits.subList(1, splits.count()))
+                    splits.subList(1, splits.count())
+                )
             }
         }
     }

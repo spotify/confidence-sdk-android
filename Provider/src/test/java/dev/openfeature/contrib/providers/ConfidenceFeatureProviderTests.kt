@@ -68,7 +68,7 @@ internal class ConfidenceFeatureProviderTests {
     fun testMatching() {
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(InMemoryCache())
-            .applyExecutor { flagName: String, resolveToken: String ->
+            .flagApplier { flagName: String, resolveToken: String ->
                 mockClient.apply(listOf(AppliedFlag(flagName, Instant.now())), resolveToken)
             }
             .client(mockClient)
