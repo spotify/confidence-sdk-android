@@ -124,6 +124,7 @@ class ConfidenceFeatureProvider private constructor(
                             reason = Reason.TARGETING_MATCH.toString())
                     }
                     else -> {
+                        processApplyAsync(parsedKey.flagName, resolvedFlag.resolveToken)
                         ProviderEvaluation(
                             value = defaultValue,
                             reason = Reason.DEFAULT.toString())
