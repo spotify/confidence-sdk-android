@@ -12,7 +12,6 @@ import dev.openfeature.sdk.exceptions.OpenFeatureError.*
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.time.Instant
 
@@ -21,7 +20,7 @@ class ConfidenceFeatureProvider private constructor(
     override val metadata: Metadata,
     private val cache: ProviderCache,
     private val client: ConfidenceClient,
-    private val coroutineDispatcher: CoroutineDispatcher
+    private val applyDispatcher: CoroutineDispatcher
 ) : FeatureProvider {
     data class Builder(
         val context: Context,
@@ -32,7 +31,7 @@ class ConfidenceFeatureProvider private constructor(
         private var region: ConfidenceRegion = EUROPE
         private var client: ConfidenceClient? = null
         private var cache: ProviderCache? = null
-        private var coroutineDispatcher: CoroutineDispatcher = Dispatchers.Default
+        private var applyDispatcher: CoroutineDispatcher = Dispatchers.Default
         fun hooks(hooks: List<Hook<*>>) = apply { this.hooks = hooks }
         fun metadata(metadata: Metadata) = apply { this.metadata = metadata }
 
@@ -52,15 +51,15 @@ class ConfidenceFeatureProvider private constructor(
         fun cache(cache: ProviderCache) = apply { this.cache = cache }
 
         /**
-         * Used for testing.
+         * Used for testing. Facilitates unit testing of the asynchronous apply operation
          */
-        fun coroutineContext(coroutineDispatcher: CoroutineDispatcher) = apply { this.coroutineDispatcher = coroutineDispatcher }
+        fun coroutineContext(applyDispatcher: CoroutineDispatcher) = apply { this.applyDispatcher = applyDispatcher }
         fun build() = ConfidenceFeatureProvider(
             hooks,
             metadata,
             cache ?: StorageFileCache(context),
             client ?: ConfidenceRemoteClient(clientSecret, region),
-            coroutineDispatcher,
+            applyDispatcher,
         )
     }
 
@@ -131,18 +130,14 @@ class ConfidenceFeatureProvider private constructor(
                     ResolveReason.RESOLVE_REASON_MATCH -> {
                         val resolvedValue: Value = findValueFromValuePath(resolvedFlag.value, parsedKey.valuePath)
                             ?: throw ParseError("Unable to parse flag value: ${parsedKey.valuePath.joinToString(separator = "/")}")
-                        CoroutineScope(coroutineDispatcher).launch {
-                            processApplyAsync(parsedKey.flagName, resolvedFlag.resolveToken)
-                        }
+                        processApplyAsync(parsedKey.flagName, resolvedFlag.resolveToken)
                         ProviderEvaluation(
                             value = getTyped<T>(resolvedValue) ?: defaultValue,
                             variant = resolvedFlag.variant,
                             reason = Reason.TARGETING_MATCH.toString())
                     }
                     else -> {
-                        CoroutineScope(coroutineDispatcher).launch {
-                            processApplyAsync(parsedKey.flagName, resolvedFlag.resolveToken)
-                        }
+                        processApplyAsync(parsedKey.flagName, resolvedFlag.resolveToken)
                         ProviderEvaluation(
                             value = defaultValue,
                             reason = Reason.DEFAULT.toString())
@@ -156,11 +151,13 @@ class ConfidenceFeatureProvider private constructor(
         }
     }
 
-    private suspend fun processApplyAsync(flagName: String, resolveToken: String) = coroutineScope {
-        try {
-            client.apply(listOf(AppliedFlag(flagName, Instant.now())), resolveToken)
-        } catch (_: Throwable) {
-            // Sending apply is best effort
+    private fun processApplyAsync(flagName: String, resolveToken: String) {
+        CoroutineScope(applyDispatcher).launch {
+            try {
+                client.apply(listOf(AppliedFlag(flagName, Instant.now())), resolveToken)
+            } catch (_: Throwable) {
+                // Sending apply is best effort
+            }
         }
     }
 
