@@ -9,13 +9,18 @@ import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient.*
 import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient.ConfidenceRegion.*
 import dev.openfeature.sdk.*
 import dev.openfeature.sdk.exceptions.OpenFeatureError.*
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.time.Instant
 
 class ConfidenceFeatureProvider private constructor(
-    override val hooks: List<Hook<*>> = listOf(),
-    override val metadata: Metadata = ConfidenceMetadata(),
+    override val hooks: List<Hook<*>>,
+    override val metadata: Metadata,
     private val cache: ProviderCache,
     private val client: ConfidenceClient,
+    private val applyDispatcher: CoroutineDispatcher
 ) : FeatureProvider {
     data class Builder(
         val context: Context,
@@ -26,6 +31,7 @@ class ConfidenceFeatureProvider private constructor(
         private var region: ConfidenceRegion = EUROPE
         private var client: ConfidenceClient? = null
         private var cache: ProviderCache? = null
+        private var applyDispatcher: CoroutineDispatcher = Dispatchers.Default
         fun hooks(hooks: List<Hook<*>>) = apply { this.hooks = hooks }
         fun metadata(metadata: Metadata) = apply { this.metadata = metadata }
 
@@ -43,11 +49,18 @@ class ConfidenceFeatureProvider private constructor(
          * Used for testing. If set, the "context" parameter is not used
          */
         fun cache(cache: ProviderCache) = apply { this.cache = cache }
+
+        /**
+         * Used for testing. Facilitates unit testing of the asynchronous apply operation
+         */
+        fun coroutineContext(applyDispatcher: CoroutineDispatcher) = apply { this.applyDispatcher = applyDispatcher }
         fun build() = ConfidenceFeatureProvider(
             hooks,
             metadata,
             cache ?: StorageFileCache(context),
-            client ?: ConfidenceRemoteClient(clientSecret, region))
+            client ?: ConfidenceRemoteClient(clientSecret, region),
+            applyDispatcher,
+        )
     }
 
     private var currEvaluationContext: EvaluationContext? = null
@@ -124,6 +137,7 @@ class ConfidenceFeatureProvider private constructor(
                             reason = Reason.TARGETING_MATCH.toString())
                     }
                     else -> {
+                        processApplyAsync(parsedKey.flagName, resolvedFlag.resolveToken)
                         ProviderEvaluation(
                             value = defaultValue,
                             reason = Reason.DEFAULT.toString())
@@ -138,7 +152,7 @@ class ConfidenceFeatureProvider private constructor(
     }
 
     private fun processApplyAsync(flagName: String, resolveToken: String) {
-        Thread {
+        CoroutineScope(applyDispatcher).launch {
             try {
                 client.apply(listOf(AppliedFlag(flagName, Instant.now())), resolveToken)
             } catch (_: Throwable) {
