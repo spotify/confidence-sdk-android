@@ -29,6 +29,13 @@ android {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
 }
 
 dependencies {
@@ -49,7 +56,6 @@ publishing {
             groupId = "dev.openfeature.contrib.providers"
             artifactId = "confidence"
             version = "0.0.1-SNAPSHOT"
-
             afterEvaluate {
                 from(components["release"])
             }
