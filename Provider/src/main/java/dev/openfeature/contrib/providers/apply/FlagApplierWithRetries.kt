@@ -31,10 +31,11 @@ class FlagApplierWithRetries(
         .create()
 
     init {
+        // TODO Can reading be slow and block the ConfidenceFeatureProvider builder?
         readFile()
     }
 
-    // TODO Ensure this fun is not called on a main thread
+    // TODO Ensure this fun is not called on a main thread, storage can be slow
     override fun apply(flagName: String, resolveToken: String) {
         data.putIfAbsent(resolveToken, ConcurrentHashMap())
         data[resolveToken]?.putIfAbsent(flagName, ConcurrentHashMap())
@@ -82,6 +83,7 @@ class FlagApplierWithRetries(
                 !it.value.values.stream().allMatch { events -> events.isEmpty() }
             }
         )
+        // TODO Add a limit for the file size?
         file.writeText(fileData)
     }
 

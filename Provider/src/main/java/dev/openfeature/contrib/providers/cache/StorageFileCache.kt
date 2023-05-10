@@ -13,6 +13,7 @@ class StorageFileCache(context: Context) : InMemoryCache() {
     private val file: File = File(context.filesDir, FLAGS_FILE_NAME)
 
     init {
+        // TODO Can reading be slow and block the ConfidenceFeatureProvider builder?
         readFile()
     }
 
