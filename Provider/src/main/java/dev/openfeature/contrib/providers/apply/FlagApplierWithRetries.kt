@@ -50,10 +50,6 @@ class FlagApplierWithRetries(
         }
     }
 
-    data class ApplyCacheData(
-        var events: MutableMap<String, MutableMap<String, MutableList<Instant>>> = mutableMapOf()
-    )
-
     // TODO Define the logic on when / how often to call this function
     // This function should never introduce bad state and any type of error is recoverable on the next try
     fun triggerBatch() {
@@ -94,7 +90,7 @@ class FlagApplierWithRetries(
         if (!file.exists()) return
         val fileText: String = file.bufferedReader().use { it.readText() }
         if (fileText.isEmpty()) return
-        val type = object : TypeToken<ApplyCacheData>() {}.type
+        val type = object : TypeToken<ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<UUID, Instant>>>>() {}.type
         data = gson.fromJson(fileText, type)
     }
 }

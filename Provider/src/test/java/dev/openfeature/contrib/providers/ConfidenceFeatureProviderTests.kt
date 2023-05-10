@@ -243,6 +243,41 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
+    fun testApplyFromStoredCache() = runTest {
+        val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
+        cacheFile.writeText(
+            "{\n" +
+                    "  \"token1\": {\n" +
+                    "    \"fdema-kotlin-flag-1\": {\n" +
+                    "      \"c70d27d6-0b4e-4405-a4a4-23431a49cfef\": \"2023-05-10T13:59:38.226449Z\"\n" +
+                    "    }\n" +
+                    "  }\n" +
+                    "}"
+        )
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val flagApplier = FlagApplierWithRetries(mockClient, testDispatcher, mockContext)
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
+            .cache(InMemoryCache())
+            .flagApplier(flagApplier)
+            .client(mockClient)
+            .build()
+
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+        whenever(mockClient.apply(any(), any())).then {}
+
+        runBlocking {
+            confidenceFeatureProvider.initialize(MutableContext("foo"))
+        }
+
+        verify(mockClient, times(1)).resolve(any(), eq(MutableContext("foo")))
+
+        flagApplier.triggerBatch()
+
+        advanceUntilIdle()
+        verify(mockClient, times(1)).apply(any(), eq("token1"))
+    }
+
+    @Test
     fun testMatchingRootObject() {
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(InMemoryCache())
