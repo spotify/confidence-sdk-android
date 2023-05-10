@@ -188,14 +188,14 @@ internal class ConfidenceFeatureProviderTests {
 
         advanceUntilIdle()
         verify(mockClient, times(8)).apply(any(), eq("token1"))
-        assertEquals(8, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token1"]?.jsonObject?.get("fdema-kotlin-flag-1")?.jsonArray?.size)
+        assertEquals(8, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token1"]?.jsonObject?.get("fdema-kotlin-flag-1")?.jsonObject?.size)
         whenever(mockClient.apply(any(), any())).then {}
 
         flagApplier.triggerBatch()
 
         advanceUntilIdle()
         verify(mockClient, times(9)).apply(any(), eq("token1"))
-        assertEquals(0, Json.parseToJsonElement(cacheFile.readText()).jsonObject.size)
+        assertEquals(0, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token1"]?.jsonObject?.get("fdema-kotlin-flag-1")?.jsonObject?.size)
         assertEquals("red", evalString.value)
         assertEquals(false, evalBool.value)
         assertEquals(7, evalInteger.value)
