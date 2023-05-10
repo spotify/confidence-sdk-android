@@ -60,18 +60,21 @@ class FlagApplierWithRetries(
         data.entries.forEach { (token, flagsForToken) ->
             val appliedFlagsKeyed = flagsForToken.entries.flatMap { (flagName, events) ->
                 events.entries.map { (uuid, time) ->
-                    Pair(uuid, AppliedFlag(flagName, time)) }
+                    Pair(uuid, AppliedFlag(flagName, time))
+                }
             }
             val handler = CoroutineExceptionHandler { _, _ ->
                 // "triggerBatch" should not introduce bad state in case of any failure, will retry later
             }
-            CoroutineScope(applyDispatcher).launch(handler) {
-                // TODO Check size limit, cap max amount of flags per request
-                client.apply(appliedFlagsKeyed.map { it.second }, token)
-                appliedFlagsKeyed.forEach {
-                    data[token]?.get(it.second.flag)?.remove(it.first)
+            // TODO chunk size 20 is an arbitrary value, replace with appropriate size
+            appliedFlagsKeyed.chunked(20).forEach { appliedFlagsKeyedChunk ->
+                CoroutineScope(applyDispatcher).launch(handler) {
+                    client.apply(appliedFlagsKeyedChunk.map { it.second }, token)
+                    appliedFlagsKeyedChunk.forEach {
+                        data[token]?.get(it.second.flag)?.remove(it.first)
+                    }
+                    writeToFile()
                 }
-                writeToFile()
             }
         }
     }
