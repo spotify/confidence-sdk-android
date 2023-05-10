@@ -130,9 +130,10 @@ class ConfidenceFeatureProvider private constructor(
                     ResolveReason.RESOLVE_REASON_MATCH -> {
                         val resolvedValue: Value = findValueFromValuePath(resolvedFlag.value, parsedKey.valuePath)
                             ?: throw ParseError("Unable to parse flag value: ${parsedKey.valuePath.joinToString(separator = "/")}")
+                        val value = getTyped<T>(resolvedValue) ?: defaultValue
                         processApplyAsync(parsedKey.flagName, resolvedFlag.resolveToken)
                         ProviderEvaluation(
-                            value = getTyped<T>(resolvedValue) ?: defaultValue,
+                            value = value,
                             variant = resolvedFlag.variant,
                             reason = Reason.TARGETING_MATCH.toString())
                     }
