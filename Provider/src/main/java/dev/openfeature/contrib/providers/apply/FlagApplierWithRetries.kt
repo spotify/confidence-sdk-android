@@ -22,12 +22,11 @@ class FlagApplierWithRetries(
     private val client: ConfidenceClient,
     private val applyDispatcher: CoroutineDispatcher,
     context: Context) : FlagApplier {
-    // <token, <flag, <uuid, time>>>
+    // <tokenString, <flagName, <uuid, applyTime>>>
     private var data : ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<UUID, Instant>>> = ConcurrentHashMap()
     private val file: File = File(context.filesDir, APPLY_FILE_NAME)
     private val gson = GsonBuilder()
         .serializeNulls()
-        .setPrettyPrinting() // TODO remove
         .registerTypeAdapter(Instant::class.java, InstantTypeAdapter())
         .create()
 
@@ -37,10 +36,10 @@ class FlagApplierWithRetries(
 
     // TODO Ensure this fun is not called on a main thread
     override fun apply(flagName: String, resolveToken: String) {
-        data.putIfAbsent(resolveToken, ConcurrentHashMap()) // should never override token entry
-        data[resolveToken]?.putIfAbsent(flagName, ConcurrentHashMap()) // should never override flag entry
-        // Never delete a string key in the maps above during runtime
-        // However, ignore empty maps when storing the cache into the file
+        data.putIfAbsent(resolveToken, ConcurrentHashMap())
+        data[resolveToken]?.putIfAbsent(flagName, ConcurrentHashMap())
+        // Never delete entries from the maps above, only add. This should prevent racy conditions
+        // Empty entries are not added to the cache file, so empty entries are removed when restarting
         data[resolveToken]?.get(flagName)?.putIfAbsent(UUID.randomUUID(), Instant.now())
         writeToFile()
         try {
@@ -59,7 +58,8 @@ class FlagApplierWithRetries(
     fun triggerBatch() {
         data.entries.forEach { (token, flagsForToken) ->
             val appliedFlagsKeyed = flagsForToken.entries.flatMap { (flagName, events) ->
-                events.entries.map { (uuid, time) -> Pair(uuid, AppliedFlag(flagName, time)) }
+                events.entries.map { (uuid, time) ->
+                    Pair(uuid, AppliedFlag(flagName, time)) }
             }
             val handler = CoroutineExceptionHandler { _, _ ->
                 // "triggerBatch" should not introduce bad state in case of any failure, will retry later
@@ -76,8 +76,12 @@ class FlagApplierWithRetries(
     }
 
     private fun writeToFile() {
-        // TODO ignore empty entries
-        val fileData = gson.toJson(data)
+        val fileData = gson.toJson(
+            data.filter {
+                // All flags entries are empty for this token, don't add this token to the file
+                !it.value.values.stream().allMatch { events -> events.isEmpty() }
+            }
+        )
         file.writeText(fileData)
     }
 
