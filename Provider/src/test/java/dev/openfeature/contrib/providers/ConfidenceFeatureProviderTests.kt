@@ -27,7 +27,6 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
@@ -88,7 +87,7 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testMatching() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val flagApplier = FlagApplierWithRetries(mockClient, testDispatcher, mockContext)
+        val flagApplier = FlagApplierWithRetries(mockClient, testDispatcher, testDispatcher, mockContext)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(InMemoryCache())
             .flagApplier(flagApplier)
@@ -160,7 +159,7 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testDelayedApply() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val flagApplier = FlagApplierWithRetries(mockClient, testDispatcher, mockContext)
+        val flagApplier = FlagApplierWithRetries(mockClient, testDispatcher, testDispatcher, mockContext)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(InMemoryCache())
             .flagApplier(flagApplier)
@@ -255,7 +254,7 @@ internal class ConfidenceFeatureProviderTests {
                     "}"
         )
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val flagApplier = FlagApplierWithRetries(mockClient, testDispatcher, mockContext)
+        val flagApplier = FlagApplierWithRetries(mockClient, testDispatcher, testDispatcher, mockContext)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(InMemoryCache())
             .flagApplier(flagApplier)

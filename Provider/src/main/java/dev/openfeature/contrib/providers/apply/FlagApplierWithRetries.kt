@@ -21,6 +21,7 @@ const val APPLY_FILE_NAME = "confidence_apply_cache.json"
 class FlagApplierWithRetries(
     private val client: ConfidenceClient,
     private val applyDispatcher: CoroutineDispatcher,
+    private val fileOperationsDispatcher: CoroutineDispatcher,
     context: Context) : FlagApplier {
     // <tokenString, <flagName, <uuid, applyTime>>>
     private var data : ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<UUID, Instant>>> = ConcurrentHashMap()
@@ -29,13 +30,12 @@ class FlagApplierWithRetries(
         .serializeNulls()
         .registerTypeAdapter(Instant::class.java, InstantTypeAdapter())
         .create()
+    private var isLoadingFileData = true
 
     init {
-        // TODO Can reading be slow and block the ConfidenceFeatureProvider builder?
         readFile()
     }
 
-    // TODO Ensure this fun is not called on a main thread, storage can be slow
     override fun apply(flagName: String, resolveToken: String) {
         data.putIfAbsent(resolveToken, ConcurrentHashMap())
         data[resolveToken]?.putIfAbsent(flagName, ConcurrentHashMap())
@@ -76,21 +76,39 @@ class FlagApplierWithRetries(
     }
 
     private fun writeToFile() {
-        val fileData = gson.toJson(
-            data.filter {
-                // All flags entries are empty for this token, don't add this token to the file
-                !it.value.values.stream().allMatch { events -> events.isEmpty() }
-            }
-        )
-        // TODO Add a limit for the file size?
-        file.writeText(fileData)
+        if (isLoadingFileData) return
+        CoroutineScope(fileOperationsDispatcher).launch {
+            val fileData = gson.toJson(
+                data.filter {
+                    // All flags entries are empty for this token, don't add this token to the file
+                    !it.value.values.stream().allMatch { events -> events.isEmpty() }
+                }
+            )
+            // TODO Add a limit for the file size?
+            file.writeText(fileData)
+        }
     }
 
     private fun readFile() {
-        if (!file.exists()) return
-        val fileText: String = file.bufferedReader().use { it.readText() }
-        if (fileText.isEmpty()) return
-        val type = object : TypeToken<ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<UUID, Instant>>>>() {}.type
-        data = gson.fromJson(fileText, type)
+        CoroutineScope(fileOperationsDispatcher).launch {
+            if (!file.exists()) return@launch
+            val fileText: String = file.bufferedReader().use { it.readText() }
+            if (fileText.isEmpty()) return@launch
+            val type = object :
+                TypeToken<ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<UUID, Instant>>>>() {}.type
+            val newData: ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<UUID, Instant>>> =
+                gson.fromJson(fileText, type)
+            newData.entries.forEach { (resolveToken, eventsByFlagName) ->
+                eventsByFlagName.entries.forEach {(flagName, eventTimeEntries) ->
+                    data.putIfAbsent(resolveToken, ConcurrentHashMap())
+                    data[resolveToken]?.putIfAbsent(flagName, ConcurrentHashMap())
+                    eventTimeEntries.forEach {(id, time) ->
+                        data[resolveToken]?.get(flagName)?.putIfAbsent(id, time)
+                    }
+                }
+            }
+        }.invokeOnCompletion {
+            isLoadingFileData = false
+        }
     }
 }
