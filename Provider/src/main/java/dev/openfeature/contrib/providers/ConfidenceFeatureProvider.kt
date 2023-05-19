@@ -63,10 +63,7 @@ class ConfidenceFeatureProvider private constructor(
         )
     }
 
-    private var currEvaluationContext: EvaluationContext? = null
-
     override suspend fun initialize(initialContext: EvaluationContext?) {
-        currEvaluationContext = initialContext
         if (initialContext == null) return
         try {
             val (resolvedFlags, resolveToken) = client.resolve(listOf(), initialContext)
@@ -87,42 +84,47 @@ class ConfidenceFeatureProvider private constructor(
 
     override fun getBooleanEvaluation(
         key: String,
-        defaultValue: Boolean
+        defaultValue: Boolean,
+        context: EvaluationContext?
     ): ProviderEvaluation<Boolean> {
-        return generateEvaluation(key, defaultValue)
+        return generateEvaluation(key, defaultValue, context)
     }
 
     override fun getDoubleEvaluation(
         key: String,
-        defaultValue: Double
+        defaultValue: Double,
+        context: EvaluationContext?
     ): ProviderEvaluation<Double> {
-        return generateEvaluation(key, defaultValue)
+        return generateEvaluation(key, defaultValue, context)
     }
 
     override fun getIntegerEvaluation(
         key: String,
-        defaultValue: Int
+        defaultValue: Int,
+        context: EvaluationContext?
     ): ProviderEvaluation<Int> {
-        return generateEvaluation(key, defaultValue)
+        return generateEvaluation(key, defaultValue, context)
     }
 
     override fun getObjectEvaluation(
         key: String,
-        defaultValue: Value
+        defaultValue: Value,
+        context: EvaluationContext?
     ): ProviderEvaluation<Value> {
-        return generateEvaluation(key, defaultValue)
+        return generateEvaluation(key, defaultValue, context)
     }
 
     override fun getStringEvaluation(
         key: String,
-        defaultValue: String
+        defaultValue: String,
+        context: EvaluationContext?
     ): ProviderEvaluation<String> {
-        return generateEvaluation(key, defaultValue)
+        return generateEvaluation(key, defaultValue, context)
     }
 
-    private fun <T> generateEvaluation(key: String, defaultValue: T): ProviderEvaluation<T> {
+    private fun <T> generateEvaluation(key: String, defaultValue: T, context: EvaluationContext?): ProviderEvaluation<T> {
         val parsedKey = FlagKey(key)
-        val evaluationContext = currEvaluationContext ?: throw ProviderNotReadyError()
+        val evaluationContext = context ?: throw InvalidContextError()
         return when(val resolve: CacheResolveResult = cache.resolve(parsedKey.flagName, evaluationContext)) {
             is CacheResolveResult.Found -> {
                 val resolvedFlag = resolve.entry
