@@ -1,7 +1,7 @@
 package dev.openfeature.contrib.providers
 
 import android.content.Context
-import dev.openfeature.contrib.providers.cache.CACHE_FILE_NAME
+import dev.openfeature.contrib.providers.cache.FLAGS_FILE_NAME
 import dev.openfeature.contrib.providers.cache.InMemoryCache
 import dev.openfeature.sdk.MutableContext
 import dev.openfeature.sdk.OpenFeatureAPI
@@ -45,7 +45,7 @@ class ConfidenceIntegrationTests {
 
     @Test
     fun testSimpleResolveStoredCache() {
-        val cacheFile = File(mockContext.filesDir, CACHE_FILE_NAME)
+        val cacheFile = File(mockContext.filesDir, FLAGS_FILE_NAME)
         assertEquals(0L, cacheFile.length())
         runBlocking {
             OpenFeatureAPI.setProvider(ConfidenceFeatureProvider.Builder(mockContext, clientSecret)

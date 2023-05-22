@@ -7,12 +7,13 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 
-const val CACHE_FILE_NAME = "confidence_cache.json"
+const val FLAGS_FILE_NAME = "confidence_flags_cache.json"
 
 class StorageFileCache(context: Context) : InMemoryCache() {
-    private val file: File = File(context.filesDir, CACHE_FILE_NAME)
+    private val file: File = File(context.filesDir, FLAGS_FILE_NAME)
 
     init {
+        // TODO Can reading be slow and block the ConfidenceFeatureProvider builder?
         readFile()
     }
 

@@ -6,6 +6,8 @@
 package dev.openfeature.contrib.providers
 
 import android.content.Context
+import dev.openfeature.contrib.providers.apply.APPLY_FILE_NAME
+import dev.openfeature.contrib.providers.apply.FlagApplierWithRetries
 import dev.openfeature.contrib.providers.cache.InMemoryCache
 import dev.openfeature.contrib.providers.client.ConfidenceClient
 import dev.openfeature.contrib.providers.client.ResolveFlagsResponse
@@ -24,8 +26,11 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
+import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -33,6 +38,8 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.io.File
+import java.nio.file.Files
 import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -72,13 +79,18 @@ internal class ConfidenceFeatureProviderTests {
             ResolveReason.RESOLVE_REASON_MATCH
         )
     )
+    @Before
+    fun setup() {
+        whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
+    }
 
     @Test
     fun testMatching() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val flagApplier = FlagApplierWithRetries(mockClient, testDispatcher, testDispatcher, mockContext)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(InMemoryCache())
-            .coroutineContext(testDispatcher)
+            .flagApplier(flagApplier)
             .client(mockClient)
             .build()
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
@@ -142,6 +154,126 @@ internal class ConfidenceFeatureProviderTests {
         assertNull(evalObject.errorCode)
         assertNull(evalNested.errorCode)
         assertNull(evalNull.errorCode)
+    }
+
+    @Test
+    fun testDelayedApply() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val flagApplier = FlagApplierWithRetries(mockClient, testDispatcher, testDispatcher, mockContext)
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
+            .cache(InMemoryCache())
+            .flagApplier(flagApplier)
+            .client(mockClient)
+            .build()
+        val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
+
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+        whenever(mockClient.apply(any(), any())).thenThrow(Error())
+
+        runBlocking {
+            confidenceFeatureProvider.initialize(MutableContext("foo"))
+        }
+
+        verify(mockClient, times(1)).resolve(any(), eq(MutableContext("foo")))
+
+        val evalString = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default", MutableContext("foo"))
+        val evalBool = confidenceFeatureProvider.getBooleanEvaluation("fdema-kotlin-flag-1.myboolean", true, MutableContext("foo"))
+        val evalInteger = confidenceFeatureProvider.getIntegerEvaluation("fdema-kotlin-flag-1.myinteger", 1, MutableContext("foo"))
+        val evalDouble = confidenceFeatureProvider.getDoubleEvaluation("fdema-kotlin-flag-1.mydouble", 7.28, MutableContext("foo"))
+        val evalDate = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mydate", "error", MutableContext("foo"))
+        val evalObject = confidenceFeatureProvider.getObjectEvaluation("fdema-kotlin-flag-1.mystruct",  Value.Structure(mapOf()), MutableContext("foo"))
+        val evalNested = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystruct.innerString", "error", MutableContext("foo"))
+        val evalNull = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mynull", "error", MutableContext("foo"))
+
+        advanceUntilIdle()
+        verify(mockClient, times(8)).apply(any(), eq("token1"))
+        assertEquals(8, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token1"]?.jsonObject?.get("fdema-kotlin-flag-1")?.jsonObject?.size)
+        whenever(mockClient.apply(any(), any())).then {}
+
+        flagApplier.triggerBatch()
+
+        advanceUntilIdle()
+        verify(mockClient, times(9)).apply(any(), eq("token1"))
+        assertEquals(0, Json.parseToJsonElement(cacheFile.readText()).jsonObject.size)
+        assertEquals("red", evalString.value)
+        assertEquals(false, evalBool.value)
+        assertEquals(7, evalInteger.value)
+        assertEquals(3.14, evalDouble.value)
+        assertEquals("2023-03-01T14:01:46Z", evalDate.value)
+        assertEquals(Value.Structure(mapOf("innerString" to Value.String("innerValue"))), evalObject.value)
+        assertEquals("innerValue", evalNested.value)
+        assertEquals("error", evalNull.value)
+
+        assertEquals(Reason.TARGETING_MATCH.toString(), evalString.reason)
+        assertEquals(Reason.TARGETING_MATCH.toString(), evalBool.reason)
+        assertEquals(Reason.TARGETING_MATCH.toString(), evalInteger.reason)
+        assertEquals(Reason.TARGETING_MATCH.toString(), evalDouble.reason)
+        assertEquals(Reason.TARGETING_MATCH.toString(), evalDate.reason)
+        assertEquals(Reason.TARGETING_MATCH.toString(), evalObject.reason)
+        assertEquals(Reason.TARGETING_MATCH.toString(), evalNested.reason)
+        assertEquals(Reason.TARGETING_MATCH.toString(), evalNull.reason)
+
+        assertEquals("flags/fdema-kotlin-flag-1/variants/variant-1", evalString.variant)
+        assertEquals("flags/fdema-kotlin-flag-1/variants/variant-1", evalBool.variant)
+        assertEquals("flags/fdema-kotlin-flag-1/variants/variant-1", evalInteger.variant)
+        assertEquals("flags/fdema-kotlin-flag-1/variants/variant-1", evalDouble.variant)
+        assertEquals("flags/fdema-kotlin-flag-1/variants/variant-1", evalDate.variant)
+        assertEquals("flags/fdema-kotlin-flag-1/variants/variant-1", evalObject.variant)
+        assertEquals("flags/fdema-kotlin-flag-1/variants/variant-1", evalNested.variant)
+        assertEquals("flags/fdema-kotlin-flag-1/variants/variant-1", evalNull.variant)
+
+        assertNull(evalString.errorMessage)
+        assertNull(evalBool.errorMessage)
+        assertNull(evalInteger.errorMessage)
+        assertNull(evalDouble.errorMessage)
+        assertNull(evalDate.errorMessage)
+        assertNull(evalObject.errorMessage)
+        assertNull(evalNested.errorMessage)
+        assertNull(evalNull.errorMessage)
+
+        assertNull(evalString.errorCode)
+        assertNull(evalBool.errorCode)
+        assertNull(evalInteger.errorCode)
+        assertNull(evalDouble.errorCode)
+        assertNull(evalDate.errorCode)
+        assertNull(evalObject.errorCode)
+        assertNull(evalNested.errorCode)
+        assertNull(evalNull.errorCode)
+    }
+
+    @Test
+    fun testApplyFromStoredCache() = runTest {
+        val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
+        cacheFile.writeText(
+            "{\n" +
+                    "  \"token1\": {\n" +
+                    "    \"fdema-kotlin-flag-1\": {\n" +
+                    "      \"c70d27d6-0b4e-4405-a4a4-23431a49cfef\": \"2023-05-10T13:59:38.226449Z\"\n" +
+                    "    }\n" +
+                    "  }\n" +
+                    "}"
+        )
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val flagApplier = FlagApplierWithRetries(mockClient, testDispatcher, testDispatcher, mockContext)
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
+            .cache(InMemoryCache())
+            .flagApplier(flagApplier)
+            .client(mockClient)
+            .build()
+
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+        whenever(mockClient.apply(any(), any())).then {}
+
+        runBlocking {
+            confidenceFeatureProvider.initialize(MutableContext("foo"))
+        }
+
+        verify(mockClient, times(1)).resolve(any(), eq(MutableContext("foo")))
+
+        flagApplier.triggerBatch()
+
+        advanceUntilIdle()
+        verify(mockClient, times(1)).apply(any(), eq("token1"))
     }
 
     @Test
