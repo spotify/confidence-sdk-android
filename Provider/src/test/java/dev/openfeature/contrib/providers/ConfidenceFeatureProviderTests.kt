@@ -86,14 +86,14 @@ internal class ConfidenceFeatureProviderTests {
             confidenceFeatureProvider.initialize(MutableContext("foo"))
         }
         verify(mockClient, times(1)).resolve(any(), eq(MutableContext("foo")))
-        val evalString = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default")
-        val evalBool = confidenceFeatureProvider.getBooleanEvaluation("fdema-kotlin-flag-1.myboolean", true)
-        val evalInteger = confidenceFeatureProvider.getIntegerEvaluation("fdema-kotlin-flag-1.myinteger", 1)
-        val evalDouble = confidenceFeatureProvider.getDoubleEvaluation("fdema-kotlin-flag-1.mydouble", 7.28)
-        val evalDate = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mydate", "error")
-        val evalObject = confidenceFeatureProvider.getObjectEvaluation("fdema-kotlin-flag-1.mystruct", Value.Structure(mapOf()))
-        val evalNested = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystruct.innerString", "error")
-        val evalNull = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mynull", "error")
+        val evalString = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default", MutableContext("foo"))
+        val evalBool = confidenceFeatureProvider.getBooleanEvaluation("fdema-kotlin-flag-1.myboolean", true, MutableContext("foo"))
+        val evalInteger = confidenceFeatureProvider.getIntegerEvaluation("fdema-kotlin-flag-1.myinteger", 1, MutableContext("foo"))
+        val evalDouble = confidenceFeatureProvider.getDoubleEvaluation("fdema-kotlin-flag-1.mydouble", 7.28, MutableContext("foo"))
+        val evalDate = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mydate", "error", MutableContext("foo"))
+        val evalObject = confidenceFeatureProvider.getObjectEvaluation("fdema-kotlin-flag-1.mystruct", Value.Structure(mapOf()), MutableContext("foo"))
+        val evalNested = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystruct.innerString", "error", MutableContext("foo"))
+        val evalNull = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mynull", "error", MutableContext("foo"))
 
         advanceUntilIdle()
         verify(mockClient, times(8)).apply(any(), eq("token1"))
@@ -154,7 +154,7 @@ internal class ConfidenceFeatureProviderTests {
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("foo"))
         }
-        val evalRootObject = confidenceFeatureProvider.getObjectEvaluation("fdema-kotlin-flag-1", Value.Structure(mapOf()))
+        val evalRootObject = confidenceFeatureProvider.getObjectEvaluation("fdema-kotlin-flag-1", Value.Structure(mapOf()), MutableContext("foo"))
 
         assertEquals(resolvedValueAsMap, evalRootObject.value.asStructure())
         assertEquals(Reason.TARGETING_MATCH.toString(), evalRootObject.reason)
@@ -172,20 +172,17 @@ internal class ConfidenceFeatureProviderTests {
             .build()
 
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
-        runBlocking {
-            confidenceFeatureProvider.initialize(MutableContext("user2"))
-        }
+
         // Simulate a case where the context in the cache is not synced with the evaluation's context
         cache.refresh(resolvedFlags, "token2", MutableContext("user1"))
-
-        val evalString = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default")
-        val evalBool = confidenceFeatureProvider.getBooleanEvaluation("fdema-kotlin-flag-1.myboolean", true)
-        val evalInteger = confidenceFeatureProvider.getIntegerEvaluation("fdema-kotlin-flag-1.myinteger", 1)
-        val evalDouble = confidenceFeatureProvider.getDoubleEvaluation("fdema-kotlin-flag-1.mydouble", 7.28)
-        val evalDate = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mydate", "default1")
-        val evalObject = confidenceFeatureProvider.getObjectEvaluation("fdema-kotlin-flag-1.mystruct", Value.Structure(mapOf()))
-        val evalNested = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystruct.innerString", "default2")
-        val evalNull = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mynull", "default3")
+        val evalString = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default", MutableContext("user2"))
+        val evalBool = confidenceFeatureProvider.getBooleanEvaluation("fdema-kotlin-flag-1.myboolean", true, MutableContext("user2"))
+        val evalInteger = confidenceFeatureProvider.getIntegerEvaluation("fdema-kotlin-flag-1.myinteger", 1, MutableContext("user2"))
+        val evalDouble = confidenceFeatureProvider.getDoubleEvaluation("fdema-kotlin-flag-1.mydouble", 7.28, MutableContext("user2"))
+        val evalDate = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mydate", "default1", MutableContext("user2"))
+        val evalObject = confidenceFeatureProvider.getObjectEvaluation("fdema-kotlin-flag-1.mystruct", Value.Structure(mapOf()), MutableContext("user2"))
+        val evalNested = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystruct.innerString", "default2", MutableContext("user2"))
+        val evalNull = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mynull", "default3", MutableContext("user2"))
 
         assertEquals("default", evalString.value)
         assertEquals(true, evalBool.value)
@@ -255,7 +252,7 @@ internal class ConfidenceFeatureProviderTests {
             confidenceFeatureProvider.initialize(MutableContext("user1"))
         }
 
-        val evalString = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default")
+        val evalString = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default", MutableContext("user1"))
 
         assertNull(evalString.errorMessage)
         assertNull(evalString.errorCode)
@@ -273,15 +270,11 @@ internal class ConfidenceFeatureProviderTests {
             .build()
 
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
-        runBlocking {
-            confidenceFeatureProvider.initialize(MutableContext("user2"))
-        }
         // Simulate a case where the context in the cache is not synced with the evaluation's context
         // This shouldn't have an effect in this test, given that not found values are priority over stale values
         cache.refresh(resolvedFlags, "token2", MutableContext("user1"))
-        // TODO Should flagNotFound throw?
         val ex = assertThrows(FlagNotFoundError::class.java) {
-            confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-2.mystring", "default")
+            confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-2.mystring", "default", MutableContext("user2"))
         }
         assertEquals("Could not find flag named: fdema-kotlin-flag-2", ex.message)
     }
@@ -298,9 +291,8 @@ internal class ConfidenceFeatureProviderTests {
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("user1"))
         }
-        // TODO Should flagNotFound throw?
         val ex = assertThrows(FlagNotFoundError::class.java) {
-            confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-2.mystring", "default")
+            confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-2.mystring", "default", MutableContext("user1"))
         }
         assertEquals("Could not find flag named: fdema-kotlin-flag-2", ex.message)
     }
@@ -319,7 +311,8 @@ internal class ConfidenceFeatureProviderTests {
         val ex = assertThrows(ParseError::class.java) {
             confidenceFeatureProvider.getStringEvaluation(
                 "fdema-kotlin-flag-1.wrongid",
-                "default"
+                "default",
+                MutableContext("user2")
             )
         }
         assertEquals("Unable to parse flag value: wrongid", ex.message)
@@ -339,7 +332,8 @@ internal class ConfidenceFeatureProviderTests {
         val ex = assertThrows(ParseError::class.java) {
             confidenceFeatureProvider.getStringEvaluation(
                 "fdema-kotlin-flag-1.mystring.extrapath",
-                "default"
+                "default",
+                MutableContext("user2")
             )
         }
         assertEquals("Unable to parse flag value: mystring/extrapath", ex.message)
