@@ -43,9 +43,9 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.9.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
     implementation("com.google.code.gson:gson:2.10")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.1")
     testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.9.1")
 }
