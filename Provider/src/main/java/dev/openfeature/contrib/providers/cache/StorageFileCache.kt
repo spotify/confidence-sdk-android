@@ -17,7 +17,11 @@ class StorageFileCache(context: Context) : InMemoryCache() {
         readFile()
     }
 
-    override fun refresh(resolvedFlags: List<ResolvedFlag>, resolveToken: String, evaluationContext: EvaluationContext) {
+    override fun refresh(
+        resolvedFlags: List<ResolvedFlag>,
+        resolveToken: String,
+        evaluationContext: EvaluationContext
+    ) {
         super.refresh(resolvedFlags, resolveToken, evaluationContext)
         // TODO Should this happen before in-memory cache is changed?
         writeToFile()

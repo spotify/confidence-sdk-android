@@ -22,9 +22,10 @@ class FlagApplierWithRetries(
     private val client: ConfidenceClient,
     private val applyDispatcher: CoroutineDispatcher,
     private val fileOperationsDispatcher: CoroutineDispatcher,
-    context: Context) : FlagApplier {
+    context: Context
+) : FlagApplier {
     // <tokenString, <flagName, <uuid, applyTime>>>
-    private var data : ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<UUID, Instant>>> = ConcurrentHashMap()
+    private var data: ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<UUID, Instant>>> = ConcurrentHashMap()
     private val file: File = File(context.filesDir, APPLY_FILE_NAME)
     private val gson = GsonBuilder()
         .serializeNulls()
@@ -99,10 +100,10 @@ class FlagApplierWithRetries(
             val newData: ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<UUID, Instant>>> =
                 gson.fromJson(fileText, type)
             newData.entries.forEach { (resolveToken, eventsByFlagName) ->
-                eventsByFlagName.entries.forEach {(flagName, eventTimeEntries) ->
+                eventsByFlagName.entries.forEach { (flagName, eventTimeEntries) ->
                     data.putIfAbsent(resolveToken, ConcurrentHashMap())
                     data[resolveToken]?.putIfAbsent(flagName, ConcurrentHashMap())
-                    eventTimeEntries.forEach {(id, time) ->
+                    eventTimeEntries.forEach { (id, time) ->
                         data[resolveToken]?.get(flagName)?.putIfAbsent(id, time)
                     }
                 }

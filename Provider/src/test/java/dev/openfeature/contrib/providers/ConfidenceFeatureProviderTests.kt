@@ -1,6 +1,10 @@
-@file:OptIn(ExperimentalCoroutinesApi::class, ExperimentalCoroutinesApi::class,
-    ExperimentalCoroutinesApi::class, ExperimentalCoroutinesApi::class,
-    ExperimentalCoroutinesApi::class, ExperimentalCoroutinesApi::class
+@file:OptIn(
+    ExperimentalCoroutinesApi::class,
+    ExperimentalCoroutinesApi::class,
+    ExperimentalCoroutinesApi::class,
+    ExperimentalCoroutinesApi::class,
+    ExperimentalCoroutinesApi::class,
+    ExperimentalCoroutinesApi::class
 )
 
 package dev.openfeature.contrib.providers
@@ -64,20 +68,25 @@ internal class ConfidenceFeatureProviderTests {
             "fdema-kotlin-flag-1",
             "flags/fdema-kotlin-flag-1/variants/variant-1",
             MutableStructure(resolvedValueAsMap),
-            SchemaType.SchemaStruct(mapOf(
-                "mystring" to SchemaType.StringSchema,
-                "myboolean" to SchemaType.BoolSchema,
-                "myinteger" to SchemaType.IntSchema,
-                "mydouble" to SchemaType.DoubleSchema,
-                "mydate" to SchemaType.StringSchema,
-                "mystruct" to SchemaType.SchemaStruct(mapOf(
-                    "innerString" to SchemaType.StringSchema
-                )),
-                "mynull" to SchemaType.StringSchema
-            )),
+            SchemaType.SchemaStruct(
+                mapOf(
+                    "mystring" to SchemaType.StringSchema,
+                    "myboolean" to SchemaType.BoolSchema,
+                    "myinteger" to SchemaType.IntSchema,
+                    "mydouble" to SchemaType.DoubleSchema,
+                    "mydate" to SchemaType.StringSchema,
+                    "mystruct" to SchemaType.SchemaStruct(
+                        mapOf(
+                            "innerString" to SchemaType.StringSchema
+                        )
+                    ),
+                    "mynull" to SchemaType.StringSchema
+                )
+            ),
             ResolveReason.RESOLVE_REASON_MATCH
         )
     )
+
     @Before
     fun setup() {
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
@@ -175,35 +184,43 @@ internal class ConfidenceFeatureProviderTests {
         verify(mockClient, times(1)).resolve(any(), eq(evaluationContext))
 
         val evalString = confidenceFeatureProvider.getStringEvaluation(
-            "fdema-kotlin-flag-1.mystring", "default",
+            "fdema-kotlin-flag-1.mystring",
+            "default",
             evaluationContext
         )
         val evalBool = confidenceFeatureProvider.getBooleanEvaluation(
-            "fdema-kotlin-flag-1.myboolean", true,
+            "fdema-kotlin-flag-1.myboolean",
+            true,
             evaluationContext
         )
         val evalInteger = confidenceFeatureProvider.getIntegerEvaluation(
-            "fdema-kotlin-flag-1.myinteger", 1,
+            "fdema-kotlin-flag-1.myinteger",
+            1,
             evaluationContext
         )
         val evalDouble = confidenceFeatureProvider.getDoubleEvaluation(
-            "fdema-kotlin-flag-1.mydouble", 7.28,
+            "fdema-kotlin-flag-1.mydouble",
+            7.28,
             evaluationContext
         )
         val evalDate = confidenceFeatureProvider.getStringEvaluation(
-            "fdema-kotlin-flag-1.mydate", "error",
+            "fdema-kotlin-flag-1.mydate",
+            "error",
             evaluationContext
         )
         val evalObject = confidenceFeatureProvider.getObjectEvaluation(
-            "fdema-kotlin-flag-1.mystruct", Value.Structure(mapOf()),
+            "fdema-kotlin-flag-1.mystruct",
+            Value.Structure(mapOf()),
             evaluationContext
         )
         val evalNested = confidenceFeatureProvider.getStringEvaluation(
-            "fdema-kotlin-flag-1.mystruct.innerString", "error",
+            "fdema-kotlin-flag-1.mystruct.innerString",
+            "error",
             evaluationContext
         )
         val evalNull = confidenceFeatureProvider.getStringEvaluation(
-            "fdema-kotlin-flag-1.mynull", "error",
+            "fdema-kotlin-flag-1.mynull",
+            "error",
             evaluationContext
         )
 
@@ -212,7 +229,7 @@ internal class ConfidenceFeatureProviderTests {
         assertEquals(8, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token1"]?.jsonObject?.get("fdema-kotlin-flag-1")?.jsonObject?.size)
         whenever(mockClient.apply(any(), any())).then {}
 
-        //Evaluate a flag property in order to trigger an apply
+        // Evaluate a flag property in order to trigger an apply
         confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "empty", evaluationContext)
 
         advanceUntilIdle()
@@ -269,12 +286,12 @@ internal class ConfidenceFeatureProviderTests {
         val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
         cacheFile.writeText(
             "{\n" +
-                    "  \"token1\": {\n" +
-                    "    \"fdema-kotlin-flag-1\": {\n" +
-                    "      \"c70d27d6-0b4e-4405-a4a4-23431a49cfef\": \"2023-05-10T13:59:38.226449Z\"\n" +
-                    "    }\n" +
-                    "  }\n" +
-                    "}"
+                "  \"token1\": {\n" +
+                "    \"fdema-kotlin-flag-1\": {\n" +
+                "      \"c70d27d6-0b4e-4405-a4a4-23431a49cfef\": \"2023-05-10T13:59:38.226449Z\"\n" +
+                "    }\n" +
+                "  }\n" +
+                "}"
         )
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
@@ -293,7 +310,7 @@ internal class ConfidenceFeatureProviderTests {
 
         verify(mockClient, times(1)).resolve(any(), eq(evaluationContext))
 
-        //Evaluate a flag property in order to trigger an apply
+        // Evaluate a flag property in order to trigger an apply
         confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "empty", evaluationContext)
         advanceUntilIdle()
         verify(mockClient, times(1)).apply(any(), eq("token1"))
@@ -398,7 +415,7 @@ internal class ConfidenceFeatureProviderTests {
                 "fdema-kotlin-flag-1",
                 "",
                 MutableStructure(mutableMapOf()),
-                SchemaType.SchemaStruct(mapOf( )),
+                SchemaType.SchemaStruct(mapOf()),
                 ResolveReason.RESOLVE_REASON_NO_TREATMENT_MATCH
             )
         )

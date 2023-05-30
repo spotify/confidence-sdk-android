@@ -6,11 +6,21 @@ import dev.openfeature.contrib.providers.apply.FlagApplierWithRetries
 import dev.openfeature.contrib.providers.cache.ProviderCache
 import dev.openfeature.contrib.providers.cache.ProviderCache.CacheResolveResult
 import dev.openfeature.contrib.providers.cache.StorageFileCache
-import dev.openfeature.contrib.providers.client.*
-import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient.*
-import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient.ConfidenceRegion.*
-import dev.openfeature.sdk.*
-import dev.openfeature.sdk.exceptions.OpenFeatureError.*
+import dev.openfeature.contrib.providers.client.ConfidenceClient
+import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient
+import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient.ConfidenceRegion
+import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient.ConfidenceRegion.EUROPE
+import dev.openfeature.contrib.providers.client.ResolveReason
+import dev.openfeature.sdk.EvaluationContext
+import dev.openfeature.sdk.FeatureProvider
+import dev.openfeature.sdk.Hook
+import dev.openfeature.sdk.Metadata
+import dev.openfeature.sdk.ProviderEvaluation
+import dev.openfeature.sdk.Reason
+import dev.openfeature.sdk.Value
+import dev.openfeature.sdk.exceptions.OpenFeatureError.FlagNotFoundError
+import dev.openfeature.sdk.exceptions.OpenFeatureError.InvalidContextError
+import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
@@ -23,7 +33,7 @@ class ConfidenceFeatureProvider private constructor(
 ) : FeatureProvider {
     data class Builder(
         val context: Context,
-        val clientSecret: String,
+        val clientSecret: String
     ) {
         private var region: ConfidenceRegion? = null
         private var hooks: List<Hook<*>>? = null
@@ -134,41 +144,50 @@ class ConfidenceFeatureProvider private constructor(
         return generateEvaluation(key, defaultValue, context)
     }
 
-    private fun <T> generateEvaluation(key: String, defaultValue: T, context: EvaluationContext?): ProviderEvaluation<T> {
+    private fun <T> generateEvaluation(
+        key: String,
+        defaultValue: T,
+        context: EvaluationContext?
+    ): ProviderEvaluation<T> {
         val parsedKey = FlagKey(key)
         val evaluationContext = context ?: throw InvalidContextError()
-        return when(val resolve: CacheResolveResult = cache.resolve(parsedKey.flagName, evaluationContext)) {
+        return when (val resolve: CacheResolveResult = cache.resolve(parsedKey.flagName, evaluationContext)) {
             is CacheResolveResult.Found -> {
                 val resolvedFlag = resolve.entry
-                when(resolvedFlag.resolveReason) {
+                when (resolvedFlag.resolveReason) {
                     ResolveReason.RESOLVE_REASON_MATCH -> {
                         val resolvedValue: Value = findValueFromValuePath(resolvedFlag.value, parsedKey.valuePath)
-                            ?: throw ParseError("Unable to parse flag value: ${parsedKey.valuePath.joinToString(separator = "/")}")
+                            ?: throw ParseError(
+                                "Unable to parse flag value: ${parsedKey.valuePath.joinToString(separator = "/")}"
+                            )
                         val value = getTyped<T>(resolvedValue) ?: defaultValue
                         flagApplier.apply(parsedKey.flagName, resolvedFlag.resolveToken)
                         ProviderEvaluation(
                             value = value,
                             variant = resolvedFlag.variant,
-                            reason = Reason.TARGETING_MATCH.toString())
+                            reason = Reason.TARGETING_MATCH.toString()
+                        )
                     }
                     else -> {
                         flagApplier.apply(parsedKey.flagName, resolvedFlag.resolveToken)
                         ProviderEvaluation(
                             value = defaultValue,
-                            reason = Reason.DEFAULT.toString())
+                            reason = Reason.DEFAULT.toString()
+                        )
                     }
                 }
             }
             CacheResolveResult.Stale -> ProviderEvaluation(
                 value = defaultValue,
-                reason = Reason.STALE.toString())
+                reason = Reason.STALE.toString()
+            )
             CacheResolveResult.NotFound -> throw FlagNotFoundError(parsedKey.flagName)
         }
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun <T> getTyped(v: Value): T? {
-        return when(v) {
+        return when (v) {
             is Value.Boolean -> v.boolean as T
             is Value.Double -> v.double as T
             is Value.Instant -> v.instant.toString() as T
@@ -182,7 +201,7 @@ class ConfidenceFeatureProvider private constructor(
 
     private fun findValueFromValuePath(value: Value.Structure, valuePath: List<String>): Value? {
         if (valuePath.isEmpty()) return value
-        return when(val currValue = value.structure[valuePath[0]]) {
+        return when (val currValue = value.structure[valuePath[0]]) {
             is Value.Structure -> findValueFromValuePath(currValue, valuePath.subList(1, valuePath.count()))
             else -> {
                 if (valuePath.count() == 1) {
@@ -203,7 +222,8 @@ class ConfidenceFeatureProvider private constructor(
                 val splits = evalKey.split(".")
                 return FlagKey(
                     splits.getOrNull(0)!!,
-                    splits.subList(1, splits.count()))
+                    splits.subList(1, splits.count())
+                )
             }
         }
     }

@@ -1,6 +1,16 @@
 package dev.openfeature.contrib.providers.client
 
-import com.google.gson.*
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonArray
+import com.google.gson.JsonDeserializationContext
+import com.google.gson.JsonDeserializer
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
+import com.google.gson.JsonSerializationContext
+import com.google.gson.JsonSerializer
 import com.google.gson.reflect.TypeToken
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.MutableStructure
@@ -8,8 +18,12 @@ import dev.openfeature.sdk.Structure
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.exceptions.OpenFeatureError.GeneralError
 import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
-import okhttp3.*
+import okhttp3.Headers
+import okhttp3.HttpUrl
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import java.lang.reflect.Type
 import java.time.Clock
 import java.time.Instant
@@ -25,8 +39,10 @@ class ConfidenceRemoteClient : ConfidenceClient {
         this.clientSecret = clientSecret
         this.okHttpClient = OkHttpClient()
         this.headers = Headers.headersOf(
-            "Content-Type", "application/json",
-            "Accept", "application/json"
+            "Content-Type",
+            "application/json",
+            "Accept",
+            "application/json"
         )
         baseUrl = when (region) {
             ConfidenceRegion.EUROPE -> "https://resolver.eu.confidence.dev"
@@ -39,8 +55,10 @@ class ConfidenceRemoteClient : ConfidenceClient {
         this.clientSecret = clientSecret
         this.okHttpClient = OkHttpClient()
         this.headers = Headers.headersOf(
-            "Content-Type", "application/json",
-            "Accept", "application/json"
+            "Content-Type",
+            "application/json",
+            "Accept",
+            "application/json"
         )
         this.baseUrl = baseUrl.toString()
         this.clock = clock
@@ -66,13 +84,16 @@ class ConfidenceRemoteClient : ConfidenceClient {
             val request = Request.Builder()
                 .url("$baseUrl/v1/flags:resolve")
                 .headers(headers)
-                .post(gson.toJson(
-                    ResolveFlagsRequest(
-                        flags.map { "flags/$it" },
-                        getEvaluationContextStruct(ctx),
-                        clientSecret,
-                        false
-                    )).toRequestBody())
+                .post(
+                    gson.toJson(
+                        ResolveFlagsRequest(
+                            flags.map { "flags/$it" },
+                            getEvaluationContextStruct(ctx),
+                            clientSecret,
+                            false
+                        )
+                    ).toRequestBody()
+                )
                 .build()
 
             okHttpClient.newCall(request).execute().use { response ->
@@ -89,13 +110,16 @@ class ConfidenceRemoteClient : ConfidenceClient {
             val request = Request.Builder()
                 .url("$baseUrl/v1/flags:apply")
                 .headers(headers)
-                .post(gson.toJson(
-                    ApplyFlagsRequest(
-                        flags.map { AppliedFlag("flags/${it.flag}", it.applyTime) },
-                        clock.instant(),
-                        clientSecret,
-                        resolveToken
-                    )).toRequestBody())
+                .post(
+                    gson.toJson(
+                        ApplyFlagsRequest(
+                            flags.map { AppliedFlag("flags/${it.flag}", it.applyTime) },
+                            clock.instant(),
+                            clientSecret,
+                            resolveToken
+                        )
+                    ).toRequestBody()
+                )
                 .build()
 
             okHttpClient.newCall(request).execute().use { response ->
@@ -123,9 +147,10 @@ class ConfidenceRemoteClient : ConfidenceClient {
                     verifyAndConvert(
                         it.key,
                         it.value,
-                        resolvedFlag.flagSchema ?: SchemaType.SchemaStruct(mapOf()))
+                        resolvedFlag.flagSchema ?: SchemaType.SchemaStruct(mapOf())
+                    )
                 }
-                when(newValue) {
+                when (newValue) {
                     null -> resolvedFlag.copy(flag = flagNameSplits[1])
                     else -> resolvedFlag.copy(
                         flag = flagNameSplits[1],
@@ -137,14 +162,14 @@ class ConfidenceRemoteClient : ConfidenceClient {
     }
 
     private fun verifyAndConvert(key: String, value: Value, schemaStruct: SchemaType.SchemaStruct): Value {
-        return when(schemaStruct.schema[key]) {
-            is SchemaType.StringSchema -> when(value) {
+        return when (schemaStruct.schema[key]) {
+            is SchemaType.StringSchema -> when (value) {
                 is Value.Instant -> Value.String(value.instant.toString())
                 is Value.String -> value
                 is Value.Null -> value
                 else -> { throw ParseError("Incompatible value \"$key\" for schema") }
             }
-            SchemaType.DoubleSchema -> when(value) {
+            SchemaType.DoubleSchema -> when (value) {
                 is Value.Integer -> {
                     val intValue = value.asInteger()
                         ?: throw GeneralError("Internal error when processing Integer value $value")
@@ -154,23 +179,24 @@ class ConfidenceRemoteClient : ConfidenceClient {
                 is Value.Null -> value
                 else -> { throw ParseError("Incompatible value \"$key\" for schema") }
             }
-            is SchemaType.SchemaStruct -> when(value) {
+            is SchemaType.SchemaStruct -> when (value) {
                 is Value.Structure -> {
                     return Value.Structure(
                         value.asStructure()?.mapValues {
-                            verifyAndConvert(it.key, it.value, schemaStruct.schema[key] as SchemaType.SchemaStruct) }
+                            verifyAndConvert(it.key, it.value, schemaStruct.schema[key] as SchemaType.SchemaStruct)
+                        }
                             ?: mapOf()
                     )
                 }
                 is Value.Null -> value
                 else -> { throw ParseError("Incompatible value \"$key\" for schema") }
             }
-            SchemaType.BoolSchema -> when(value) {
+            SchemaType.BoolSchema -> when (value) {
                 is Value.Boolean -> value
                 is Value.Null -> value
                 else -> { throw ParseError("Incompatible value \"$key\" for schema") }
             }
-            SchemaType.IntSchema -> when(value) {
+            SchemaType.IntSchema -> when (value) {
                 is Value.Integer -> value
                 is Value.Null -> value
                 else -> { throw ParseError("Incompatible value \"$key\" for schema") }
@@ -191,7 +217,8 @@ class ConfidenceRemoteClient : ConfidenceClient {
  * Adapters
  */
 
-class SchemaTypeAdapter : JsonDeserializer<SchemaType.SchemaStruct>,
+class SchemaTypeAdapter :
+    JsonDeserializer<SchemaType.SchemaStruct>,
     JsonSerializer<SchemaType.SchemaStruct> {
     override fun deserialize(
         json: JsonElement?,
@@ -260,7 +287,7 @@ class StructureTypeAdapter : JsonDeserializer<Structure>, JsonSerializer<Structu
             if (value.asJsonPrimitive.isString) {
                 return try {
                     Value.Instant(Instant.parse(value.asString))
-                } catch(e: Exception) {
+                } catch (e: Exception) {
                     Value.String(value.asString)
                 }
             } else if (value.asJsonPrimitive.isNumber) {
@@ -293,7 +320,7 @@ class StructureTypeAdapter : JsonDeserializer<Structure>, JsonSerializer<Structu
     private fun convertStructure(src: Structure?): JsonElement {
         val jsonObject = JsonObject()
         src?.asMap()?.forEach { entry: Map.Entry<String, Value> ->
-            when(val value = entry.value) {
+            when (val value = entry.value) {
                 is Value.String -> jsonObject.addProperty(entry.key, value.asString())
                 is Value.Boolean -> jsonObject.addProperty(entry.key, value.asBoolean())
                 is Value.Instant -> jsonObject.add(entry.key, Gson().toJsonTree(value.asInstant().toString()))
@@ -391,7 +418,7 @@ data class AppliedFlag(
     var applyTime: Instant
 )
 
-sealed interface SchemaType{
+sealed interface SchemaType {
     data class SchemaStruct(
         var schema: Map<String, SchemaType>
     ) : SchemaType
@@ -401,16 +428,20 @@ sealed interface SchemaType{
     object BoolSchema : SchemaType
 }
 
-enum class ResolveReason{
+enum class ResolveReason {
     // Unspecified enum.
     RESOLVE_REASON_UNSPECIFIED,
+
     // The flag was successfully resolved because one rule matched.
     RESOLVE_REASON_MATCH,
+
     // The flag could not be resolved because no rule matched.
     RESOLVE_REASON_NO_SEGMENT_MATCH,
+
     // The flag could not be resolved because the matching rule had no variant
     // that could be assigned.
     RESOLVE_REASON_NO_TREATMENT_MATCH,
+
     // The flag could not be resolved because it was archived.
     RESOLVE_REASON_FLAG_ARCHIVED
 }
