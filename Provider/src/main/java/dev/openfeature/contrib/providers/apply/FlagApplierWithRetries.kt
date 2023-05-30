@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.time.Instant
 import java.util.UUID
@@ -31,10 +32,15 @@ class FlagApplierWithRetries(
         .serializeNulls()
         .registerTypeAdapter(Instant::class.java, InstantTypeAdapter())
         .create()
-    private var isLoadingFileData = true
+    private var isInitializing = false
 
     init {
-        readFile()
+        isInitializing = true
+        CoroutineScope(fileOperationsDispatcher).launch {
+            readFile()
+        }.invokeOnCompletion {
+            isInitializing = false
+        }
     }
 
     override fun apply(flagName: String, resolveToken: String) {
@@ -43,7 +49,9 @@ class FlagApplierWithRetries(
         // Never delete entries from the maps above, only add. This should prevent racy conditions
         // Empty entries are not added to the cache file, so empty entries are removed when restarting
         data[resolveToken]?.get(flagName)?.putIfAbsent(UUID.randomUUID(), Instant.now())
-        writeToFile()
+        CoroutineScope(fileOperationsDispatcher).launch {
+            writeToFile()
+        }
         try {
             triggerBatch()
         } catch (_: Throwable) {
@@ -76,9 +84,9 @@ class FlagApplierWithRetries(
         }
     }
 
-    private fun writeToFile() {
-        if (isLoadingFileData) return
-        CoroutineScope(fileOperationsDispatcher).launch {
+    private suspend fun writeToFile() {
+        if (isInitializing) return
+        withContext(fileOperationsDispatcher) {
             val fileData = gson.toJson(
                 data.filter {
                     // All flags entries are empty for this token, don't add this token to the file
@@ -90,11 +98,11 @@ class FlagApplierWithRetries(
         }
     }
 
-    private fun readFile() {
-        CoroutineScope(fileOperationsDispatcher).launch {
-            if (!file.exists()) return@launch
+    private suspend fun readFile() {
+        withContext(fileOperationsDispatcher) {
+            if (!file.exists()) return@withContext
             val fileText: String = file.bufferedReader().use { it.readText() }
-            if (fileText.isEmpty()) return@launch
+            if (fileText.isEmpty()) return@withContext
             val type = object :
                 TypeToken<ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<UUID, Instant>>>>() {}.type
             val newData: ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<UUID, Instant>>> =
@@ -108,8 +116,6 @@ class FlagApplierWithRetries(
                     }
                 }
             }
-        }.invokeOnCompletion {
-            isLoadingFileData = false
         }
     }
 }
