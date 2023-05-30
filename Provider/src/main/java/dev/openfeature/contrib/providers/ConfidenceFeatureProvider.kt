@@ -11,6 +11,7 @@ import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient.*
 import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient.ConfidenceRegion.*
 import dev.openfeature.sdk.*
 import dev.openfeature.sdk.exceptions.OpenFeatureError.*
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
 class ConfidenceFeatureProvider private constructor(
@@ -29,7 +30,7 @@ class ConfidenceFeatureProvider private constructor(
         private var metadata: Metadata? = null
         private var client: ConfidenceClient? = null
         private var cache: ProviderCache? = null
-        private var flagApplier: FlagApplier? = null
+        private var dispatcher: CoroutineDispatcher = Dispatchers.IO
         fun hooks(hooks: List<Hook<*>>) = apply { this.hooks = hooks }
         fun metadata(metadata: Metadata) = apply { this.metadata = metadata }
 
@@ -37,6 +38,14 @@ class ConfidenceFeatureProvider private constructor(
          * Default is "EU". This value is ignored if an external client is set via this builder
          */
         fun region(region: ConfidenceRegion) = apply { this.region = region }
+
+        /**
+         * CoroutineDispatcher to use for file I/O and network traffic, if not set it will use
+         * Dispatcher.IO
+         */
+        fun dispatcher(dispatcher: CoroutineDispatcher) = apply {
+            this.dispatcher = dispatcher
+        }
 
         /**
          * Used for testing.
@@ -48,10 +57,6 @@ class ConfidenceFeatureProvider private constructor(
          */
         fun cache(cache: ProviderCache) = apply { this.cache = cache }
 
-        /**
-         * Used for testing.
-         */
-        fun flagApplier(flagApplier: FlagApplier) = apply { this.flagApplier = flagApplier }
         fun build(): ConfidenceFeatureProvider {
             val configuredRegion = region ?: EUROPE
             val configuredClient = client ?: ConfidenceRemoteClient(clientSecret, configuredRegion)
@@ -60,10 +65,10 @@ class ConfidenceFeatureProvider private constructor(
                 metadata ?: ConfidenceMetadata(),
                 cache ?: StorageFileCache(context),
                 configuredClient,
-                flagApplier ?: FlagApplierWithRetries(
+                FlagApplierWithRetries(
                     configuredClient,
-                    Dispatchers.Default,
-                    Dispatchers.Default,
+                    dispatcher,
+                    dispatcher,
                     context
                 )
             )
@@ -76,7 +81,7 @@ class ConfidenceFeatureProvider private constructor(
             val (resolvedFlags, resolveToken) = client.resolve(listOf(), initialContext)
             cache.refresh(resolvedFlags, resolveToken, initialContext)
         } catch (_: Throwable) {
-            // Can't refresh cache at this time
+            // Can't refresh cache at this time. Do we retry at a later time?
         }
     }
 
