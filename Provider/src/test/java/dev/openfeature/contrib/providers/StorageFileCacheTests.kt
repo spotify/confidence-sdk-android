@@ -2,7 +2,11 @@ package dev.openfeature.contrib.providers
 
 import android.content.Context
 import dev.openfeature.contrib.providers.cache.StorageFileCache
-import dev.openfeature.contrib.providers.client.*
+import dev.openfeature.contrib.providers.client.ConfidenceClient
+import dev.openfeature.contrib.providers.client.ResolveFlagsResponse
+import dev.openfeature.contrib.providers.client.ResolveReason
+import dev.openfeature.contrib.providers.client.ResolvedFlag
+import dev.openfeature.contrib.providers.client.SchemaType
 import dev.openfeature.sdk.MutableContext
 import dev.openfeature.sdk.MutableStructure
 import dev.openfeature.sdk.Reason
@@ -24,32 +28,41 @@ class StorageFileCacheTests {
         ResolvedFlag(
             "fdema-kotlin-flag-1",
             "flags/fdema-kotlin-flag-1/variants/variant-1",
-            MutableStructure(mutableMapOf(
-                "mystring" to Value.String("red"),
-                "myboolean" to Value.Boolean(false),
-                "myinteger" to Value.Integer( 7),
-                "mydouble" to Value.Double(3.14),
-                "mydate" to Value.String(instant.toString()),
-                "mystruct" to Value.Structure(mapOf(
-                    "innerString" to Value.String("innerValue")
-                )),
-                "mynull" to Value.Null
-            )),
-            SchemaType.SchemaStruct(mapOf(
-                "mystring" to SchemaType.StringSchema,
-                "myboolean" to SchemaType.BoolSchema,
-                "myinteger" to SchemaType.IntSchema,
-                "mydouble" to SchemaType.DoubleSchema,
-                "mydate" to SchemaType.StringSchema,
-                "mystruct" to SchemaType.SchemaStruct(mapOf(
-                    "innerString" to SchemaType.StringSchema
-                )),
-                "mynull" to SchemaType.StringSchema
-            )),
+            MutableStructure(
+                mutableMapOf(
+                    "mystring" to Value.String("red"),
+                    "myboolean" to Value.Boolean(false),
+                    "myinteger" to Value.Integer(7),
+                    "mydouble" to Value.Double(3.14),
+                    "mydate" to Value.String(instant.toString()),
+                    "mystruct" to Value.Structure(
+                        mapOf(
+                            "innerString" to Value.String("innerValue")
+                        )
+                    ),
+                    "mynull" to Value.Null
+                )
+            ),
+            SchemaType.SchemaStruct(
+                mapOf(
+                    "mystring" to SchemaType.StringSchema,
+                    "myboolean" to SchemaType.BoolSchema,
+                    "myinteger" to SchemaType.IntSchema,
+                    "mydouble" to SchemaType.DoubleSchema,
+                    "mydate" to SchemaType.StringSchema,
+                    "mystruct" to SchemaType.SchemaStruct(
+                        mapOf(
+                            "innerString" to SchemaType.StringSchema
+                        )
+                    ),
+                    "mynull" to SchemaType.StringSchema
+                )
+            ),
             ResolveReason.RESOLVE_REASON_MATCH
         )
     )
     private val mockContext: Context = mock()
+
     @Before
     fun setup() {
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
