@@ -30,7 +30,6 @@ class ConfidenceFeatureProvider private constructor(
         private var metadata: Metadata? = null
         private var client: ConfidenceClient? = null
         private var cache: ProviderCache? = null
-        private var flagApplier: FlagApplier? = null
         private var dispatcher: CoroutineDispatcher = Dispatchers.IO
         fun hooks(hooks: List<Hook<*>>) = apply { this.hooks = hooks }
         fun metadata(metadata: Metadata) = apply { this.metadata = metadata }
@@ -58,10 +57,6 @@ class ConfidenceFeatureProvider private constructor(
          */
         fun cache(cache: ProviderCache) = apply { this.cache = cache }
 
-        /**
-         * Used for testing.
-         */
-        fun flagApplier(flagApplier: FlagApplier) = apply { this.flagApplier = flagApplier }
         fun build(): ConfidenceFeatureProvider {
             val configuredRegion = region ?: EUROPE
             val configuredClient = client ?: ConfidenceRemoteClient(clientSecret, configuredRegion)
@@ -70,7 +65,7 @@ class ConfidenceFeatureProvider private constructor(
                 metadata ?: ConfidenceMetadata(),
                 cache ?: StorageFileCache(context),
                 configuredClient,
-                flagApplier ?: FlagApplierWithRetries(
+                FlagApplierWithRetries(
                     configuredClient,
                     dispatcher,
                     dispatcher,
