@@ -32,3 +32,19 @@ val result = client.getBooleanValue("flag.my-boolean", false)
 Notes:
 - If a flag can't be resolved from cache, the provider doesn't automatically resort to calling remote: refreshing the cache from remote only happens when setting a new provider and/or evaluation context in the global OpenFeatureAPI
 - It's advised not to perform resolves while `setProvider` and `setEvaluationContext` are running: resolves might return the default value with reason `STALE` during such operations.
+
+## Contributing
+
+### Formatting
+
+This repo uses [ktlint](https://github.com/JLLeitschuh/ktlint-gradle) for formatting.
+
+Please consider adding a pre-commit hook for formatting using
+
+```
+./gradlew :addKtlintCheckGitPreCommitHook
+```
+Manual formatting is done by invoking
+```
+./gradlew :ktlintFormat
+```
