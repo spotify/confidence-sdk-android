@@ -317,7 +317,7 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
-    fun testMatchingRootObject() {
+    fun testMatchingRootObject() = runTest {
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(InMemoryCache())
             .client(mockClient)
@@ -336,7 +336,7 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
-    fun testStale() {
+    fun testStale() = runTest {
         val cache = InMemoryCache()
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(cache)
@@ -403,7 +403,7 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
-    fun testNonMatching() {
+    fun testNonMatching() = runTest {
         val cache = InMemoryCache()
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(cache)
@@ -434,7 +434,7 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
-    fun testFlagNotFound() {
+    fun testFlagNotFound() = runTest {
         val cache = InMemoryCache()
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(cache)
@@ -452,7 +452,7 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
-    fun testErrorInNetwork() {
+    fun testErrorInNetwork() = runTest {
         val cache = InMemoryCache()
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(cache)
@@ -470,7 +470,7 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
-    fun testValueNotFound() {
+    fun testValueNotFound() = runTest {
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(InMemoryCache())
             .client(mockClient)
@@ -491,7 +491,7 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
-    fun testValueNotFoundLongPath() {
+    fun testValueNotFoundLongPath() = runTest {
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(InMemoryCache())
             .client(mockClient)

@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package dev.openfeature.contrib.providers
 
 import dev.openfeature.contrib.providers.client.AppliedFlag
@@ -11,6 +13,9 @@ import dev.openfeature.sdk.MutableStructure
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
 import junit.framework.TestCase.assertEquals
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -39,7 +44,8 @@ internal class ConfidenceRemoteClientTests {
     }
 
     @Test
-    fun testDeserializeResolveResponse() {
+    fun testDeserializeResolveResponse() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val instant = Instant.parse("2023-03-01T14:01:46Z")
         val jsonPayload = "{\n" +
             " \"resolvedFlags\": [\n" +
@@ -99,7 +105,10 @@ internal class ConfidenceRemoteClientTests {
                 .setResponseCode(200)
                 .setBody(jsonPayload)
         )
-        val parsedResponse = ConfidenceRemoteClient(baseUrl = mockWebServer.url("/v1/flags:resolve"))
+        val parsedResponse = ConfidenceRemoteClient(
+            baseUrl = mockWebServer.url("/v1/flags:resolve"),
+            dispatcher = testDispatcher
+        )
             .resolve(listOf(), MutableContext("user1"))
         val expectedParsed = ResolveFlagsResponse(
             listOf(
@@ -145,7 +154,8 @@ internal class ConfidenceRemoteClientTests {
     }
 
     @Test
-    fun testDeserializeResolveResponseNoMatch() {
+    fun testDeserializeResolveResponseNoMatch() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val jsonPayload = "{\n" +
             " \"resolvedFlags\": [\n" +
             "  {\n" +
@@ -164,8 +174,12 @@ internal class ConfidenceRemoteClientTests {
                 .setResponseCode(200)
                 .setBody(jsonPayload)
         )
-        val parsedResponse = ConfidenceRemoteClient(baseUrl = mockWebServer.url("/v1/flags:resolve"))
-            .resolve(listOf(), MutableContext("user1"))
+        val parsedResponse =
+            ConfidenceRemoteClient(
+                baseUrl = mockWebServer.url("/v1/flags:resolve"),
+                dispatcher = testDispatcher
+            )
+                .resolve(listOf(), MutableContext("user1"))
         val expectedParsed = ResolveFlagsResponse(
             listOf(
                 ResolvedFlag(
@@ -182,7 +196,8 @@ internal class ConfidenceRemoteClientTests {
     }
 
     @Test
-    fun testDoubleTypeSchemaConversion() {
+    fun testDoubleTypeSchemaConversion() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val jsonPayload = "{\n" +
             " \"resolvedFlags\": [\n" +
             "  {\n" +
@@ -209,8 +224,12 @@ internal class ConfidenceRemoteClientTests {
                 .setResponseCode(200)
                 .setBody(jsonPayload)
         )
-        val parsedResponse = ConfidenceRemoteClient(baseUrl = mockWebServer.url("/v1/flags:resolve"))
-            .resolve(listOf(), MutableContext("user1"))
+        val parsedResponse =
+            ConfidenceRemoteClient(
+                baseUrl = mockWebServer.url("/v1/flags:resolve"),
+                dispatcher = testDispatcher
+            )
+                .resolve(listOf(), MutableContext("user1"))
         val expectedParsed = ResolveFlagsResponse(
             listOf(
                 ResolvedFlag(
@@ -263,8 +282,14 @@ internal class ConfidenceRemoteClientTests {
                 .setBody(jsonPayload)
         )
         val ex = assertThrows(ParseError::class.java) {
-            ConfidenceRemoteClient(baseUrl = mockWebServer.url("/v1/flags:resolve"))
-                .resolve(listOf(), MutableContext("user1"))
+            runTest {
+                val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+                ConfidenceRemoteClient(
+                    baseUrl = mockWebServer.url("/v1/flags:resolve"),
+                    dispatcher = testDispatcher
+                )
+                    .resolve(listOf(), MutableContext("user1"))
+            }
         }
         assertEquals("Incompatible value \"myinteger\" for schema", ex.message)
     }
@@ -298,13 +323,18 @@ internal class ConfidenceRemoteClientTests {
                 .setBody(jsonPayload)
         )
         val ex = assertThrows(ParseError::class.java) {
-            ConfidenceRemoteClient(baseUrl = mockWebServer.url("/v1/flags:resolve"))
-                .resolve(listOf(), MutableContext("user1"))
+            runTest {
+                val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+                ConfidenceRemoteClient(
+                    baseUrl = mockWebServer.url("/v1/flags:resolve"),
+                    dispatcher = testDispatcher
+                )
+                    .resolve(listOf(), MutableContext("user1"))
+            }
         }
         assertEquals("Couldn't find value \"myinteger\" in schema", ex.message)
     }
 
-    @Test
     fun testDeserializedMalformedResolveResponse() {
         val jsonPayload = "{\n" +
             " \"resolvedFlags\": [\n" +
@@ -331,8 +361,14 @@ internal class ConfidenceRemoteClientTests {
                 .setBody(jsonPayload)
         )
         val ex = assertThrows(ParseError::class.java) {
-            ConfidenceRemoteClient(baseUrl = mockWebServer.url("/v1/flags:resolve"))
-                .resolve(listOf(), MutableContext("user1"))
+            runTest {
+                val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+                ConfidenceRemoteClient(
+                    baseUrl = mockWebServer.url("/v1/flags:resolve"),
+                    dispatcher = testDispatcher
+                )
+                    .resolve(listOf(), MutableContext("user1"))
+            }
         }
         assertEquals("Unrecognized flag schema identifier: [WRONG-SCHEMA-IDENTIFIED]", ex.message)
     }
@@ -364,14 +400,21 @@ internal class ConfidenceRemoteClientTests {
                 .setBody(jsonPayload)
         )
         val ex = assertThrows(ParseError::class.java) {
-            ConfidenceRemoteClient(baseUrl = mockWebServer.url("/v1/flags:resolve"))
-                .resolve(listOf(), MutableContext("user1"))
+            runTest {
+                val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+                ConfidenceRemoteClient(
+                    baseUrl = mockWebServer.url("/v1/flags:resolve"),
+                    dispatcher = testDispatcher
+                )
+                    .resolve(listOf(), MutableContext("user1"))
+            }
         }
         assertEquals("Unexpected flag name in resolve flag data: fdema-kotlin-flag-1", ex.message)
     }
 
     @Test
-    fun testSerializeResolveRequest() {
+    fun testSerializeResolveRequest() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val instant = Instant.parse("2023-03-01T14:01:46Z")
         mockWebServer.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
@@ -411,7 +454,11 @@ internal class ConfidenceRemoteClientTests {
             }
         }
 
-        ConfidenceRemoteClient("secret1", mockWebServer.url("/v1/flags:resolve"))
+        ConfidenceRemoteClient(
+            "secret1",
+            mockWebServer.url("/v1/flags:resolve"),
+            dispatcher = testDispatcher
+        )
             .resolve(
                 listOf("flag1", "flag2"),
                 MutableContext(
@@ -423,7 +470,12 @@ internal class ConfidenceRemoteClientTests {
                         "mydouble" to Value.Double(3.14),
                         "mydate" to Value.Instant(instant),
                         "mynull" to Value.Null,
-                        "mylist" to Value.List(listOf(Value.Boolean(true), Value.String("innerList"))),
+                        "mylist" to Value.List(
+                            listOf(
+                                Value.Boolean(true),
+                                Value.String("innerList")
+                            )
+                        ),
                         "mystructure" to Value.Structure(mapOf("myinnerString" to Value.String("value")))
                     )
                 )
@@ -431,7 +483,8 @@ internal class ConfidenceRemoteClientTests {
     }
 
     @Test
-    fun testSerializeApplyRequest() {
+    fun testSerializeApplyRequest() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val applyDate = Date.from(Instant.parse("2023-03-01T14:01:46Z"))
         val sendDate = Date.from(Instant.parse("2023-03-01T14:03:46Z"))
         val mockClock: Clock = mock()
@@ -455,7 +508,12 @@ internal class ConfidenceRemoteClientTests {
                 return MockResponse().setResponseCode(200)
             }
         }
-        ConfidenceRemoteClient("secret1", mockWebServer.url("/v1/flags:apply"), mockClock)
+        ConfidenceRemoteClient(
+            "secret1",
+            mockWebServer.url("/v1/flags:apply"),
+            mockClock,
+            dispatcher = testDispatcher
+        )
             .apply(listOf(AppliedFlag("flag1", applyDate.toInstant())), "token1")
     }
 }
