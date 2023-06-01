@@ -53,7 +53,7 @@ class ConfidenceRemoteClient : ConfidenceClient {
             ConfidenceRegion.USA -> "https://resolver.us.confidence.dev"
         }
         this.clock = Clock.systemUTC()
-        this.dispatcher = Dispatchers.IO
+        this.dispatcher = dispatcher
     }
 
     internal constructor(
