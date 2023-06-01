@@ -69,7 +69,11 @@ class ConfidenceFeatureProvider private constructor(
 
         fun build(): ConfidenceFeatureProvider {
             val configuredRegion = region ?: EUROPE
-            val configuredClient = client ?: ConfidenceRemoteClient(clientSecret, configuredRegion)
+            val configuredClient = client ?: ConfidenceRemoteClient(
+                clientSecret = clientSecret,
+                region = configuredRegion,
+                dispatcher = dispatcher
+            )
             return ConfidenceFeatureProvider(
                 hooks ?: listOf(),
                 metadata ?: ConfidenceMetadata(),

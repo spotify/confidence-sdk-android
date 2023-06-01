@@ -13,6 +13,7 @@ import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
 import junit.framework.TestCase
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.any
@@ -69,7 +70,7 @@ class StorageFileCacheTests {
     }
 
     @Test
-    fun testOfflineScenarioLoadsStoredCache() {
+    fun testOfflineScenarioLoadsStoredCache() = runTest {
         val mockClient: ConfidenceClient = mock()
         val cache1 = StorageFileCache(mockContext)
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))

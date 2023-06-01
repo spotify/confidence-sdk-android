@@ -18,6 +18,9 @@ import dev.openfeature.sdk.Structure
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.exceptions.OpenFeatureError.GeneralError
 import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.Headers
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
@@ -34,8 +37,9 @@ class ConfidenceRemoteClient : ConfidenceClient {
     private val baseUrl: String
     private val headers: Headers
     private val clock: Clock
+    private val dispatcher: CoroutineDispatcher
 
-    constructor(clientSecret: String, region: ConfidenceRegion) {
+    constructor(clientSecret: String, region: ConfidenceRegion, dispatcher: CoroutineDispatcher = Dispatchers.IO) {
         this.clientSecret = clientSecret
         this.okHttpClient = OkHttpClient()
         this.headers = Headers.headersOf(
@@ -49,9 +53,15 @@ class ConfidenceRemoteClient : ConfidenceClient {
             ConfidenceRegion.USA -> "https://resolver.us.confidence.dev"
         }
         this.clock = Clock.systemUTC()
+        this.dispatcher = dispatcher
     }
 
-    internal constructor(clientSecret: String = "", baseUrl: HttpUrl, clock: Clock = Clock.systemUTC()) {
+    internal constructor(
+        clientSecret: String = "",
+        baseUrl: HttpUrl,
+        clock: Clock = Clock.systemUTC(),
+        dispatcher: CoroutineDispatcher = Dispatchers.IO
+    ) {
         this.clientSecret = clientSecret
         this.okHttpClient = OkHttpClient()
         this.headers = Headers.headersOf(
@@ -62,6 +72,7 @@ class ConfidenceRemoteClient : ConfidenceClient {
         )
         this.baseUrl = baseUrl.toString()
         this.clock = clock
+        this.dispatcher = dispatcher
     }
 
     companion object {
@@ -79,33 +90,34 @@ class ConfidenceRemoteClient : ConfidenceClient {
         USA
     }
 
-    override fun resolve(flags: List<String>, ctx: EvaluationContext): ResolveFlagsResponse {
-        try {
-            val request = Request.Builder()
-                .url("$baseUrl/v1/flags:resolve")
-                .headers(headers)
-                .post(
-                    gson.toJson(
-                        ResolveFlagsRequest(
-                            flags.map { "flags/$it" },
-                            getEvaluationContextStruct(ctx),
-                            clientSecret,
-                            false
-                        )
-                    ).toRequestBody()
-                )
-                .build()
+    override suspend fun resolve(flags: List<String>, ctx: EvaluationContext): ResolveFlagsResponse =
+        withContext(dispatcher) {
+            try {
+                val request = Request.Builder()
+                    .url("$baseUrl/v1/flags:resolve")
+                    .headers(headers)
+                    .post(
+                        gson.toJson(
+                            ResolveFlagsRequest(
+                                flags.map { "flags/$it" },
+                                getEvaluationContextStruct(ctx),
+                                clientSecret,
+                                false
+                            )
+                        ).toRequestBody()
+                    )
+                    .build()
 
-            okHttpClient.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) throw GeneralError("Unexpected code $response")
-                return processResolveResponse(response)
+                okHttpClient.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) throw GeneralError("Unexpected code $response")
+                    return@withContext processResolveResponse(response)
+                }
+            } catch (err: Error) {
+                throw GeneralError("Error when executing resolve request: ${err.localizedMessage}")
             }
-        } catch (err: Error) {
-            throw GeneralError("Error when executing resolve request: ${err.localizedMessage}")
         }
-    }
 
-    override fun apply(flags: List<AppliedFlag>, resolveToken: String) {
+    override suspend fun apply(flags: List<AppliedFlag>, resolveToken: String) = withContext(dispatcher) {
         try {
             val request = Request.Builder()
                 .url("$baseUrl/v1/flags:apply")
