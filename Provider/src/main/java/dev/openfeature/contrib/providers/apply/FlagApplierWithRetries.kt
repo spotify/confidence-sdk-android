@@ -9,6 +9,7 @@ import dev.openfeature.contrib.providers.client.InstantTypeAdapter
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
@@ -35,7 +36,6 @@ class FlagApplierWithRetries(
         CoroutineScope(dispatcher)
     }
     private val writeRequestChannel: Channel<WriteRequest> = Channel()
-    private val triggerBatchChannel: Channel<Unit> = Channel()
     private val file: File = File(context.filesDir, APPLY_FILE_NAME)
     private val gson = GsonBuilder()
         .serializeNulls()
@@ -54,14 +54,8 @@ class FlagApplierWithRetries(
             // either the write request or trigger signal,
             // makes sure we get them one by one and fairly distributed
             // the thread will suspended until we are done
-            select {
-                writeRequestChannel.onReceive { writeRequest ->
-                    internalApply(writeRequest.flagName, writeRequest.resolveToken, data)
-                }
-
-                triggerBatchChannel.onReceive {
-                    internalTriggerBatch(data)
-                }
+            for(writeRequest in writeRequestChannel) {
+                internalApply(writeRequest.flagName, writeRequest.resolveToken, data)
             }
         }
     }
@@ -87,14 +81,6 @@ class FlagApplierWithRetries(
             internalTriggerBatch(data)
         } catch (_: Throwable) {
             // "triggerBatch" should not introduce bad state in case of any failure, will retry later
-        }
-    }
-
-    // TODO Define the logic on when / how often to call this function
-    // This function should never introduce bad state and any type of error is recoverable on the next try
-    fun triggerBatch() {
-        coroutineScope.launch {
-            triggerBatchChannel.send(Unit)
         }
     }
 
