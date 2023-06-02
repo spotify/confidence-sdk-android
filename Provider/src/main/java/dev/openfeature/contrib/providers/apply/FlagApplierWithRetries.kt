@@ -50,8 +50,14 @@ class FlagApplierWithRetries(
             val data : ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<UUID, Instant>>> =
                 ConcurrentHashMap()
             readFile(data)
+
+            // the select clause ensures only one at the time
+            // of this events can come true,
+            // either the write request or trigger signal,
+            // makes sure we get them one by one and fairly distributed
+            // the thread will suspended until we are done
             select {
-                writeRequestChannel.onReceive {writeRequest ->
+                writeRequestChannel.onReceive { writeRequest ->
                     internalApply(writeRequest.flagName, writeRequest.resolveToken, data)
                 }
 
