@@ -46,7 +46,7 @@ class FlagApplierWithRetries(
         coroutineScope.launch {
             // the data being in a coroutine like this
             // ensures we don't have any shared mutability
-            val data : FlagsAppliedMap  = mutableMapOf()
+            val data: FlagsAppliedMap = mutableMapOf()
             readFile(data)
 
             // the select clause ensures only one at the time
@@ -109,46 +109,46 @@ class FlagApplierWithRetries(
             }
             // TODO chunk size 20 is an arbitrary value, replace with appropriate size
             appliedFlagsKeyed.chunked(20).forEach { appliedFlagsKeyedChunk ->
-                    client.apply(appliedFlagsKeyedChunk.map { it.second }, token)
-                    appliedFlagsKeyedChunk.forEach {
-                        data[token]?.get(it.second.flag)?.remove(it.first)
-                    }
-                    writeToFile(data)
+                client.apply(appliedFlagsKeyedChunk.map { it.second }, token)
+                appliedFlagsKeyedChunk.forEach {
+                    data[token]?.get(it.second.flag)?.remove(it.first)
+                }
+                writeToFile(data)
             }
         }
     }
 
     private suspend fun writeToFile(
         data: FlagsAppliedMap
-    )  = coroutineScope {
-            val fileData = gson.toJson(
-                data.filter {
-                    // All flags entries are empty for this token, don't add this token to the file
-                    !it.value.values.stream().allMatch { events -> events.isEmpty() }
-                }
-            )
-            // TODO Add a limit for the file size?
-            file.writeText(fileData)
+    ) = coroutineScope {
+        val fileData = gson.toJson(
+            data.filter {
+                // All flags entries are empty for this token, don't add this token to the file
+                !it.value.values.stream().allMatch { events -> events.isEmpty() }
+            }
+        )
+        // TODO Add a limit for the file size?
+        file.writeText(fileData)
     }
 
     private suspend fun readFile(
         data: FlagsAppliedMap
     ) = coroutineScope {
-            if (!file.exists()) return@coroutineScope
-            val fileText: String = file.bufferedReader().use { it.readText() }
-            if (fileText.isEmpty()) return@coroutineScope
-            val type = object :
-                TypeToken<Map<String, Map<String, Map<UUID, Instant>>>>() {}.type
-            val newData: Map<String, Map<String, Map<UUID, Instant>>> =
-                gson.fromJson(fileText, type)
-            newData.entries.forEach { (resolveToken, eventsByFlagName) ->
-                eventsByFlagName.entries.forEach { (flagName, eventTimeEntries) ->
-                    data.putIfAbsent(resolveToken, hashMapOf())
-                    data[resolveToken]?.putIfAbsent(flagName, hashMapOf())
-                    eventTimeEntries.forEach { (id, time) ->
-                        data[resolveToken]?.get(flagName)?.putIfAbsent(id, time)
-                    }
+        if (!file.exists()) return@coroutineScope
+        val fileText: String = file.bufferedReader().use { it.readText() }
+        if (fileText.isEmpty()) return@coroutineScope
+        val type = object :
+            TypeToken<Map<String, Map<String, Map<UUID, Instant>>>>() {}.type
+        val newData: Map<String, Map<String, Map<UUID, Instant>>> =
+            gson.fromJson(fileText, type)
+        newData.entries.forEach { (resolveToken, eventsByFlagName) ->
+            eventsByFlagName.entries.forEach { (flagName, eventTimeEntries) ->
+                data.putIfAbsent(resolveToken, hashMapOf())
+                data[resolveToken]?.putIfAbsent(flagName, hashMapOf())
+                eventTimeEntries.forEach { (id, time) ->
+                    data[resolveToken]?.get(flagName)?.putIfAbsent(id, time)
                 }
             }
         }
     }
+}
