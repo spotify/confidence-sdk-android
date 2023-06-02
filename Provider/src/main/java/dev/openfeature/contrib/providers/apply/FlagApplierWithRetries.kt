@@ -7,18 +7,14 @@ import dev.openfeature.contrib.providers.client.AppliedFlag
 import dev.openfeature.contrib.providers.client.ConfidenceClient
 import dev.openfeature.contrib.providers.client.InstantTypeAdapter
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.time.Instant
-import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentMap
+import java.util.*
 
 const val APPLY_FILE_NAME = "confidence_apply_cache.json"
 
@@ -26,6 +22,9 @@ data class WriteRequest(
     val flagName: String,
     val resolveToken: String
 )
+
+private typealias FlagsAppliedMap =
+    MutableMap<String, MutableMap<String, MutableMap<UUID, Instant>>>
 
 class FlagApplierWithRetries(
     private val client: ConfidenceClient,
@@ -47,8 +46,7 @@ class FlagApplierWithRetries(
         coroutineScope.launch {
             // the data being in a coroutine like this
             // ensures we don't have any shared mutability
-            val data : ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<UUID, Instant>>> =
-                ConcurrentHashMap()
+            val data : FlagsAppliedMap  = mutableMapOf()
             readFile(data)
 
             // the select clause ensures only one at the time
@@ -77,10 +75,10 @@ class FlagApplierWithRetries(
     private suspend fun internalApply(
         flagName: String,
         resolveToken: String,
-        data: ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<UUID, Instant>>>
+        data: FlagsAppliedMap
     ) = coroutineScope {
-        data.putIfAbsent(resolveToken, ConcurrentHashMap())
-        data[resolveToken]?.putIfAbsent(flagName, ConcurrentHashMap())
+        data.putIfAbsent(resolveToken, hashMapOf())
+        data[resolveToken]?.putIfAbsent(flagName, hashMapOf())
         // Never delete entries from the maps above, only add. This should prevent racy conditions
         // Empty entries are not added to the cache file, so empty entries are removed when restarting
         data[resolveToken]?.get(flagName)?.putIfAbsent(UUID.randomUUID(), Instant.now())
@@ -101,7 +99,7 @@ class FlagApplierWithRetries(
     }
 
     private suspend fun internalTriggerBatch(
-        data: ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<UUID, Instant>>>
+        data: FlagsAppliedMap
     ) = coroutineScope {
         data.entries.forEach { (token, flagsForToken) ->
             val appliedFlagsKeyed = flagsForToken.entries.flatMap { (flagName, events) ->
@@ -121,7 +119,7 @@ class FlagApplierWithRetries(
     }
 
     private suspend fun writeToFile(
-        data: ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<UUID, Instant>>>
+        data: FlagsAppliedMap
     )  = coroutineScope {
             val fileData = gson.toJson(
                 data.filter {
@@ -134,19 +132,19 @@ class FlagApplierWithRetries(
     }
 
     private suspend fun readFile(
-        data: ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<UUID, Instant>>>
+        data: FlagsAppliedMap
     ) = coroutineScope {
             if (!file.exists()) return@coroutineScope
             val fileText: String = file.bufferedReader().use { it.readText() }
             if (fileText.isEmpty()) return@coroutineScope
             val type = object :
-                TypeToken<ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<UUID, Instant>>>>() {}.type
-            val newData: ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<UUID, Instant>>> =
+                TypeToken<Map<String, Map<String, Map<UUID, Instant>>>>() {}.type
+            val newData: Map<String, Map<String, Map<UUID, Instant>>> =
                 gson.fromJson(fileText, type)
             newData.entries.forEach { (resolveToken, eventsByFlagName) ->
                 eventsByFlagName.entries.forEach { (flagName, eventTimeEntries) ->
-                    data.putIfAbsent(resolveToken, ConcurrentHashMap())
-                    data[resolveToken]?.putIfAbsent(flagName, ConcurrentHashMap())
+                    data.putIfAbsent(resolveToken, hashMapOf())
+                    data[resolveToken]?.putIfAbsent(flagName, hashMapOf())
                     eventTimeEntries.forEach { (id, time) ->
                         data[resolveToken]?.get(flagName)?.putIfAbsent(id, time)
                     }
