@@ -9,10 +9,8 @@ import dev.openfeature.contrib.providers.client.InstantTypeAdapter
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.selects.select
 import java.io.File
 import java.time.Instant
 import java.util.*
@@ -49,12 +47,7 @@ class FlagApplierWithRetries(
             val data: FlagsAppliedMap = mutableMapOf()
             readFile(data)
 
-            // the select clause ensures only one at the time
-            // of this events can come true,
-            // either the write request or trigger signal,
-            // makes sure we get them one by one and fairly distributed
-            // the thread will suspended until we are done
-            for(writeRequest in writeRequestChannel) {
+            for (writeRequest in writeRequestChannel) {
                 internalApply(writeRequest.flagName, writeRequest.resolveToken, data)
             }
         }

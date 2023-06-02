@@ -11,7 +11,6 @@ package dev.openfeature.contrib.providers
 
 import android.content.Context
 import dev.openfeature.contrib.providers.apply.APPLY_FILE_NAME
-import dev.openfeature.contrib.providers.apply.FlagApplierWithRetries
 import dev.openfeature.contrib.providers.cache.InMemoryCache
 import dev.openfeature.contrib.providers.client.ConfidenceClient
 import dev.openfeature.contrib.providers.client.ResolveFlagsResponse
@@ -96,7 +95,6 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testMatching() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val flagApplier = FlagApplierWithRetries(mockClient, testDispatcher, mockContext)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(InMemoryCache())
             .client(mockClient)
@@ -168,7 +166,6 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testDelayedApply() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val flagApplier = FlagApplierWithRetries(mockClient, testDispatcher, mockContext)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(InMemoryCache())
             .client(mockClient)
@@ -297,7 +294,6 @@ internal class ConfidenceFeatureProviderTests {
                 "}"
         )
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val flagApplier = FlagApplierWithRetries(mockClient, testDispatcher, mockContext)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(InMemoryCache())
             .client(mockClient)
@@ -314,7 +310,6 @@ internal class ConfidenceFeatureProviderTests {
 
         verify(mockClient, times(1)).resolve(any(), eq(evaluationContext))
 
-        // Evaluate a flag property in order to trigger an apply
         confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "empty", evaluationContext)
         advanceUntilIdle()
         verify(mockClient, times(1)).apply(any(), eq("token1"))
