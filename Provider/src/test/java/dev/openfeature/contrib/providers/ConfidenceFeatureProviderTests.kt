@@ -11,6 +11,7 @@ package dev.openfeature.contrib.providers
 
 import android.content.Context
 import dev.openfeature.contrib.providers.apply.APPLY_FILE_NAME
+import dev.openfeature.contrib.providers.apply.FlagApplierWithRetries
 import dev.openfeature.contrib.providers.cache.InMemoryCache
 import dev.openfeature.contrib.providers.client.ConfidenceClient
 import dev.openfeature.contrib.providers.client.ResolveFlagsResponse
@@ -95,6 +96,7 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testMatching() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val flagApplier = FlagApplierWithRetries(mockClient, testDispatcher, mockContext)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(InMemoryCache())
             .client(mockClient)
@@ -166,6 +168,7 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testDelayedApply() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val flagApplier = FlagApplierWithRetries(mockClient, testDispatcher, mockContext)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(InMemoryCache())
             .client(mockClient)
@@ -294,6 +297,7 @@ internal class ConfidenceFeatureProviderTests {
                 "}"
         )
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val flagApplier = FlagApplierWithRetries(mockClient, testDispatcher, mockContext)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(InMemoryCache())
             .client(mockClient)
