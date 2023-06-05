@@ -7,20 +7,30 @@ import dev.openfeature.contrib.providers.client.AppliedFlag
 import dev.openfeature.contrib.providers.client.ConfidenceClient
 import dev.openfeature.contrib.providers.client.InstantTypeAdapter
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.selects.select
 import java.io.File
 import java.time.Instant
 import java.util.*
 
 const val APPLY_FILE_NAME = "confidence_apply_cache.json"
 
-data class WriteRequest(
-    val flagName: String,
-    val resolveToken: String
-)
+private sealed class FlagApplierEvent {
+    data class WriteRequest(
+        val flagName: String,
+        val resolveToken: String
+    ) : FlagApplierEvent()
+
+    data class DataSentRequest(
+        val resolveToken: String,
+        val flags: List<Pair<UUID, AppliedFlag>>
+    ) : FlagApplierEvent()
+}
 
 private typealias FlagsAppliedMap =
     MutableMap<String, MutableMap<String, MutableMap<UUID, Instant>>>
@@ -31,14 +41,23 @@ class FlagApplierWithRetries(
     context: Context
 ) : FlagApplier {
     private val coroutineScope: CoroutineScope by lazy {
-        CoroutineScope(dispatcher)
+        // the SupervisorJob makes sure that if one coroutine
+        // throw an error, the whole scope is not cancelled
+        // the thrown error can be handled individually
+        CoroutineScope(SupervisorJob() + dispatcher)
     }
-    private val writeRequestChannel: Channel<WriteRequest> = Channel()
+
+    private val writeRequestChannel: Channel<FlagApplierEvent.WriteRequest> = Channel()
+    private val dataSentChannel: Channel<FlagApplierEvent.DataSentRequest> = Channel()
     private val file: File = File(context.filesDir, APPLY_FILE_NAME)
     private val gson = GsonBuilder()
         .serializeNulls()
         .registerTypeAdapter(Instant::class.java, InstantTypeAdapter())
         .create()
+
+    private val exceptionHandler by lazy {
+        CoroutineExceptionHandler { _, throwable -> println(throwable.message) }
+    }
 
     init {
         coroutineScope.launch {
@@ -47,39 +66,51 @@ class FlagApplierWithRetries(
             val data: FlagsAppliedMap = mutableMapOf()
             readFile(data)
 
-            for (writeRequest in writeRequestChannel) {
-                internalApply(writeRequest.flagName, writeRequest.resolveToken, data)
+            // the select clause makes sure that we don't
+            // share the data/file write operations between coroutines
+            // at any certain time there is only one of these events being handled
+            while (true) {
+                select {
+                    writeRequestChannel.onReceive { writeRequest ->
+                        with(writeRequest) {
+                            internalApply(flagName, resolveToken, data)
+                        }
+                    }
+
+                    dataSentChannel.onReceive { event ->
+                        event.flags.forEach {
+                            data[event.resolveToken]?.get(it.second.flag)?.remove(it.first)
+                        }
+                        writeToFile(data)
+                    }
+                }
             }
         }
     }
 
     override fun apply(flagName: String, resolveToken: String) {
         coroutineScope.launch {
-            writeRequestChannel.send(WriteRequest(flagName, resolveToken))
+            writeRequestChannel.send(FlagApplierEvent.WriteRequest(flagName, resolveToken))
         }
     }
 
-    private suspend fun internalApply(
+    private fun internalApply(
         flagName: String,
         resolveToken: String,
         data: FlagsAppliedMap
-    ) = coroutineScope {
+    ) {
         data.putIfAbsent(resolveToken, hashMapOf())
         data[resolveToken]?.putIfAbsent(flagName, hashMapOf())
         // Never delete entries from the maps above, only add. This should prevent racy conditions
         // Empty entries are not added to the cache file, so empty entries are removed when restarting
         data[resolveToken]?.get(flagName)?.putIfAbsent(UUID.randomUUID(), Instant.now())
         writeToFile(data)
-        try {
-            internalTriggerBatch(data)
-        } catch (_: Throwable) {
-            // "triggerBatch" should not introduce bad state in case of any failure, will retry later
-        }
+        triggerSendBatch(data)
     }
 
-    private suspend fun internalTriggerBatch(
+    private fun triggerSendBatch(
         data: FlagsAppliedMap
-    ) = coroutineScope {
+    ) {
         data.entries.forEach { (token, flagsForToken) ->
             val appliedFlagsKeyed = flagsForToken.entries.flatMap { (flagName, events) ->
                 events.entries.map { (uuid, time) ->
@@ -88,18 +119,17 @@ class FlagApplierWithRetries(
             }
             // TODO chunk size 20 is an arbitrary value, replace with appropriate size
             appliedFlagsKeyed.chunked(20).forEach { appliedFlagsKeyedChunk ->
-                client.apply(appliedFlagsKeyedChunk.map { it.second }, token)
-                appliedFlagsKeyedChunk.forEach {
-                    data[token]?.get(it.second.flag)?.remove(it.first)
+                coroutineScope.launch(exceptionHandler) {
+                    client.apply(appliedFlagsKeyedChunk.map { it.second }, token)
+                    dataSentChannel.send(FlagApplierEvent.DataSentRequest(token, appliedFlagsKeyedChunk))
                 }
-                writeToFile(data)
             }
         }
     }
 
-    private suspend fun writeToFile(
+    private fun writeToFile(
         data: FlagsAppliedMap
-    ) = coroutineScope {
+    ) {
         val fileData = gson.toJson(
             data.filter {
                 // All flags entries are empty for this token, don't add this token to the file
