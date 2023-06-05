@@ -310,7 +310,6 @@ internal class ConfidenceFeatureProviderTests {
 
         verify(mockClient, times(1)).resolve(any(), eq(evaluationContext))
 
-        // Evaluate a flag property in order to trigger an apply
         confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "empty", evaluationContext)
         advanceUntilIdle()
         verify(mockClient, times(1)).apply(any(), eq("token1"))

@@ -82,7 +82,6 @@ class ConfidenceFeatureProvider private constructor(
                 FlagApplierWithRetries(
                     configuredClient,
                     dispatcher,
-                    dispatcher,
                     context
                 )
             )
