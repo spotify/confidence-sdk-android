@@ -56,7 +56,7 @@ class FlagApplierWithRetries(
         .create()
 
     private val exceptionHandler by lazy {
-        CoroutineExceptionHandler { _, throwable -> println(throwable.message) }
+        CoroutineExceptionHandler { _, _ -> }
     }
 
     init {
