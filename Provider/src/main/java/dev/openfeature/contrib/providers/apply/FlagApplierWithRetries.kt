@@ -3,7 +3,7 @@ package dev.openfeature.contrib.providers.apply
 import android.content.Context
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
-import dev.openfeature.contrib.providers.EventHandler
+import dev.openfeature.contrib.providers.EventProcessor
 import dev.openfeature.contrib.providers.client.AppliedFlag
 import dev.openfeature.contrib.providers.client.ConfidenceClient
 import dev.openfeature.contrib.providers.client.InstantTypeAdapter
@@ -42,47 +42,48 @@ class FlagApplierWithRetries(
         .registerTypeAdapter(Instant::class.java, InstantTypeAdapter())
         .create()
 
-    private val eventHandler by lazy {
-        EventHandler.builder<
+    private val eventProcessor by lazy {
+        EventProcessor<
             FlagApplierInput,
             FlagApplierBatchProcessedInput,
             FlagsAppliedMap
-            >(dispatcher)
-            .initialise {
+            >(
+            onInitialised = {
                 val data: FlagsAppliedMap = mutableMapOf()
                 readFile(data)
                 data
-            }
-            .onApplyEvent { flagApplierInput, mutableData ->
+            },
+            onApply = { flagApplierInput, mutableData ->
                 internalApply(
                     flagApplierInput.flagName,
                     flagApplierInput.resolveToken,
                     mutableData
                 )
-            }
-            .onBatchProcess { mutableData, sendChannel, coroutineScope, coroutineExceptionHandler ->
+            },
+            processBatchAction = { event, mutableData ->
+                event.flags.forEach {
+                    mutableData[event.resolveToken]?.get(it.second.flag)?.remove(it.first)
+                }
+                writeToFile(mutableData)
+            },
+            onProcessBatch = { mutableData, sendChannel, coroutineScope, coroutineExceptionHandler ->
                 processBatch(
                     mutableData,
                     coroutineScope,
                     sendChannel,
                     coroutineExceptionHandler
                 )
-            }
-            .onBatchProcessed { event, mutableData ->
-                event.flags.forEach {
-                    mutableData[event.resolveToken]?.get(it.second.flag)?.remove(it.first)
-                }
-                writeToFile(mutableData)
-            }
-            .build()
+            },
+            dispatcher = dispatcher
+        )
     }
 
     init {
-        eventHandler.apply { }
+        eventProcessor.start()
     }
 
     override fun apply(flagName: String, resolveToken: String) {
-        eventHandler.apply(FlagApplierInput(resolveToken, flagName))
+        eventProcessor.apply(FlagApplierInput(resolveToken, flagName))
     }
 
     private fun internalApply(
@@ -111,7 +112,7 @@ class FlagApplierWithRetries(
                 }
             }
             // TODO chunk size 20 is an arbitrary value, replace with appropriate size
-            appliedFlagsKeyed.chunked(20).forEach { appliedFlagsKeyedChunk ->
+            appliedFlagsKeyed.chunked(CHUNK_SIZE).forEach { appliedFlagsKeyedChunk ->
                 coroutineScope.launch(coroutineExceptionHandler) {
                     client.apply(appliedFlagsKeyedChunk.map { it.second }, token)
                     sendChannel.send(FlagApplierBatchProcessedInput(token, appliedFlagsKeyedChunk))
@@ -152,5 +153,9 @@ class FlagApplierWithRetries(
                 }
             }
         }
+    }
+
+    companion object {
+        private const val CHUNK_SIZE = 20
     }
 }
