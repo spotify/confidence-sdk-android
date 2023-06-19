@@ -5,7 +5,7 @@ import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import dev.openfeature.contrib.providers.client.AppliedFlag
 import dev.openfeature.contrib.providers.client.ConfidenceClient
-import dev.openfeature.contrib.providers.client.DateTypeAdapter
+import dev.openfeature.contrib.providers.client.InstantTypeAdapter
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -52,7 +52,7 @@ class FlagApplierWithRetries(
     private val file: File = File(context.filesDir, APPLY_FILE_NAME)
     private val gson = GsonBuilder()
         .serializeNulls()
-        .registerTypeAdapter(Date::class.java, DateTypeAdapter())
+        .registerTypeAdapter(kotlinx.datetime.Instant::class.java, InstantTypeAdapter())
         .create()
 
     private val exceptionHandler by lazy {
@@ -113,8 +113,8 @@ class FlagApplierWithRetries(
     ) {
         data.entries.forEach { (token, flagsForToken) ->
             val appliedFlagsKeyed = flagsForToken.entries.flatMap { (flagName, events) ->
-                events.entries.map { (uuid, date) ->
-                    Pair(uuid, AppliedFlag(flagName, date))
+                events.entries.map { (uuid, time) ->
+                    Pair(uuid, AppliedFlag(flagName, time))
                 }
             }
             // TODO chunk size 20 is an arbitrary value, replace with appropriate size

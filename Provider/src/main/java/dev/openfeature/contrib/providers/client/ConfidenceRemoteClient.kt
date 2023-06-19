@@ -21,6 +21,8 @@ import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import okhttp3.Headers
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
@@ -28,11 +30,6 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.lang.reflect.Type
-import java.time.Instant
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
 
 class ConfidenceRemoteClient : ConfidenceClient {
     private val clientSecret: String
@@ -55,14 +52,14 @@ class ConfidenceRemoteClient : ConfidenceClient {
             ConfidenceRegion.EUROPE -> "https://resolver.eu.confidence.dev"
             ConfidenceRegion.USA -> "https://resolver.us.confidence.dev"
         }
-        this.clock = Clock.systemUTC()
+        this.clock = Clock.System
         this.dispatcher = dispatcher
     }
 
     internal constructor(
         clientSecret: String = "",
         baseUrl: HttpUrl,
-        clock: Clock = Clock.systemUTC(),
+        clock: Clock = Clock.System,
         dispatcher: CoroutineDispatcher = Dispatchers.IO
     ) {
         this.clientSecret = clientSecret
@@ -129,7 +126,7 @@ class ConfidenceRemoteClient : ConfidenceClient {
                     gson.toJson(
                         ApplyFlagsRequest(
                             flags.map { AppliedFlag("flags/${it.flag}", it.applyTime) },
-                            clock.instant(),
+                            clock.now(),
                             clientSecret,
                             resolveToken
                         )
@@ -386,9 +383,9 @@ class InstantTypeAdapter : JsonDeserializer<Instant>, JsonSerializer<Instant> {
         json: JsonElement?,
         typeOfT: Type?,
         context: JsonDeserializationContext?
-    ): Instant {
+    ): Instant? {
         val asString = json?.asJsonPrimitive?.asString
-        return Instant.parse(asString)
+        return asString?.let { Instant.parse(it) }
     }
 
     override fun serialize(
