@@ -15,7 +15,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
 import java.time.Instant
-import java.util.UUID
 
 const val APPLY_FILE_NAME = "confidence_apply_cache.json"
 data class FlagApplierInput(
@@ -25,11 +24,16 @@ data class FlagApplierInput(
 
 data class FlagApplierBatchProcessedInput(
     val resolveToken: String,
-    val flags: List<Pair<UUID, AppliedFlag>>
+    val flags: List<AppliedFlag>
+)
+
+data class ApplyInstance(
+    val time: Instant,
+    val sent: Boolean
 )
 
 private typealias FlagsAppliedMap =
-    MutableMap<String, MutableMap<String, MutableMap<UUID, Instant>>>
+    MutableMap<String, MutableMap<String, ApplyInstance>>
 
 class FlagApplierWithRetries(
     private val client: ConfidenceClient,
@@ -62,7 +66,7 @@ class FlagApplierWithRetries(
             },
             processBatchAction = { event, mutableData ->
                 event.flags.forEach {
-                    mutableData[event.resolveToken]?.get(it.second.flag)?.remove(it.first)
+                    mutableData[event.resolveToken]?.computeIfPresent(it.flag) { _, v -> v.copy(sent = true) }
                 }
                 writeToFile(mutableData)
             },
@@ -91,11 +95,12 @@ class FlagApplierWithRetries(
         resolveToken: String,
         data: FlagsAppliedMap
     ) {
+        if (data[resolveToken]?.containsKey(flagName) == true) {
+            // A single "apply" is needed for a given flag+resolveToken
+            return
+        }
         data.putIfAbsent(resolveToken, hashMapOf())
-        data[resolveToken]?.putIfAbsent(flagName, hashMapOf())
-        // Never delete entries from the maps above, only add. This should prevent racy conditions
-        // Empty entries are not added to the cache file, so empty entries are removed when restarting
-        data[resolveToken]?.get(flagName)?.putIfAbsent(UUID.randomUUID(), Instant.now())
+        data[resolveToken]?.putIfAbsent(flagName, ApplyInstance(Instant.now(), false))
         writeToFile(data)
     }
 
@@ -106,15 +111,13 @@ class FlagApplierWithRetries(
         coroutineExceptionHandler: CoroutineExceptionHandler
     ) {
         data.entries.forEach { (token, flagsForToken) ->
-            val appliedFlagsKeyed = flagsForToken.entries.flatMap { (flagName, events) ->
-                events.entries.map { (uuid, time) ->
-                    Pair(uuid, AppliedFlag(flagName, time))
-                }
-            }
+            val appliedFlagsKeyed: List<AppliedFlag> = flagsForToken.entries
+                .filter { e -> !e.value.sent }
+                .map { e -> AppliedFlag(e.key, e.value.time) }
             // TODO chunk size 20 is an arbitrary value, replace with appropriate size
             appliedFlagsKeyed.chunked(CHUNK_SIZE).forEach { appliedFlagsKeyedChunk ->
                 coroutineScope.launch(coroutineExceptionHandler) {
-                    client.apply(appliedFlagsKeyedChunk.map { it.second }, token)
+                    client.apply(appliedFlagsKeyedChunk, token)
                     sendChannel.send(FlagApplierBatchProcessedInput(token, appliedFlagsKeyedChunk))
                 }
             }
@@ -124,14 +127,8 @@ class FlagApplierWithRetries(
     private fun writeToFile(
         data: FlagsAppliedMap
     ) {
-        val fileData = gson.toJson(
-            data.filter {
-                // All flags entries are empty for this token, don't add this token to the file
-                !it.value.values.stream().allMatch { events -> events.isEmpty() }
-            }
-        )
         // TODO Add a limit for the file size?
-        file.writeText(fileData)
+        file.writeText(gson.toJson(data))
     }
 
     private suspend fun readFile(
@@ -140,17 +137,13 @@ class FlagApplierWithRetries(
         if (!file.exists()) return@coroutineScope
         val fileText: String = file.bufferedReader().use { it.readText() }
         if (fileText.isEmpty()) return@coroutineScope
-        val type = object :
-            TypeToken<Map<String, Map<String, Map<UUID, Instant>>>>() {}.type
-        val newData: Map<String, Map<String, Map<UUID, Instant>>> =
+        val type = object : TypeToken<FlagsAppliedMap>() {}.type
+        val newData: FlagsAppliedMap =
             gson.fromJson(fileText, type)
         newData.entries.forEach { (resolveToken, eventsByFlagName) ->
-            eventsByFlagName.entries.forEach { (flagName, eventTimeEntries) ->
+            eventsByFlagName.entries.forEach { (flagName, applyInstance) ->
                 data.putIfAbsent(resolveToken, hashMapOf())
-                data[resolveToken]?.putIfAbsent(flagName, hashMapOf())
-                eventTimeEntries.forEach { (id, time) ->
-                    data[resolveToken]?.get(flagName)?.putIfAbsent(id, time)
-                }
+                data[resolveToken]?.putIfAbsent(flagName, applyInstance)
             }
         }
     }
