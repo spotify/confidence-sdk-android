@@ -1,9 +1,23 @@
+
+
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
     id("maven-publish")
     id("org.jlleitschuh.gradle.ktlint")
-    kotlin("plugin.serialization") version "1.8.10"
+    kotlin("plugin.serialization")
+}
+
+object Versions {
+    const val openFeatureSDK = "0.0.1-SNAPSHOT"
+    const val okHttp = "4.10.0"
+    const val kotlinxSerialization = "1.5.1"
+    const val gson = "2.10"
+    const val coroutines = "1.7.1"
+    const val junit = "4.13.2"
+    const val kotlinMockito = "4.1.0"
+    const val mockWebServer = "4.9.1"
+    const val providerVersion = "0.0.1-SNAPSHOT"
 }
 
 android {
@@ -43,15 +57,17 @@ android {
 }
 
 dependencies {
-    api("dev.openfeature:kotlin-sdk:0.0.1-SNAPSHOT")
-    implementation("com.squareup.okhttp3:okhttp:4.9.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
-    implementation("com.google.code.gson:gson:2.10")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.1")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
-    testImplementation("com.squareup.okhttp3:mockwebserver:4.9.1")
+    api("dev.openfeature:kotlin-sdk:${Versions.openFeatureSDK}")
+    implementation("com.squareup.okhttp3:okhttp:${Versions.okHttp}")
+    implementation(
+        "org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}"
+    )
+    implementation("com.google.code.gson:gson:${Versions.gson}")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
+    testImplementation("junit:junit:${Versions.junit}")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.coroutines}")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:${Versions.kotlinMockito}")
+    testImplementation("com.squareup.okhttp3:mockwebserver:${Versions.mockWebServer}")
 }
 
 publishing {
@@ -59,7 +75,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "dev.openfeature.contrib.providers"
             artifactId = "confidence"
-            version = "0.0.1-SNAPSHOT"
+            version = Versions.providerVersion
             afterEvaluate {
                 from(components["release"])
             }
