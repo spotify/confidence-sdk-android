@@ -32,7 +32,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
             OpenFeatureAPI.setProvider(
                 ConfidenceFeatureProvider.Builder(
                     app.applicationContext,
-                    "n8h8Zt6obiJRDh2iFB9S9bRsjs8upqaw"
+                    "xa0fQ4WKSvuxdjPtesupleiSbZeik6Gf"
                 )
                     .dispatcher(Dispatchers.IO)
                     .build(),
