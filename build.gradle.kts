@@ -3,4 +3,5 @@ plugins {
     id("com.android.library").version("7.4.2").apply(false)
     id("org.jetbrains.kotlin.android").version("1.8.0").apply(false)
     id("org.jlleitschuh.gradle.ktlint").version("11.3.2").apply(true)
+    kotlin("plugin.serialization").version("1.8.10").apply(true)
 }
