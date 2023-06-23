@@ -16,6 +16,8 @@ import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -26,9 +28,6 @@ import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import java.time.Clock
-import java.time.Instant
-import java.util.Date
 
 internal class ConfidenceRemoteClientTests {
     private val mockWebServer = MockWebServer()
@@ -485,11 +484,11 @@ internal class ConfidenceRemoteClientTests {
     @Test
     fun testSerializeApplyRequest() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val applyDate = Date.from(Instant.parse("2023-03-01T14:01:46Z"))
-        val sendDate = Date.from(Instant.parse("2023-03-01T14:03:46Z"))
+        val applyDate = Instant.parse("2023-03-01T14:01:46Z")
+        val sendDate = Instant.parse("2023-03-01T14:03:46Z")
         val mockClock: Clock = mock()
 
-        whenever(mockClock.instant()).thenReturn(sendDate.toInstant())
+        whenever(mockClock.now()).thenReturn(sendDate)
         mockWebServer.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
                 val expectedSerializedRequest = "{\n" +
@@ -514,6 +513,6 @@ internal class ConfidenceRemoteClientTests {
             mockClock,
             dispatcher = testDispatcher
         )
-            .apply(listOf(AppliedFlag("flag1", applyDate.toInstant())), "token1")
+            .apply(listOf(AppliedFlag("flag1", applyDate)), "token1")
     }
 }
