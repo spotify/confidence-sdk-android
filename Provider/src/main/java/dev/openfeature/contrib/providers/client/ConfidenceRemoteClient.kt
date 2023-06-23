@@ -23,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlinx.serialization.Serializable
 import okhttp3.Headers
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
@@ -408,8 +409,10 @@ data class ResolveFlagsRequest(
     var apply: Boolean
 )
 
+@Serializable
 data class ResolveFlagsResponse(var resolvedFlags: List<ResolvedFlag>, var resolveToken: String)
 
+@Serializable
 data class ResolvedFlag(
     var flag: String,
     var variant: String,
@@ -430,7 +433,9 @@ data class AppliedFlag(
     var applyTime: Instant
 )
 
+@Serializable
 sealed interface SchemaType {
+    @Serializable
     data class SchemaStruct(
         var schema: Map<String, SchemaType>
     ) : SchemaType

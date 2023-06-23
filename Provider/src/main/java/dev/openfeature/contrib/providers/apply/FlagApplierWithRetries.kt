@@ -14,8 +14,9 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import java.io.File
-import java.time.Instant
 import java.util.*
 
 const val APPLY_FILE_NAME = "confidence_apply_cache.json"
@@ -52,7 +53,7 @@ class FlagApplierWithRetries(
     private val file: File = File(context.filesDir, APPLY_FILE_NAME)
     private val gson = GsonBuilder()
         .serializeNulls()
-        .registerTypeAdapter(kotlinx.datetime.Instant::class.java, InstantTypeAdapter())
+        .registerTypeAdapter(Instant::class.java, InstantTypeAdapter())
         .create()
 
     private val exceptionHandler by lazy {
@@ -103,7 +104,7 @@ class FlagApplierWithRetries(
         data[resolveToken]?.putIfAbsent(flagName, hashMapOf())
         // Never delete entries from the maps above, only add. This should prevent racy conditions
         // Empty entries are not added to the cache file, so empty entries are removed when restarting
-        data[resolveToken]?.get(flagName)?.putIfAbsent(UUID.randomUUID(), Instant.now())
+        data[resolveToken]?.get(flagName)?.putIfAbsent(UUID.randomUUID(), Clock.System.now())
         writeToFile(data)
         triggerSendBatch(data)
     }

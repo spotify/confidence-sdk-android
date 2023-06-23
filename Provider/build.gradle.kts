@@ -59,7 +59,6 @@ android {
 }
 
 dependencies {
-<<<<<<< HEAD
     api("dev.openfeature:kotlin-sdk:${Versions.openFeatureSDK}")
     implementation("com.squareup.okhttp3:okhttp:${Versions.okHttp}")
     implementation(
@@ -69,6 +68,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
     testImplementation("junit:junit:${Versions.junit}")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.dateTime}")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.coroutines}")
     testImplementation("org.mockito.kotlin:mockito-kotlin:${Versions.kotlinMockito}")
     testImplementation("com.squareup.okhttp3:mockwebserver:${Versions.mockWebServer}")
