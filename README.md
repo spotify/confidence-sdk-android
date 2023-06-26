@@ -4,6 +4,24 @@ Kotlin implementation of the Confidence feature provider, to be used in conjunct
 
 ## Usage
 
+### Support API 21
+
+In order to support older APIs, we recommend using [desugaring](https://developer.android.com/studio/write/java8-support-table):
+
+Add this in your `build.gradle` file:
+
+```kotlin
+compileOptions {
+    ...
+    isCoreLibraryDesugaringEnabled = true
+}
+    ...
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:LATEST_VERSION")
+}
+```
+
 ### Adding the package dependency
 
 Add the following dependency to your gradle file:
