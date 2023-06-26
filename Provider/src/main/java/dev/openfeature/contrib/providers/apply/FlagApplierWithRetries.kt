@@ -3,34 +3,30 @@ package dev.openfeature.contrib.providers.apply
 import android.content.Context
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import dev.openfeature.contrib.providers.EventProcessor
 import dev.openfeature.contrib.providers.client.AppliedFlag
 import dev.openfeature.contrib.providers.client.ConfidenceClient
 import dev.openfeature.contrib.providers.client.InstantTypeAdapter
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.selects.select
 import java.io.File
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 
 const val APPLY_FILE_NAME = "confidence_apply_cache.json"
+data class FlagApplierInput(
+    val resolveToken: String,
+    val flagName: String
+)
 
-private sealed class FlagApplierEvent {
-    data class WriteRequest(
-        val flagName: String,
-        val resolveToken: String
-    ) : FlagApplierEvent()
-
-    data class DataSentRequest(
-        val resolveToken: String,
-        val flags: List<Pair<UUID, AppliedFlag>>
-    ) : FlagApplierEvent()
-}
+data class FlagApplierBatchProcessedInput(
+    val resolveToken: String,
+    val flags: List<Pair<UUID, AppliedFlag>>
+)
 
 private typealias FlagsAppliedMap =
     MutableMap<String, MutableMap<String, MutableMap<UUID, Instant>>>
@@ -40,58 +36,54 @@ class FlagApplierWithRetries(
     private val dispatcher: CoroutineDispatcher,
     context: Context
 ) : FlagApplier {
-    private val coroutineScope: CoroutineScope by lazy {
-        // the SupervisorJob makes sure that if one coroutine
-        // throw an error, the whole scope is not cancelled
-        // the thrown error can be handled individually
-        CoroutineScope(SupervisorJob() + dispatcher)
-    }
-
-    private val writeRequestChannel: Channel<FlagApplierEvent.WriteRequest> = Channel()
-    private val dataSentChannel: Channel<FlagApplierEvent.DataSentRequest> = Channel()
     private val file: File = File(context.filesDir, APPLY_FILE_NAME)
     private val gson = GsonBuilder()
         .serializeNulls()
         .registerTypeAdapter(Instant::class.java, InstantTypeAdapter())
         .create()
 
-    private val exceptionHandler by lazy {
-        CoroutineExceptionHandler { _, _ -> }
+    private val eventProcessor by lazy {
+        EventProcessor<
+            FlagApplierInput,
+            FlagApplierBatchProcessedInput,
+            FlagsAppliedMap
+            >(
+            onInitialised = {
+                val data: FlagsAppliedMap = mutableMapOf()
+                readFile(data)
+                data
+            },
+            onApply = { flagApplierInput, mutableData ->
+                internalApply(
+                    flagApplierInput.flagName,
+                    flagApplierInput.resolveToken,
+                    mutableData
+                )
+            },
+            processBatchAction = { event, mutableData ->
+                event.flags.forEach {
+                    mutableData[event.resolveToken]?.get(it.second.flag)?.remove(it.first)
+                }
+                writeToFile(mutableData)
+            },
+            onProcessBatch = { mutableData, sendChannel, coroutineScope, coroutineExceptionHandler ->
+                processBatch(
+                    mutableData,
+                    coroutineScope,
+                    sendChannel,
+                    coroutineExceptionHandler
+                )
+            },
+            dispatcher = dispatcher
+        )
     }
 
     init {
-        coroutineScope.launch {
-            // the data being in a coroutine like this
-            // ensures we don't have any shared mutability
-            val data: FlagsAppliedMap = mutableMapOf()
-            readFile(data)
-
-            // the select clause makes sure that we don't
-            // share the data/file write operations between coroutines
-            // at any certain time there is only one of these events being handled
-            while (true) {
-                select {
-                    writeRequestChannel.onReceive { writeRequest ->
-                        with(writeRequest) {
-                            internalApply(flagName, resolveToken, data)
-                        }
-                    }
-
-                    dataSentChannel.onReceive { event ->
-                        event.flags.forEach {
-                            data[event.resolveToken]?.get(it.second.flag)?.remove(it.first)
-                        }
-                        writeToFile(data)
-                    }
-                }
-            }
-        }
+        eventProcessor.start()
     }
 
     override fun apply(flagName: String, resolveToken: String) {
-        coroutineScope.launch {
-            writeRequestChannel.send(FlagApplierEvent.WriteRequest(flagName, resolveToken))
-        }
+        eventProcessor.apply(FlagApplierInput(resolveToken, flagName))
     }
 
     private fun internalApply(
@@ -105,11 +97,13 @@ class FlagApplierWithRetries(
         // Empty entries are not added to the cache file, so empty entries are removed when restarting
         data[resolveToken]?.get(flagName)?.putIfAbsent(UUID.randomUUID(), Instant.now())
         writeToFile(data)
-        triggerSendBatch(data)
     }
 
-    private fun triggerSendBatch(
-        data: FlagsAppliedMap
+    private fun processBatch(
+        data: FlagsAppliedMap,
+        coroutineScope: CoroutineScope,
+        sendChannel: SendChannel<FlagApplierBatchProcessedInput>,
+        coroutineExceptionHandler: CoroutineExceptionHandler
     ) {
         data.entries.forEach { (token, flagsForToken) ->
             val appliedFlagsKeyed = flagsForToken.entries.flatMap { (flagName, events) ->
@@ -118,10 +112,10 @@ class FlagApplierWithRetries(
                 }
             }
             // TODO chunk size 20 is an arbitrary value, replace with appropriate size
-            appliedFlagsKeyed.chunked(20).forEach { appliedFlagsKeyedChunk ->
-                coroutineScope.launch(exceptionHandler) {
+            appliedFlagsKeyed.chunked(CHUNK_SIZE).forEach { appliedFlagsKeyedChunk ->
+                coroutineScope.launch(coroutineExceptionHandler) {
                     client.apply(appliedFlagsKeyedChunk.map { it.second }, token)
-                    dataSentChannel.send(FlagApplierEvent.DataSentRequest(token, appliedFlagsKeyedChunk))
+                    sendChannel.send(FlagApplierBatchProcessedInput(token, appliedFlagsKeyedChunk))
                 }
             }
         }
@@ -159,5 +153,9 @@ class FlagApplierWithRetries(
                 }
             }
         }
+    }
+
+    companion object {
+        private const val CHUNK_SIZE = 20
     }
 }
