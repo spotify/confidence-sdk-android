@@ -290,6 +290,84 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
+    fun testApplyOnMultipleEvaluations() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
+            .cache(InMemoryCache())
+            .client(mockClient)
+            .dispatcher(testDispatcher)
+            .build()
+        val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
+        whenever(mockClient.apply(any(), any())).then {}
+
+        val evaluationContext1 = MutableContext("foo")
+        val evaluationContext2 = MutableContext("bar")
+
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+        runBlocking {
+            confidenceFeatureProvider.initialize(evaluationContext1)
+        }
+        verify(mockClient, times(1)).resolve(any(), eq(evaluationContext1))
+
+        val evalString1 = confidenceFeatureProvider.getStringEvaluation(
+            "fdema-kotlin-flag-1.mystring",
+            "default",
+            evaluationContext1
+        )
+        // Second evaluation shouldn't trigger apply
+        confidenceFeatureProvider.getStringEvaluation(
+            "fdema-kotlin-flag-1.mystring",
+            "default",
+            evaluationContext1
+        )
+
+        advanceUntilIdle()
+        verify(mockClient, times(1)).apply(any(), eq("token1"))
+        assertEquals(true, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token1"]?.jsonObject?.get("fdema-kotlin-flag-1")?.jsonObject?.get("sent")?.jsonPrimitive?.boolean)
+
+        val captor1 = argumentCaptor<List<AppliedFlag>>()
+        verify(mockClient, times(1)).apply(captor1.capture(), eq("token1"))
+
+        assertEquals(1, captor1.firstValue.count())
+        assertEquals("fdema-kotlin-flag-1", captor1.firstValue.first().flag)
+        assertEquals("red", evalString1.value)
+        assertEquals(Reason.TARGETING_MATCH.toString(), evalString1.reason)
+        assertEquals("flags/fdema-kotlin-flag-1/variants/variant-1", evalString1.variant)
+        assertNull(evalString1.errorMessage)
+        assertNull(evalString1.errorCode)
+
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token2"))
+        runBlocking {
+            confidenceFeatureProvider.onContextSet(evaluationContext1, evaluationContext2)
+        }
+        verify(mockClient, times(1)).resolve(any(), eq(evaluationContext2))
+
+        // Third evaluation with different context should trigger apply
+        val evalString2 = confidenceFeatureProvider.getStringEvaluation(
+            "fdema-kotlin-flag-1.mystring",
+            "default",
+            evaluationContext2
+        )
+
+        advanceUntilIdle()
+        verify(mockClient, times(1)).apply(any(), eq("token2"))
+
+        assertEquals(true, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token1"]?.jsonObject?.get("fdema-kotlin-flag-1")?.jsonObject?.get("sent")?.jsonPrimitive?.boolean)
+        assertEquals(true, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token2"]?.jsonObject?.get("fdema-kotlin-flag-1")?.jsonObject?.get("sent")?.jsonPrimitive?.boolean)
+
+        val captor = argumentCaptor<List<AppliedFlag>>()
+        verify(mockClient, times(1)).apply(captor.capture(), eq("token2"))
+
+        assertEquals(1, captor.firstValue.count())
+        assertEquals("fdema-kotlin-flag-1", captor.firstValue.first().flag)
+        assertEquals("red", evalString2.value)
+        assertEquals(Reason.TARGETING_MATCH.toString(), evalString2.reason)
+        assertEquals("flags/fdema-kotlin-flag-1/variants/variant-1", evalString2.variant)
+        assertNull(evalString2.errorMessage)
+        assertNull(evalString2.errorCode)
+    }
+
+    @Test
     fun testApplyFromStoredCache() = runTest {
         val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
         cacheFile.writeText(
