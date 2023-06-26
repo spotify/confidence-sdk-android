@@ -397,6 +397,68 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
+    fun testApplyCacheRemovesSentResolveTokens() = runTest {
+        val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
+        cacheFile.writeText(
+            "{\n" +
+                "  \"token1\": {\n" +
+                "    \"fdema-kotlin-flag-0\": {\n" +
+                "      \"time\": \"2023-06-26T11:55:33.184774Z\",\n" +
+                "      \"sent\": true\n" +
+                "    }\n" +
+                "  },\n" +
+                "  \"token2\": {\n" +
+                "    \"fdema-kotlin-flag-2\": {\n" +
+                "      \"time\": \"2023-06-26T11:55:33.184774Z\",\n" +
+                "      \"sent\": true\n" +
+                "    },\n" +
+                "    \"fdema-kotlin-flag-3\": {\n" +
+                "      \"time\": \"2023-06-26T11:55:33.184774Z\",\n" +
+                "      \"sent\": false\n" +
+                "    }\n" +
+                "  },\n" +
+                "  \"token3\": {\n" +
+                "    \"fdema-kotlin-flag-4\": {\n" +
+                "      \"time\": \"2023-06-26T11:55:33.184774Z\",\n" +
+                "      \"sent\": false\n" +
+                "    }\n" +
+                "  }\n" +
+                "}\n"
+        )
+
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
+            .cache(InMemoryCache())
+            .client(mockClient)
+            .dispatcher(testDispatcher)
+            .build()
+
+        whenever(mockClient.apply(any(), any())).then {}
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token2"))
+
+        val evaluationContext = MutableContext("foo")
+
+        runBlocking {
+            confidenceFeatureProvider.initialize(evaluationContext)
+        }
+
+        confidenceFeatureProvider.getStringEvaluation(
+            "fdema-kotlin-flag-1.mystring",
+            "default",
+            evaluationContext
+        )
+
+        advanceUntilIdle()
+        assertEquals(2, Json.parseToJsonElement(cacheFile.readText()).jsonObject.size)
+        assertEquals(3, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token2"]?.jsonObject?.size)
+        assertEquals(true, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token2"]?.jsonObject?.get("fdema-kotlin-flag-1")?.jsonObject?.get("sent")?.jsonPrimitive?.boolean)
+        assertEquals(true, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token2"]?.jsonObject?.get("fdema-kotlin-flag-2")?.jsonObject?.get("sent")?.jsonPrimitive?.boolean)
+        assertEquals(true, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token2"]?.jsonObject?.get("fdema-kotlin-flag-3")?.jsonObject?.get("sent")?.jsonPrimitive?.boolean)
+        assertEquals(1, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token3"]?.jsonObject?.size)
+        assertEquals(true, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token3"]?.jsonObject?.get("fdema-kotlin-flag-4")?.jsonObject?.get("sent")?.jsonPrimitive?.boolean)
+    }
+
+    @Test
     fun testMatchingRootObject() = runTest {
         val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
             .cache(InMemoryCache())
