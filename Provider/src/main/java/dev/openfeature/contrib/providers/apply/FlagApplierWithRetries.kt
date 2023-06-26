@@ -123,8 +123,12 @@ class FlagApplierWithRetries(
     private fun writeToFile(
         data: FlagsAppliedMap
     ) {
+        val fileData = gson.toJson(
+            // All apply events have been sent for this token, don't add this token to the file
+            data.filter { !it.value.values.all { applyInstance -> applyInstance.sent } }
+        )
         // TODO Add a limit for the file size?
-        file.writeText(gson.toJson(data))
+        file.writeText(fileData)
     }
 
     private suspend fun readFile(
@@ -136,15 +140,12 @@ class FlagApplierWithRetries(
         val type = object : TypeToken<FlagsAppliedMap>() {}.type
         val newData: FlagsAppliedMap = gson.fromJson(fileText, type)
         // Append to `data` rather than overwrite it, in case `data` is not empty when the file is being read
-        newData
-            // Remove resolveToken entries for which all apply events have been sent
-            .filter { e -> e.value.values.any { applyInstance -> !applyInstance.sent } }
-            .entries.forEach { (resolveToken, eventsByFlagName) ->
-                eventsByFlagName.entries.forEach { (flagName, applyInstance) ->
-                    data.putIfAbsent(resolveToken, hashMapOf())
-                    data[resolveToken]?.putIfAbsent(flagName, applyInstance)
-                }
+        newData.entries.forEach { (resolveToken, eventsByFlagName) ->
+            eventsByFlagName.entries.forEach { (flagName, applyInstance) ->
+                data.putIfAbsent(resolveToken, hashMapOf())
+                data[resolveToken]?.putIfAbsent(flagName, applyInstance)
             }
+        }
     }
 
     companion object {

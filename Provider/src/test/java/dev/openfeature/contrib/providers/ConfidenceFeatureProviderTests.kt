@@ -242,7 +242,7 @@ internal class ConfidenceFeatureProviderTests {
         assertEquals(1, captor.firstValue.count())
         assertEquals("fdema-kotlin-flag-1", captor.firstValue.first().flag)
 
-        assertEquals(true, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token1"]?.jsonObject?.get("fdema-kotlin-flag-1")?.jsonObject?.get("sent")?.jsonPrimitive?.boolean)
+        assertEquals(0, Json.parseToJsonElement(cacheFile.readText()).jsonObject.size)
         assertEquals("red", evalString.value)
         assertEquals(false, evalBool.value)
         assertEquals(7, evalInteger.value)
@@ -323,7 +323,7 @@ internal class ConfidenceFeatureProviderTests {
 
         advanceUntilIdle()
         verify(mockClient, times(1)).apply(any(), eq("token1"))
-        assertEquals(true, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token1"]?.jsonObject?.get("fdema-kotlin-flag-1")?.jsonObject?.get("sent")?.jsonPrimitive?.boolean)
+        assertEquals(0, Json.parseToJsonElement(cacheFile.readText()).jsonObject.size)
 
         val captor1 = argumentCaptor<List<AppliedFlag>>()
         verify(mockClient, times(1)).apply(captor1.capture(), eq("token1"))
@@ -351,10 +351,7 @@ internal class ConfidenceFeatureProviderTests {
 
         advanceUntilIdle()
         verify(mockClient, times(1)).apply(any(), eq("token2"))
-
-        assertEquals(true, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token1"]?.jsonObject?.get("fdema-kotlin-flag-1")?.jsonObject?.get("sent")?.jsonPrimitive?.boolean)
-        assertEquals(true, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token2"]?.jsonObject?.get("fdema-kotlin-flag-1")?.jsonObject?.get("sent")?.jsonPrimitive?.boolean)
-
+        assertEquals(0, Json.parseToJsonElement(cacheFile.readText()).jsonObject.size)
         val captor = argumentCaptor<List<AppliedFlag>>()
         verify(mockClient, times(1)).apply(captor.capture(), eq("token2"))
 
@@ -449,13 +446,10 @@ internal class ConfidenceFeatureProviderTests {
         )
 
         advanceUntilIdle()
-        assertEquals(2, Json.parseToJsonElement(cacheFile.readText()).jsonObject.size)
-        assertEquals(3, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token2"]?.jsonObject?.size)
-        assertEquals(true, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token2"]?.jsonObject?.get("fdema-kotlin-flag-1")?.jsonObject?.get("sent")?.jsonPrimitive?.boolean)
-        assertEquals(true, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token2"]?.jsonObject?.get("fdema-kotlin-flag-2")?.jsonObject?.get("sent")?.jsonPrimitive?.boolean)
-        assertEquals(true, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token2"]?.jsonObject?.get("fdema-kotlin-flag-3")?.jsonObject?.get("sent")?.jsonPrimitive?.boolean)
-        assertEquals(1, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token3"]?.jsonObject?.size)
-        assertEquals(true, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token3"]?.jsonObject?.get("fdema-kotlin-flag-4")?.jsonObject?.get("sent")?.jsonPrimitive?.boolean)
+        verify(mockClient, times(0)).apply(any(), eq("token1"))
+        verify(mockClient, times(1)).apply(any(), eq("token2"))
+        verify(mockClient, times(1)).apply(any(), eq("token3"))
+        assertEquals(0, Json.parseToJsonElement(cacheFile.readText()).jsonObject.size)
     }
 
     @Test
