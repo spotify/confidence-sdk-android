@@ -23,13 +23,15 @@ import dev.openfeature.sdk.exceptions.OpenFeatureError.InvalidContextError
 import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class ConfidenceFeatureProvider private constructor(
     override val hooks: List<Hook<*>>,
     override val metadata: Metadata,
     private val cache: ProviderCache,
     private val client: ConfidenceClient,
-    private val flagApplier: FlagApplier
+    private val flagApplier: FlagApplier,
+    private val dispatcher: CoroutineDispatcher
 ) : FeatureProvider {
     data class Builder(
         val context: Context,
@@ -83,18 +85,21 @@ class ConfidenceFeatureProvider private constructor(
                     configuredClient,
                     dispatcher,
                     context
-                )
+                ),
+                dispatcher
             )
         }
     }
 
     override suspend fun initialize(initialContext: EvaluationContext?) {
         if (initialContext == null) return
-        try {
-            val (resolvedFlags, resolveToken) = client.resolve(listOf(), initialContext)
-            cache.refresh(resolvedFlags, resolveToken, initialContext)
-        } catch (_: Throwable) {
-            // Can't refresh cache at this time. Do we retry at a later time?
+        withContext(dispatcher) {
+            try {
+                val (resolvedFlags, resolveToken) = client.resolve(listOf(), initialContext)
+                cache.refresh(resolvedFlags, resolveToken, initialContext)
+            } catch (_: Throwable) {
+                // Can't refresh cache at this time. Do we retry at a later time?
+            }
         }
     }
 
