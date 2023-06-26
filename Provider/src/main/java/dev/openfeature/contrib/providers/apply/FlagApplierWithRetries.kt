@@ -95,10 +95,6 @@ class FlagApplierWithRetries(
         resolveToken: String,
         data: FlagsAppliedMap
     ) {
-        if (data[resolveToken]?.containsKey(flagName) == true) {
-            // A single "apply" is needed for a given flag+resolveToken
-            return
-        }
         data.putIfAbsent(resolveToken, hashMapOf())
         data[resolveToken]?.putIfAbsent(flagName, ApplyInstance(Instant.now(), false))
         writeToFile(data)
