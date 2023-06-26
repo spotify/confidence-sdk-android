@@ -17,7 +17,9 @@ compileOptions {
 }
     ...
 
-coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:LATEST_VERSION")
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:LATEST_VERSION")
+}
 ```
 
 ### Adding the package dependency
