@@ -134,8 +134,8 @@ class FlagApplierWithRetries(
         val fileText: String = file.bufferedReader().use { it.readText() }
         if (fileText.isEmpty()) return@coroutineScope
         val type = object : TypeToken<FlagsAppliedMap>() {}.type
-        val newData: FlagsAppliedMap =
-            gson.fromJson(fileText, type)
+        val newData: FlagsAppliedMap = gson.fromJson(fileText, type)
+        // Append to `data` rather than overwrite it, in case `data` is not empty when the file is being read
         newData.entries.forEach { (resolveToken, eventsByFlagName) ->
             eventsByFlagName.entries.forEach { (flagName, applyInstance) ->
                 data.putIfAbsent(resolveToken, hashMapOf())
