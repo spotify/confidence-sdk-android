@@ -36,7 +36,9 @@ Notes:
 
 ### Support APIs lower than 26
 
-In order to support older APIs, we recommend using [desugaring](https://developer.android.com/studio/write/java8-support-table):
+This SDK can be used with a `minSDK` of 21 however, in order for the app to run on devices lower than API 26 we we recommend using [desugaring](https://developer.android.com/studio/write/java8-support-table).
+
+Otherwise, the application may cause crashes on lower APIs.
 
 Add this in your `build.gradle` file:
 
