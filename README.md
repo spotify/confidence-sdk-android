@@ -34,7 +34,7 @@ Notes:
 - It's advised not to perform resolves while `setProvider` and `setEvaluationContext` are running: resolves might return the default value with reason `STALE` during such operations.
 
 
-### Support API 21
+### Support APIs lower than 26
 
 In order to support older APIs, we recommend using [desugaring](https://developer.android.com/studio/write/java8-support-table):
 
