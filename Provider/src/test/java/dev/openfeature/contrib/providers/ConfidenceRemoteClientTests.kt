@@ -4,10 +4,10 @@ package dev.openfeature.contrib.providers
 
 import dev.openfeature.contrib.providers.client.AppliedFlag
 import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient
-import dev.openfeature.contrib.providers.client.ResolveFlagsResponse
+import dev.openfeature.contrib.providers.client.Flags
+import dev.openfeature.contrib.providers.client.ResolveFlags
 import dev.openfeature.contrib.providers.client.ResolveReason
 import dev.openfeature.contrib.providers.client.ResolvedFlag
-import dev.openfeature.contrib.providers.client.SchemaType
 import dev.openfeature.sdk.MutableContext
 import dev.openfeature.sdk.MutableStructure
 import dev.openfeature.sdk.Value
@@ -110,7 +110,7 @@ internal class ConfidenceRemoteClientTests {
             dispatcher = testDispatcher
         )
             .resolve(listOf(), MutableContext("user1"))
-        val expectedParsed = ResolveFlagsResponse(
+        val expectedFlags = Flags(
             listOf(
                 ResolvedFlag(
                     "fdema-kotlin-flag-1",
@@ -130,24 +130,12 @@ internal class ConfidenceRemoteClientTests {
                             )
                         )
                     ),
-                    SchemaType.SchemaStruct(
-                        mapOf(
-                            "mystring" to SchemaType.StringSchema,
-                            "myboolean" to SchemaType.BoolSchema,
-                            "myinteger" to SchemaType.IntSchema,
-                            "mydouble" to SchemaType.DoubleSchema,
-                            "mynull" to SchemaType.DoubleSchema, // Arbitrary schema type here
-                            "mydate" to SchemaType.StringSchema,
-                            "mystruct" to SchemaType.SchemaStruct(
-                                mapOf(
-                                    "innerString" to SchemaType.StringSchema
-                                )
-                            )
-                        )
-                    ),
                     ResolveReason.RESOLVE_REASON_MATCH
                 )
-            ),
+            )
+        )
+        val expectedParsed = ResolveFlags(
+            expectedFlags,
             "token1"
         )
         assertEquals(expectedParsed, parsedResponse)
@@ -180,14 +168,14 @@ internal class ConfidenceRemoteClientTests {
                 dispatcher = testDispatcher
             )
                 .resolve(listOf(), MutableContext("user1"))
-        val expectedParsed = ResolveFlagsResponse(
-            listOf(
-                ResolvedFlag(
-                    "fdema-kotlin-flag-1",
-                    "",
-                    null,
-                    null,
-                    ResolveReason.RESOLVE_REASON_NO_SEGMENT_MATCH
+        val expectedParsed = ResolveFlags(
+            Flags(
+                listOf(
+                    ResolvedFlag(
+                        flag = "fdema-kotlin-flag-1",
+                        variant = "",
+                        reason = ResolveReason.RESOLVE_REASON_NO_SEGMENT_MATCH
+                    )
                 )
             ),
             "token1"
@@ -230,22 +218,19 @@ internal class ConfidenceRemoteClientTests {
                 dispatcher = testDispatcher
             )
                 .resolve(listOf(), MutableContext("user1"))
-        val expectedParsed = ResolveFlagsResponse(
-            listOf(
-                ResolvedFlag(
-                    "fdema-kotlin-flag-1",
-                    "flags/fdema-kotlin-flag-1/variants/variant-1",
-                    MutableStructure(
-                        mutableMapOf(
-                            "mydouble" to Value.Double(3.0)
-                        )
-                    ),
-                    SchemaType.SchemaStruct(
-                        mapOf(
-                            "mydouble" to SchemaType.DoubleSchema
-                        )
-                    ),
-                    ResolveReason.RESOLVE_REASON_MATCH
+        val expectedParsed = ResolveFlags(
+            Flags(
+                listOf(
+                    ResolvedFlag(
+                        "fdema-kotlin-flag-1",
+                        "flags/fdema-kotlin-flag-1/variants/variant-1",
+                        MutableStructure(
+                            mutableMapOf(
+                                "mydouble" to Value.Double(3.0)
+                            )
+                        ),
+                        ResolveReason.RESOLVE_REASON_MATCH
+                    )
                 )
             ),
             "token1"
@@ -442,7 +427,10 @@ internal class ConfidenceRemoteClientTests {
                     "  \"clientSecret\": \"secret1\",\n" +
                     "  \"apply\": false\n" +
                     "}"
-                assertEquals(expectedSerializedRequest, request.body.copy().readUtf8())
+                assertEquals(
+                    expectedSerializedRequest.replace("\\s".toRegex(), ""),
+                    request.body.copy().readUtf8().replace("\\s".toRegex(), "")
+                )
                 return MockResponse()
                     .setBody(
                         "{\n" +
@@ -503,7 +491,10 @@ internal class ConfidenceRemoteClientTests {
                     "  \"clientSecret\": \"secret1\",\n" +
                     "  \"resolveToken\": \"token1\"\n" +
                     "}"
-                assertEquals(expectedSerializedRequest, request.body.readUtf8())
+                assertEquals(
+                    expectedSerializedRequest.replace("\\s".toRegex(), ""),
+                    request.body.readUtf8().replace("\\s".toRegex(), "")
+                )
 
                 return MockResponse().setResponseCode(200)
             }

@@ -20,7 +20,7 @@ open class InMemoryCache : ProviderCache {
             values = resolvedFlags.associate {
                 it.flag to CacheEntry(
                     it.variant,
-                    Value.Structure(it.value?.asMap() ?: mapOf()),
+                    Value.Structure(it.value.asMap()),
                     it.reason
                 )
             },

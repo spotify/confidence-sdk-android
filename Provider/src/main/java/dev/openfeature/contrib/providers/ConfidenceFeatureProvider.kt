@@ -7,9 +7,8 @@ import dev.openfeature.contrib.providers.cache.ProviderCache
 import dev.openfeature.contrib.providers.cache.ProviderCache.CacheResolveResult
 import dev.openfeature.contrib.providers.cache.StorageFileCache
 import dev.openfeature.contrib.providers.client.ConfidenceClient
+import dev.openfeature.contrib.providers.client.ConfidenceRegion
 import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient
-import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient.ConfidenceRegion
-import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient.ConfidenceRegion.EUROPE
 import dev.openfeature.contrib.providers.client.ResolveReason
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FeatureProvider
@@ -70,12 +69,14 @@ class ConfidenceFeatureProvider private constructor(
         fun cache(cache: ProviderCache) = apply { this.cache = cache }
 
         fun build(): ConfidenceFeatureProvider {
-            val configuredRegion = region ?: EUROPE
+            val configuredRegion = region ?: ConfidenceRegion.EUROPE
+
             val configuredClient = client ?: ConfidenceRemoteClient(
                 clientSecret = clientSecret,
                 region = configuredRegion,
                 dispatcher = dispatcher
             )
+
             return ConfidenceFeatureProvider(
                 hooks ?: listOf(),
                 metadata ?: ConfidenceMetadata(),
@@ -96,7 +97,7 @@ class ConfidenceFeatureProvider private constructor(
         withContext(dispatcher) {
             try {
                 val (resolvedFlags, resolveToken) = client.resolve(listOf(), initialContext)
-                cache.refresh(resolvedFlags, resolveToken, initialContext)
+                cache.refresh(resolvedFlags.list, resolveToken, initialContext)
             } catch (_: Throwable) {
                 // Can't refresh cache at this time. Do we retry at a later time?
             }
