@@ -2,7 +2,7 @@ package dev.openfeature.contrib.providers.client.network
 
 import dev.openfeature.contrib.providers.client.AppliedFlag
 import dev.openfeature.contrib.providers.client.await
-import dev.openfeature.contrib.providers.client.serializers.InstantSerializer
+import dev.openfeature.contrib.providers.client.serializers.DateSerializer
 import dev.openfeature.contrib.providers.client.serializers.StructureSerializer
 import dev.openfeature.contrib.providers.client.serializers.UUIDSerializer
 import kotlinx.coroutines.CoroutineDispatcher
@@ -18,7 +18,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
-import java.time.Instant
+import java.util.Date
 
 internal interface ApplyFlagsInteractor : suspend (ApplyFlagsRequest) -> (Response)
 
@@ -52,7 +52,7 @@ internal class ApplyFlagsInteractorImpl(
 internal data class ApplyFlagsRequest(
     val flags: List<AppliedFlag>,
     @Contextual
-    val sendTime: Instant,
+    val sendTime: Date,
     val clientSecret: String,
     val resolveToken: String
 )
@@ -60,7 +60,7 @@ internal data class ApplyFlagsRequest(
 private val json = Json {
     serializersModule = SerializersModule {
         contextual(UUIDSerializer)
-        contextual(InstantSerializer)
+        contextual(DateSerializer)
         contextual(StructureSerializer)
     }
 }

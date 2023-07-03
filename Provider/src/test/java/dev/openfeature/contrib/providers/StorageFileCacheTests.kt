@@ -24,7 +24,7 @@ import java.nio.file.Files
 import java.time.Instant
 
 class StorageFileCacheTests {
-    private val instant = Instant.parse("2023-03-01T14:01:46Z")
+    private val instant = Instant.parse("2023-03-01T14:01:46.999Z")
     private val resolvedFlags = Flags(
         listOf(
             ResolvedFlag(
@@ -94,7 +94,7 @@ class StorageFileCacheTests {
         TestCase.assertEquals(false, evalBool.value)
         TestCase.assertEquals(7, evalInteger.value)
         TestCase.assertEquals(3.14, evalDouble.value)
-        TestCase.assertEquals("2023-03-01T14:01:46Z", evalDate.value)
+        TestCase.assertEquals("2023-03-01T14:01:46.999Z", evalDate.value)
         TestCase.assertEquals(
             Value.Structure(mapOf("innerString" to Value.String("innerValue"))),
             evalObject.value

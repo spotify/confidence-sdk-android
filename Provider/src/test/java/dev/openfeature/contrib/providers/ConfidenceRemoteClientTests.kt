@@ -3,6 +3,7 @@
 package dev.openfeature.contrib.providers
 
 import dev.openfeature.contrib.providers.client.AppliedFlag
+import dev.openfeature.contrib.providers.client.Clock
 import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient
 import dev.openfeature.contrib.providers.client.Flags
 import dev.openfeature.contrib.providers.client.ResolveFlags
@@ -26,7 +27,6 @@ import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import java.time.Clock
 import java.time.Instant
 import java.util.Date
 
@@ -46,7 +46,7 @@ internal class ConfidenceRemoteClientTests {
     @Test
     fun testDeserializeResolveResponse() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val instant = Instant.parse("2023-03-01T14:01:46Z")
+        val instant = Date.from(Instant.parse("2023-03-01T14:01:46.123Z"))
         val jsonPayload = "{\n" +
             " \"resolvedFlags\": [\n" +
             "  {\n" +
@@ -400,7 +400,7 @@ internal class ConfidenceRemoteClientTests {
     @Test
     fun testSerializeResolveRequest() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val instant = Instant.parse("2023-03-01T14:01:46Z")
+        val date = Date.from(Instant.parse("2023-03-01T14:01:46.123Z"))
         mockWebServer.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
                 val expectedSerializedRequest = "{\n" +
@@ -414,7 +414,7 @@ internal class ConfidenceRemoteClientTests {
                     "    \"mystring\": \"test\",\n" +
                     "    \"myinteger\": 7,\n" +
                     "    \"mydouble\": 3.14,\n" +
-                    "    \"mydate\": \"2023-03-01T14:01:46Z\",\n" +
+                    "    \"mydate\": \"2023-03-01T14:01:46.123Z\",\n" +
                     "    \"mynull\": null,\n" +
                     "    \"mylist\": [\n" +
                     "      true,\n" +
@@ -456,7 +456,7 @@ internal class ConfidenceRemoteClientTests {
                         "mystring" to Value.String("test"),
                         "myinteger" to Value.Integer(7),
                         "mydouble" to Value.Double(3.14),
-                        "mydate" to Value.Instant(Date.from(instant)),
+                        "mydate" to Value.Instant(date),
                         "mynull" to Value.Null,
                         "mylist" to Value.List(
                             listOf(
@@ -473,21 +473,21 @@ internal class ConfidenceRemoteClientTests {
     @Test
     fun testSerializeApplyRequest() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val applyDate = Date.from(Instant.parse("2023-03-01T14:01:46Z"))
-        val sendDate = Date.from(Instant.parse("2023-03-01T14:03:46Z"))
+        val applyDate = Date.from(Instant.parse("2023-03-01T14:01:46.123Z"))
+        val sendDate = Date.from(Instant.parse("2023-03-01T14:03:46.124Z"))
         val mockClock: Clock = mock()
 
-        whenever(mockClock.instant()).thenReturn(sendDate.toInstant())
+        whenever(mockClock.currentTime()).thenReturn(sendDate)
         mockWebServer.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
                 val expectedSerializedRequest = "{\n" +
                     "  \"flags\": [\n" +
                     "    {\n" +
                     "      \"flag\": \"flags/flag1\",\n" +
-                    "      \"applyTime\": \"2023-03-01T14:01:46Z\"\n" +
+                    "      \"applyTime\": \"2023-03-01T14:01:46.123Z\"\n" +
                     "    }\n" +
                     "  ],\n" +
-                    "  \"sendTime\": \"2023-03-01T14:03:46Z\",\n" +
+                    "  \"sendTime\": \"2023-03-01T14:03:46.124Z\",\n" +
                     "  \"clientSecret\": \"secret1\",\n" +
                     "  \"resolveToken\": \"token1\"\n" +
                     "}"
@@ -505,6 +505,6 @@ internal class ConfidenceRemoteClientTests {
             mockClock,
             dispatcher = testDispatcher
         )
-            .apply(listOf(AppliedFlag("flag1", applyDate.toInstant())), "token1")
+            .apply(listOf(AppliedFlag("flag1", applyDate)), "token1")
     }
 }

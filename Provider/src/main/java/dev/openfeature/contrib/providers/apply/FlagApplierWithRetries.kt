@@ -4,7 +4,7 @@ import android.content.Context
 import dev.openfeature.contrib.providers.EventProcessor
 import dev.openfeature.contrib.providers.client.AppliedFlag
 import dev.openfeature.contrib.providers.client.ConfidenceClient
-import dev.openfeature.contrib.providers.client.serializers.InstantSerializer
+import dev.openfeature.contrib.providers.client.serializers.DateSerializer
 import dev.openfeature.contrib.providers.client.serializers.UUIDSerializer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -19,7 +19,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import java.io.File
-import java.time.Instant
+import java.util.Date
 
 const val APPLY_FILE_NAME = "confidence_apply_cache.json"
 data class FlagApplierInput(
@@ -35,7 +35,7 @@ data class FlagApplierBatchProcessedInput(
 @Serializable
 data class ApplyInstance(
     @Contextual
-    val time: Instant,
+    val time: Date,
     val sent: Boolean
 )
 
@@ -99,7 +99,7 @@ class FlagApplierWithRetries(
         data: FlagsAppliedMap
     ) {
         data.putIfAbsent(resolveToken, hashMapOf())
-        data[resolveToken]?.putIfAbsent(flagName, ApplyInstance(Instant.now(), false))
+        data[resolveToken]?.putIfAbsent(flagName, ApplyInstance(Date(), false))
         writeToFile(data)
     }
 
@@ -156,6 +156,6 @@ class FlagApplierWithRetries(
 private val json = Json {
     serializersModule = SerializersModule {
         contextual(UUIDSerializer)
-        contextual(InstantSerializer)
+        contextual(DateSerializer)
     }
 }
