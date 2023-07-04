@@ -1,5 +1,6 @@
 package dev.openfeature.contrib.providers.client
 
+import android.annotation.SuppressLint
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
@@ -28,8 +29,11 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.lang.reflect.Type
+import java.text.SimpleDateFormat
 import java.time.Clock
 import java.time.Instant
+import java.util.Date
+import java.util.TimeZone
 
 class ConfidenceRemoteClient : ConfidenceClient {
     private val clientSecret: String
@@ -176,7 +180,7 @@ class ConfidenceRemoteClient : ConfidenceClient {
     private fun verifyAndConvert(key: String, value: Value, schemaStruct: SchemaType.SchemaStruct): Value {
         return when (schemaStruct.schema[key]) {
             is SchemaType.StringSchema -> when (value) {
-                is Value.Instant -> Value.String(value.instant.toString())
+                is Value.Instant -> Value.String(value.instant.toISO8601String())
                 is Value.String -> value
                 is Value.Null -> value
                 else -> { throw ParseError("Incompatible value \"$key\" for schema") }
@@ -224,6 +228,12 @@ class ConfidenceRemoteClient : ConfidenceClient {
         return MutableStructure(ctxAttributes)
     }
 }
+
+@SuppressLint("SimpleDateFormat")
+private val datetimeFormatter =
+    SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").apply { timeZone = TimeZone.getTimeZone("UTC") }
+
+private fun Date.toISO8601String(): String = datetimeFormatter.format(this)
 
 /*
  * Adapters
@@ -298,7 +308,9 @@ class StructureTypeAdapter : JsonDeserializer<Structure>, JsonSerializer<Structu
         if (value.isJsonPrimitive) {
             if (value.asJsonPrimitive.isString) {
                 return try {
-                    Value.Instant(Instant.parse(value.asString))
+                    val date = datetimeFormatter.parse(value.asString)
+                        ?: throw IllegalArgumentException("Cannot parse ${value.asString} to date.")
+                    Value.Instant(date)
                 } catch (e: Exception) {
                     Value.String(value.asString)
                 }
@@ -335,7 +347,12 @@ class StructureTypeAdapter : JsonDeserializer<Structure>, JsonSerializer<Structu
             when (val value = entry.value) {
                 is Value.String -> jsonObject.addProperty(entry.key, value.asString())
                 is Value.Boolean -> jsonObject.addProperty(entry.key, value.asBoolean())
-                is Value.Instant -> jsonObject.add(entry.key, Gson().toJsonTree(value.asInstant().toString()))
+                is Value.Instant -> jsonObject.add(
+                    entry.key,
+                    value.asInstant()?.toISO8601String()?.let {
+                        Gson().toJsonTree(it)
+                    } ?: JsonNull.INSTANCE
+                )
                 is Value.Double -> jsonObject.addProperty(entry.key, value.asDouble())
                 is Value.Integer -> jsonObject.addProperty(entry.key, value.asInteger())
                 is Value.List -> jsonObject.add(entry.key, convertArray(entry.value.asList()))
