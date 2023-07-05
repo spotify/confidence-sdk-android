@@ -14,10 +14,10 @@ import dev.openfeature.contrib.providers.apply.APPLY_FILE_NAME
 import dev.openfeature.contrib.providers.cache.InMemoryCache
 import dev.openfeature.contrib.providers.client.AppliedFlag
 import dev.openfeature.contrib.providers.client.ConfidenceClient
-import dev.openfeature.contrib.providers.client.ResolveFlagsResponse
+import dev.openfeature.contrib.providers.client.Flags
+import dev.openfeature.contrib.providers.client.ResolveFlags
 import dev.openfeature.contrib.providers.client.ResolveReason
 import dev.openfeature.contrib.providers.client.ResolvedFlag
-import dev.openfeature.contrib.providers.client.SchemaType
 import dev.openfeature.sdk.MutableContext
 import dev.openfeature.sdk.MutableStructure
 import dev.openfeature.sdk.Reason
@@ -67,27 +67,14 @@ internal class ConfidenceFeatureProviderTests {
         ),
         "mynull" to Value.Null
     )
-    private val resolvedFlags = listOf(
-        ResolvedFlag(
-            "fdema-kotlin-flag-1",
-            "flags/fdema-kotlin-flag-1/variants/variant-1",
-            MutableStructure(resolvedValueAsMap),
-            SchemaType.SchemaStruct(
-                mapOf(
-                    "mystring" to SchemaType.StringSchema,
-                    "myboolean" to SchemaType.BoolSchema,
-                    "myinteger" to SchemaType.IntSchema,
-                    "mydouble" to SchemaType.DoubleSchema,
-                    "mydate" to SchemaType.StringSchema,
-                    "mystruct" to SchemaType.SchemaStruct(
-                        mapOf(
-                            "innerString" to SchemaType.StringSchema
-                        )
-                    ),
-                    "mynull" to SchemaType.StringSchema
-                )
-            ),
-            ResolveReason.RESOLVE_REASON_MATCH
+    private val resolvedFlags = Flags(
+        listOf(
+            ResolvedFlag(
+                "fdema-kotlin-flag-1",
+                "flags/fdema-kotlin-flag-1/variants/variant-1",
+                MutableStructure(resolvedValueAsMap),
+                ResolveReason.RESOLVE_REASON_MATCH
+            )
         )
     )
 
@@ -104,7 +91,7 @@ internal class ConfidenceFeatureProviderTests {
             .client(mockClient)
             .dispatcher(testDispatcher)
             .build()
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("foo"))
         }
@@ -177,7 +164,7 @@ internal class ConfidenceFeatureProviderTests {
             .build()
         val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
 
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
         whenever(mockClient.apply(any(), any())).thenThrow(Error())
 
         val evaluationContext = MutableContext("foo")
@@ -303,7 +290,7 @@ internal class ConfidenceFeatureProviderTests {
         val evaluationContext1 = MutableContext("foo")
         val evaluationContext2 = MutableContext("bar")
 
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
         runBlocking {
             confidenceFeatureProvider.initialize(evaluationContext1)
         }
@@ -336,7 +323,7 @@ internal class ConfidenceFeatureProviderTests {
         assertNull(evalString1.errorMessage)
         assertNull(evalString1.errorCode)
 
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token2"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token2"))
         runBlocking {
             confidenceFeatureProvider.onContextSet(evaluationContext1, evaluationContext2)
         }
@@ -378,7 +365,7 @@ internal class ConfidenceFeatureProviderTests {
             .dispatcher(testDispatcher)
             .build()
 
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
         whenever(mockClient.apply(any(), any())).then {}
 
         val evaluationContext = MutableContext("foo")
@@ -431,7 +418,7 @@ internal class ConfidenceFeatureProviderTests {
             .build()
 
         whenever(mockClient.apply(any(), any())).then {}
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token2"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token2"))
 
         val evaluationContext = MutableContext("foo")
 
@@ -458,7 +445,7 @@ internal class ConfidenceFeatureProviderTests {
             .cache(InMemoryCache())
             .client(mockClient)
             .build()
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("foo"))
         }
@@ -479,10 +466,10 @@ internal class ConfidenceFeatureProviderTests {
             .client(mockClient)
             .build()
 
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
 
         // Simulate a case where the context in the cache is not synced with the evaluation's context
-        cache.refresh(resolvedFlags, "token2", MutableContext("user1"))
+        cache.refresh(resolvedFlags.list, "token2", MutableContext("user1"))
         val evalString = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default", MutableContext("user2"))
         val evalBool = confidenceFeatureProvider.getBooleanEvaluation("fdema-kotlin-flag-1.myboolean", true, MutableContext("user2"))
         val evalInteger = confidenceFeatureProvider.getIntegerEvaluation("fdema-kotlin-flag-1.myinteger", 1, MutableContext("user2"))
@@ -546,16 +533,17 @@ internal class ConfidenceFeatureProviderTests {
             .client(mockClient)
             .build()
 
-        val resolvedNonMatchingFlags = listOf(
-            ResolvedFlag(
-                "fdema-kotlin-flag-1",
-                "",
-                MutableStructure(mutableMapOf()),
-                SchemaType.SchemaStruct(mapOf()),
-                ResolveReason.RESOLVE_REASON_NO_TREATMENT_MATCH
+        val resolvedNonMatchingFlags = Flags(
+            listOf(
+                ResolvedFlag(
+                    "fdema-kotlin-flag-1",
+                    "",
+                    MutableStructure(mutableMapOf()),
+                    ResolveReason.RESOLVE_REASON_NO_TREATMENT_MATCH
+                )
             )
         )
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedNonMatchingFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedNonMatchingFlags, "token1"))
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("user1"))
         }
@@ -577,10 +565,10 @@ internal class ConfidenceFeatureProviderTests {
             .client(mockClient)
             .build()
 
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
         // Simulate a case where the context in the cache is not synced with the evaluation's context
         // This shouldn't have an effect in this test, given that not found values are priority over stale values
-        cache.refresh(resolvedFlags, "token2", MutableContext("user1"))
+        cache.refresh(resolvedFlags.list, "token2", MutableContext("user1"))
         val ex = assertThrows(FlagNotFoundError::class.java) {
             confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-2.mystring", "default", MutableContext("user2"))
         }
@@ -612,7 +600,7 @@ internal class ConfidenceFeatureProviderTests {
             .client(mockClient)
             .build()
 
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("user2"))
         }
@@ -633,7 +621,7 @@ internal class ConfidenceFeatureProviderTests {
             .client(mockClient)
             .build()
 
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("user2"))
         }

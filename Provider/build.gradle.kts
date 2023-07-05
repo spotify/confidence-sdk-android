@@ -12,7 +12,6 @@ object Versions {
     const val openFeatureSDK = "0.0.1-SNAPSHOT"
     const val okHttp = "4.10.0"
     const val kotlinxSerialization = "1.5.1"
-    const val gson = "2.10"
     const val coroutines = "1.7.1"
     const val junit = "4.13.2"
     const val kotlinMockito = "4.1.0"
@@ -64,7 +63,6 @@ dependencies {
     implementation(
         "org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}"
     )
-    implementation("com.google.code.gson:gson:${Versions.gson}")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:${Versions.desugaringVersion}")
     testImplementation("junit:junit:${Versions.junit}")

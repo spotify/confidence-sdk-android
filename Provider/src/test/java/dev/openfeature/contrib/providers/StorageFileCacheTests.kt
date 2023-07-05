@@ -3,10 +3,10 @@ package dev.openfeature.contrib.providers
 import android.content.Context
 import dev.openfeature.contrib.providers.cache.StorageFileCache
 import dev.openfeature.contrib.providers.client.ConfidenceClient
-import dev.openfeature.contrib.providers.client.ResolveFlagsResponse
+import dev.openfeature.contrib.providers.client.Flags
+import dev.openfeature.contrib.providers.client.ResolveFlags
 import dev.openfeature.contrib.providers.client.ResolveReason
 import dev.openfeature.contrib.providers.client.ResolvedFlag
-import dev.openfeature.contrib.providers.client.SchemaType
 import dev.openfeature.sdk.MutableContext
 import dev.openfeature.sdk.MutableStructure
 import dev.openfeature.sdk.Reason
@@ -25,41 +25,28 @@ import java.time.Instant
 
 class StorageFileCacheTests {
     private val instant = Instant.parse("2023-03-01T14:01:46Z")
-    private val resolvedFlags = listOf(
-        ResolvedFlag(
-            "fdema-kotlin-flag-1",
-            "flags/fdema-kotlin-flag-1/variants/variant-1",
-            MutableStructure(
-                mutableMapOf(
-                    "mystring" to Value.String("red"),
-                    "myboolean" to Value.Boolean(false),
-                    "myinteger" to Value.Integer(7),
-                    "mydouble" to Value.Double(3.14),
-                    "mydate" to Value.String(instant.toString()),
-                    "mystruct" to Value.Structure(
-                        mapOf(
-                            "innerString" to Value.String("innerValue")
-                        )
-                    ),
-                    "mynull" to Value.Null
-                )
-            ),
-            SchemaType.SchemaStruct(
-                mapOf(
-                    "mystring" to SchemaType.StringSchema,
-                    "myboolean" to SchemaType.BoolSchema,
-                    "myinteger" to SchemaType.IntSchema,
-                    "mydouble" to SchemaType.DoubleSchema,
-                    "mydate" to SchemaType.StringSchema,
-                    "mystruct" to SchemaType.SchemaStruct(
-                        mapOf(
-                            "innerString" to SchemaType.StringSchema
-                        )
-                    ),
-                    "mynull" to SchemaType.StringSchema
-                )
-            ),
-            ResolveReason.RESOLVE_REASON_MATCH
+    private val resolvedFlags = Flags(
+        listOf(
+            ResolvedFlag(
+                "fdema-kotlin-flag-1",
+                "flags/fdema-kotlin-flag-1/variants/variant-1",
+                MutableStructure(
+                    mutableMapOf(
+                        "mystring" to Value.String("red"),
+                        "myboolean" to Value.Boolean(false),
+                        "myinteger" to Value.Integer(7),
+                        "mydouble" to Value.Double(3.14),
+                        "mydate" to Value.String(instant.toString()),
+                        "mystruct" to Value.Structure(
+                            mapOf(
+                                "innerString" to Value.String("innerValue")
+                            )
+                        ),
+                        "mynull" to Value.Null
+                    )
+                ),
+                ResolveReason.RESOLVE_REASON_MATCH
+            )
         )
     )
     private val mockContext: Context = mock()
@@ -73,7 +60,7 @@ class StorageFileCacheTests {
     fun testOfflineScenarioLoadsStoredCache() = runTest {
         val mockClient: ConfidenceClient = mock()
         val cache1 = StorageFileCache(mockContext)
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlagsResponse(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
         val provider1 = ConfidenceFeatureProvider.Builder(mockContext, "")
             .client(mockClient)
             .cache(cache1)

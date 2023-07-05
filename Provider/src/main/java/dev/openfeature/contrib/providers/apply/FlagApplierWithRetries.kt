@@ -1,18 +1,23 @@
 package dev.openfeature.contrib.providers.apply
 
 import android.content.Context
-import com.google.gson.GsonBuilder
-import com.google.gson.reflect.TypeToken
 import dev.openfeature.contrib.providers.EventProcessor
 import dev.openfeature.contrib.providers.client.AppliedFlag
 import dev.openfeature.contrib.providers.client.ConfidenceClient
-import dev.openfeature.contrib.providers.client.InstantTypeAdapter
+import dev.openfeature.contrib.providers.client.serializers.InstantSerializer
+import dev.openfeature.contrib.providers.client.serializers.UUIDSerializer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.contextual
 import java.io.File
 import java.time.Instant
 
@@ -27,7 +32,9 @@ data class FlagApplierBatchProcessedInput(
     val flags: List<AppliedFlag>
 )
 
+@Serializable
 data class ApplyInstance(
+    @Contextual
     val time: Instant,
     val sent: Boolean
 )
@@ -41,10 +48,6 @@ class FlagApplierWithRetries(
     context: Context
 ) : FlagApplier {
     private val file: File = File(context.filesDir, APPLY_FILE_NAME)
-    private val gson = GsonBuilder()
-        .serializeNulls()
-        .registerTypeAdapter(Instant::class.java, InstantTypeAdapter())
-        .create()
 
     private val eventProcessor by lazy {
         EventProcessor<
@@ -121,14 +124,14 @@ class FlagApplierWithRetries(
     }
 
     private fun writeToFile(
-        data: FlagsAppliedMap
+        data: Map<String, MutableMap<String, ApplyInstance>>
     ) {
-        val fileData = gson.toJson(
-            // All apply events have been sent for this token, don't add this token to the file
-            data.filter { !it.value.values.all { applyInstance -> applyInstance.sent } }
-        )
-        // TODO Add a limit for the file size?
-        file.writeText(fileData)
+        // All apply events have been sent for this token, don't add this token to the file
+        val toStoreData = data
+            .filter {
+                !it.value.values.all { applyInstance -> applyInstance.sent }
+            }
+        file.writeText(json.encodeToString(toStoreData))
     }
 
     private suspend fun readFile(
@@ -137,9 +140,7 @@ class FlagApplierWithRetries(
         if (!file.exists()) return@coroutineScope
         val fileText: String = file.bufferedReader().use { it.readText() }
         if (fileText.isEmpty()) return@coroutineScope
-        val type = object : TypeToken<FlagsAppliedMap>() {}.type
-        val newData: FlagsAppliedMap = gson.fromJson(fileText, type)
-        // Append to `data` rather than overwrite it, in case `data` is not empty when the file is being read
+        val newData = json.decodeFromString<FlagsAppliedMap>(fileText)
         newData.entries.forEach { (resolveToken, eventsByFlagName) ->
             eventsByFlagName.entries.forEach { (flagName, applyInstance) ->
                 data.putIfAbsent(resolveToken, hashMapOf())
@@ -150,5 +151,11 @@ class FlagApplierWithRetries(
 
     companion object {
         private const val CHUNK_SIZE = 20
+    }
+}
+private val json = Json {
+    serializersModule = SerializersModule {
+        contextual(UUIDSerializer)
+        contextual(InstantSerializer)
     }
 }
