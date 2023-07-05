@@ -6,16 +6,13 @@ import dev.openfeature.sdk.EvaluationContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 const val FLAGS_FILE_NAME = "confidence_flags_cache.json"
 
-class StorageFileCache(context: Context) : InMemoryCache() {
+class StorageFileCache private constructor(context: Context) : InMemoryCache() {
     private val file: File = File(context.filesDir, FLAGS_FILE_NAME)
-
-    init {
-        // TODO Can reading be slow and block the ConfidenceFeatureProvider builder?
-        readFile()
-    }
 
     override fun refresh(
         resolvedFlags: List<ResolvedFlag>,
@@ -43,5 +40,13 @@ class StorageFileCache(context: Context) : InMemoryCache() {
         val fileText: String = file.bufferedReader().use { it.readText() }
         if (fileText.isEmpty()) return
         data = Json.decodeFromString(CacheData.serializer(), fileText)
+    }
+
+    companion object {
+        suspend fun create(context: Context): StorageFileCache = suspendCoroutine {
+            val storage = StorageFileCache(context)
+            storage.readFile()
+            it.resume(storage)
+        }
     }
 }

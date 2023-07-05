@@ -59,12 +59,14 @@ class StorageFileCacheTests {
     @Test
     fun testOfflineScenarioLoadsStoredCache() = runTest {
         val mockClient: ConfidenceClient = mock()
-        val cache1 = StorageFileCache(mockContext)
+        val cache1 = StorageFileCache.create(mockContext)
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
-        val provider1 = ConfidenceFeatureProvider.Builder(mockContext, "")
-            .client(mockClient)
-            .cache(cache1)
-            .build()
+        val provider1 = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            client = mockClient,
+            cache = cache1
+        )
         runBlocking {
             provider1.initialize(MutableContext(targetingKey = "user1"))
         }
@@ -72,11 +74,13 @@ class StorageFileCacheTests {
         // Simulate offline scenario
         whenever(mockClient.resolve(eq(listOf()), any())).thenThrow(Error())
         // Create new cache to force reading cache data from storage
-        val cache2 = StorageFileCache(mockContext)
-        val provider2 = ConfidenceFeatureProvider.Builder(mockContext, "")
-            .client(mockClient)
-            .cache(cache2)
-            .build()
+        val cache2 = StorageFileCache.create(mockContext)
+        val provider2 = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            client = mockClient,
+            cache = cache2
+        )
         val evalString = provider2.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default", MutableContext("user1"))
         val evalBool = provider2.getBooleanEvaluation("fdema-kotlin-flag-1.myboolean", true, MutableContext("user1"))
         val evalInteger = provider2.getIntegerEvaluation("fdema-kotlin-flag-1.myinteger", 1, MutableContext("user1"))
