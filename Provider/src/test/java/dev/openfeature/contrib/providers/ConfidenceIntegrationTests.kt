@@ -33,9 +33,7 @@ class ConfidenceIntegrationTests {
     fun testSimpleResolveInMemoryCache() {
         runBlocking {
             OpenFeatureAPI.setProvider(
-                ConfidenceFeatureProvider.Builder(mockContext, clientSecret)
-                    .cache(InMemoryCache())
-                    .build(),
+                ConfidenceFeatureProvider.create(mockContext, clientSecret, cache = InMemoryCache()),
                 MutableContext(
                     targetingKey = UUID.randomUUID().toString(),
                     attributes = mutableMapOf(
@@ -63,8 +61,7 @@ class ConfidenceIntegrationTests {
         assertEquals(0L, cacheFile.length())
         runBlocking {
             OpenFeatureAPI.setProvider(
-                ConfidenceFeatureProvider.Builder(mockContext, clientSecret)
-                    .build(),
+                ConfidenceFeatureProvider.create(mockContext, clientSecret),
                 MutableContext(
                     targetingKey = UUID.randomUUID().toString(),
                     attributes = mutableMapOf(

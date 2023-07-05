@@ -86,11 +86,13 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testMatching() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
-            .cache(InMemoryCache())
-            .client(mockClient)
-            .dispatcher(testDispatcher)
-            .build()
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            cache = InMemoryCache(),
+            client = mockClient,
+            dispatcher = testDispatcher
+        )
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("foo"))
@@ -157,11 +159,13 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testDelayedApply() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
-            .cache(InMemoryCache())
-            .client(mockClient)
-            .dispatcher(testDispatcher)
-            .build()
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            cache = InMemoryCache(),
+            client = mockClient,
+            dispatcher = testDispatcher
+        )
         val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
 
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
@@ -279,11 +283,13 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testApplyOnMultipleEvaluations() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
-            .cache(InMemoryCache())
-            .client(mockClient)
-            .dispatcher(testDispatcher)
-            .build()
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            cache = InMemoryCache(),
+            client = mockClient,
+            dispatcher = testDispatcher
+        )
         val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
         whenever(mockClient.apply(any(), any())).then {}
 
@@ -359,11 +365,13 @@ internal class ConfidenceFeatureProviderTests {
         )
 
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
-            .cache(InMemoryCache())
-            .client(mockClient)
-            .dispatcher(testDispatcher)
-            .build()
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            cache = InMemoryCache(),
+            client = mockClient,
+            dispatcher = testDispatcher
+        )
 
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
         whenever(mockClient.apply(any(), any())).then {}
@@ -411,11 +419,13 @@ internal class ConfidenceFeatureProviderTests {
         )
 
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
-            .cache(InMemoryCache())
-            .client(mockClient)
-            .dispatcher(testDispatcher)
-            .build()
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            cache = InMemoryCache(),
+            client = mockClient,
+            dispatcher = testDispatcher
+        )
 
         whenever(mockClient.apply(any(), any())).then {}
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token2"))
@@ -441,10 +451,12 @@ internal class ConfidenceFeatureProviderTests {
 
     @Test
     fun testMatchingRootObject() = runTest {
-        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
-            .cache(InMemoryCache())
-            .client(mockClient)
-            .build()
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            cache = InMemoryCache(),
+            client = mockClient
+        )
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("foo"))
@@ -461,10 +473,12 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testStale() = runTest {
         val cache = InMemoryCache()
-        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
-            .cache(cache)
-            .client(mockClient)
-            .build()
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            cache = cache,
+            client = mockClient
+        )
 
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
 
@@ -528,16 +542,18 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testNonMatching() = runTest {
         val cache = InMemoryCache()
-        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
-            .cache(cache)
-            .client(mockClient)
-            .build()
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            cache = cache,
+            client = mockClient
+        )
 
         val resolvedNonMatchingFlags = Flags(
             listOf(
                 ResolvedFlag(
-                    "fdema-kotlin-flag-1",
-                    "",
+                    flag = "fdema-kotlin-flag-1",
+                    variant = "",
                     MutableStructure(mutableMapOf()),
                     ResolveReason.RESOLVE_REASON_NO_TREATMENT_MATCH
                 )
@@ -560,10 +576,12 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testFlagNotFound() = runTest {
         val cache = InMemoryCache()
-        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
-            .cache(cache)
-            .client(mockClient)
-            .build()
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            cache = cache,
+            client = mockClient
+        )
 
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
         // Simulate a case where the context in the cache is not synced with the evaluation's context
@@ -578,11 +596,12 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testErrorInNetwork() = runTest {
         val cache = InMemoryCache()
-        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
-            .cache(cache)
-            .client(mockClient)
-            .build()
-
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            cache = cache,
+            client = mockClient
+        )
         whenever(mockClient.resolve(eq(listOf()), any())).thenThrow(Error())
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("user1"))
@@ -595,11 +614,12 @@ internal class ConfidenceFeatureProviderTests {
 
     @Test
     fun testValueNotFound() = runTest {
-        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
-            .cache(InMemoryCache())
-            .client(mockClient)
-            .build()
-
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            cache = InMemoryCache(),
+            client = mockClient
+        )
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("user2"))
@@ -616,11 +636,12 @@ internal class ConfidenceFeatureProviderTests {
 
     @Test
     fun testValueNotFoundLongPath() = runTest {
-        val confidenceFeatureProvider = ConfidenceFeatureProvider.Builder(mockContext, "")
-            .cache(InMemoryCache())
-            .client(mockClient)
-            .build()
-
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            cache = InMemoryCache(),
+            client = mockClient
+        )
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("user2"))

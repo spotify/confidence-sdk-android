@@ -32,66 +32,6 @@ class ConfidenceFeatureProvider private constructor(
     private val flagApplier: FlagApplier,
     private val dispatcher: CoroutineDispatcher
 ) : FeatureProvider {
-    data class Builder(
-        val context: Context,
-        val clientSecret: String
-    ) {
-        private var region: ConfidenceRegion? = null
-        private var hooks: List<Hook<*>>? = null
-        private var metadata: Metadata? = null
-        private var client: ConfidenceClient? = null
-        private var cache: ProviderCache? = null
-        private var dispatcher: CoroutineDispatcher = Dispatchers.IO
-        fun hooks(hooks: List<Hook<*>>) = apply { this.hooks = hooks }
-        fun metadata(metadata: Metadata) = apply { this.metadata = metadata }
-
-        /**
-         * Default is "EU". This value is ignored if an external client is set via this builder
-         */
-        fun region(region: ConfidenceRegion) = apply { this.region = region }
-
-        /**
-         * CoroutineDispatcher to use for file I/O and network traffic, if not set it will use
-         * Dispatcher.IO
-         */
-        fun dispatcher(dispatcher: CoroutineDispatcher) = apply {
-            this.dispatcher = dispatcher
-        }
-
-        /**
-         * Used for testing.
-         */
-        fun client(client: ConfidenceClient) = apply { this.client = client }
-
-        /**
-         * Used for testing.
-         */
-        fun cache(cache: ProviderCache) = apply { this.cache = cache }
-
-        fun build(): ConfidenceFeatureProvider {
-            val configuredRegion = region ?: ConfidenceRegion.EUROPE
-
-            val configuredClient = client ?: ConfidenceRemoteClient(
-                clientSecret = clientSecret,
-                region = configuredRegion,
-                dispatcher = dispatcher
-            )
-
-            return ConfidenceFeatureProvider(
-                hooks ?: listOf(),
-                metadata ?: ConfidenceMetadata(),
-                cache ?: StorageFileCache(context),
-                configuredClient,
-                FlagApplierWithRetries(
-                    configuredClient,
-                    dispatcher,
-                    context
-                ),
-                dispatcher
-            )
-        }
-    }
-
     override suspend fun initialize(initialContext: EvaluationContext?) {
         if (initialContext == null) return
         withContext(dispatcher) {
@@ -236,6 +176,40 @@ class ConfidenceFeatureProvider private constructor(
             }
         }
     }
+    companion object {
+        private class ConfidenceMetadata(override var name: String? = "confidence") : Metadata
 
-    class ConfidenceMetadata(override var name: String? = "confidence") : Metadata
+        @Suppress("LongParameterList")
+        suspend fun create(
+            context: Context,
+            clientSecret: String,
+            region: ConfidenceRegion = ConfidenceRegion.EUROPE,
+            hooks: List<Hook<*>> = listOf(),
+            client: ConfidenceClient? = null,
+            metadata: Metadata = ConfidenceMetadata(),
+            cache: ProviderCache? = null,
+            flagApplier: FlagApplier? = null,
+            dispatcher: CoroutineDispatcher = Dispatchers.IO
+        ): ConfidenceFeatureProvider {
+            val configuredClient = client ?: ConfidenceRemoteClient(
+                clientSecret = clientSecret,
+                region = region,
+                dispatcher = dispatcher
+            )
+            val flagApplierWithRetries = flagApplier ?: FlagApplierWithRetries(
+                client = configuredClient,
+                dispatcher = dispatcher,
+                context = context
+            )
+
+            return ConfidenceFeatureProvider(
+                hooks = hooks,
+                metadata = metadata,
+                cache = cache ?: StorageFileCache.create(context),
+                client = configuredClient,
+                flagApplier = flagApplierWithRetries,
+                dispatcher
+            )
+        }
+    }
 }
