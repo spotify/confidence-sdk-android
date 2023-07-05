@@ -15,6 +15,8 @@ import kotlinx.serialization.modules.contextual
 import okhttp3.Headers
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
+import okhttp3.Response
+import java.net.HttpURLConnection
 
 class ConfidenceRemoteClient : ConfidenceClient {
     private val clientSecret: String
@@ -93,7 +95,7 @@ class ConfidenceRemoteClient : ConfidenceClient {
     override suspend fun resolve(
         flags: List<String>,
         ctx: EvaluationContext
-    ): ResolveFlags {
+    ): ResolveResponse {
         val request = ResolveFlagsRequest(
             flags.map { "flags/$it" },
             ctx.toEvaluationContextStruct(),
@@ -102,15 +104,14 @@ class ConfidenceRemoteClient : ConfidenceClient {
         )
 
         val networkResponse = resolveInteractor(request)
-        val bodyString = networkResponse.body!!.string()
-
-        // building the json class responsible for serializing the object
-        val networkJson = Json {
-            serializersModule = SerializersModule {
-                contextual(FlagsSerializer)
-            }
+        // The backend right now will never return this status code
+        // we are also not sending the ETag to the backend.
+        // the code is added as part of the future work to support this feature.
+        return if (networkResponse.code == HttpURLConnection.HTTP_NOT_MODIFIED) {
+            ResolveResponse.NotModified
+        } else {
+            networkResponse.toResolveFlags()
         }
-        return networkJson.decodeFromString(bodyString)
     }
 
     override suspend fun apply(flags: List<AppliedFlag>, resolveToken: String) {
@@ -122,4 +123,21 @@ class ConfidenceRemoteClient : ConfidenceClient {
         )
         applyInteractor(request)
     }
+}
+
+private fun Response.toResolveFlags(): ResolveResponse {
+    val bodyString = body!!.string()
+
+    // building the json class responsible for serializing the object
+    val networkJson = Json {
+        serializersModule = SerializersModule {
+            contextual(FlagsSerializer)
+        }
+    }
+    return ResolveResponse.Resolved(networkJson.decodeFromString(bodyString))
+}
+
+sealed class ResolveResponse {
+    object NotModified : ResolveResponse()
+    data class Resolved(val flags: ResolveFlags) : ResolveResponse()
 }

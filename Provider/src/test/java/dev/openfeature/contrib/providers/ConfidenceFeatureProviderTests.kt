@@ -17,6 +17,7 @@ import dev.openfeature.contrib.providers.client.ConfidenceClient
 import dev.openfeature.contrib.providers.client.Flags
 import dev.openfeature.contrib.providers.client.ResolveFlags
 import dev.openfeature.contrib.providers.client.ResolveReason
+import dev.openfeature.contrib.providers.client.ResolveResponse
 import dev.openfeature.contrib.providers.client.ResolvedFlag
 import dev.openfeature.sdk.MutableContext
 import dev.openfeature.sdk.MutableStructure
@@ -42,6 +43,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -93,7 +95,7 @@ internal class ConfidenceFeatureProviderTests {
             client = mockClient,
             dispatcher = testDispatcher
         )
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveResponse.Resolved(ResolveFlags(resolvedFlags, "token1")))
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("foo"))
         }
@@ -168,7 +170,7 @@ internal class ConfidenceFeatureProviderTests {
         )
         val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
 
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveResponse.Resolved(ResolveFlags(resolvedFlags, "token1")))
         whenever(mockClient.apply(any(), any())).thenThrow(Error())
 
         val evaluationContext = MutableContext("foo")
@@ -296,7 +298,11 @@ internal class ConfidenceFeatureProviderTests {
         val evaluationContext1 = MutableContext("foo")
         val evaluationContext2 = MutableContext("bar")
 
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
+            ResolveResponse.Resolved(
+                ResolveFlags(resolvedFlags, "token1")
+            )
+        )
         runBlocking {
             confidenceFeatureProvider.initialize(evaluationContext1)
         }
@@ -329,7 +335,11 @@ internal class ConfidenceFeatureProviderTests {
         assertNull(evalString1.errorMessage)
         assertNull(evalString1.errorCode)
 
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token2"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
+            ResolveResponse.Resolved(
+                ResolveFlags(resolvedFlags, "token2")
+            )
+        )
         runBlocking {
             confidenceFeatureProvider.onContextSet(evaluationContext1, evaluationContext2)
         }
@@ -373,7 +383,11 @@ internal class ConfidenceFeatureProviderTests {
             dispatcher = testDispatcher
         )
 
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
+            ResolveResponse.Resolved(
+                ResolveFlags(resolvedFlags, "token1")
+            )
+        )
         whenever(mockClient.apply(any(), any())).then {}
 
         val evaluationContext = MutableContext("foo")
@@ -428,7 +442,11 @@ internal class ConfidenceFeatureProviderTests {
         )
 
         whenever(mockClient.apply(any(), any())).then {}
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token2"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
+            ResolveResponse.Resolved(
+                ResolveFlags(resolvedFlags, "token2")
+            )
+        )
 
         val evaluationContext = MutableContext("foo")
 
@@ -457,7 +475,11 @@ internal class ConfidenceFeatureProviderTests {
             cache = InMemoryCache(),
             client = mockClient
         )
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
+            ResolveResponse.Resolved(
+                ResolveFlags(resolvedFlags, "token1")
+            )
+        )
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("foo"))
         }
@@ -480,7 +502,11 @@ internal class ConfidenceFeatureProviderTests {
             client = mockClient
         )
 
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
+            ResolveResponse.Resolved(
+                ResolveFlags(resolvedFlags, "token1")
+            )
+        )
 
         // Simulate a case where the context in the cache is not synced with the evaluation's context
         cache.refresh(resolvedFlags.list, "token2", MutableContext("user1"))
@@ -559,7 +585,11 @@ internal class ConfidenceFeatureProviderTests {
                 )
             )
         )
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedNonMatchingFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
+            ResolveResponse.Resolved(
+                ResolveFlags(resolvedNonMatchingFlags, "token1")
+            )
+        )
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("user1"))
         }
@@ -583,7 +613,11 @@ internal class ConfidenceFeatureProviderTests {
             client = mockClient
         )
 
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
+            ResolveResponse.Resolved(
+                ResolveFlags(resolvedFlags, "token1")
+            )
+        )
         // Simulate a case where the context in the cache is not synced with the evaluation's context
         // This shouldn't have an effect in this test, given that not found values are priority over stale values
         cache.refresh(resolvedFlags.list, "token2", MutableContext("user1"))
@@ -613,6 +647,22 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
+    fun whenResolveIsNotModifiedDoNotUpdateCache() = runTest {
+        val cache = mock<InMemoryCache>()
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            cache = cache,
+            client = mockClient
+        )
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveResponse.NotModified)
+        runBlocking {
+            confidenceFeatureProvider.initialize(MutableContext("user1"))
+        }
+        verify(cache, never()).refresh(any(), any(), any())
+    }
+
+    @Test
     fun testValueNotFound() = runTest {
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
@@ -620,7 +670,11 @@ internal class ConfidenceFeatureProviderTests {
             cache = InMemoryCache(),
             client = mockClient
         )
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
+            ResolveResponse.Resolved(
+                ResolveFlags(resolvedFlags, "token1")
+            )
+        )
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("user2"))
         }
@@ -642,7 +696,7 @@ internal class ConfidenceFeatureProviderTests {
             cache = InMemoryCache(),
             client = mockClient
         )
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveResponse.Resolved(ResolveFlags(resolvedFlags, "token1")))
         runBlocking {
             confidenceFeatureProvider.initialize(MutableContext("user2"))
         }

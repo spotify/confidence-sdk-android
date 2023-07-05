@@ -10,6 +10,7 @@ import dev.openfeature.contrib.providers.client.ConfidenceClient
 import dev.openfeature.contrib.providers.client.ConfidenceRegion
 import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient
 import dev.openfeature.contrib.providers.client.ResolveReason
+import dev.openfeature.contrib.providers.client.ResolveResponse
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FeatureProvider
 import dev.openfeature.sdk.Hook
@@ -36,8 +37,11 @@ class ConfidenceFeatureProvider private constructor(
         if (initialContext == null) return
         withContext(dispatcher) {
             try {
-                val (resolvedFlags, resolveToken) = client.resolve(listOf(), initialContext)
-                cache.refresh(resolvedFlags.list, resolveToken, initialContext)
+                val resolveResponse = client.resolve(listOf(), initialContext)
+                if (resolveResponse is ResolveResponse.Resolved) {
+                    val (flags, resolveToken) = resolveResponse.flags
+                    cache.refresh(flags.list, resolveToken, initialContext)
+                }
             } catch (_: Throwable) {
                 // Can't refresh cache at this time. Do we retry at a later time?
             }
@@ -102,29 +106,10 @@ class ConfidenceFeatureProvider private constructor(
         val evaluationContext = context ?: throw InvalidContextError()
         return when (val resolve: CacheResolveResult = cache.resolve(parsedKey.flagName, evaluationContext)) {
             is CacheResolveResult.Found -> {
-                val resolvedFlag = resolve.entry
-                when (resolvedFlag.resolveReason) {
-                    ResolveReason.RESOLVE_REASON_MATCH -> {
-                        val resolvedValue: Value = findValueFromValuePath(resolvedFlag.value, parsedKey.valuePath)
-                            ?: throw ParseError(
-                                "Unable to parse flag value: ${parsedKey.valuePath.joinToString(separator = "/")}"
-                            )
-                        val value = getTyped<T>(resolvedValue) ?: defaultValue
-                        flagApplier.apply(parsedKey.flagName, resolvedFlag.resolveToken)
-                        ProviderEvaluation(
-                            value = value,
-                            variant = resolvedFlag.variant,
-                            reason = Reason.TARGETING_MATCH.toString()
-                        )
-                    }
-                    else -> {
-                        flagApplier.apply(parsedKey.flagName, resolvedFlag.resolveToken)
-                        ProviderEvaluation(
-                            value = defaultValue,
-                            reason = Reason.DEFAULT.toString()
-                        )
-                    }
-                }
+                resolve.entry.toProviderEvaluation(
+                    parsedKey,
+                    defaultValue
+                )
             }
             CacheResolveResult.Stale -> ProviderEvaluation(
                 value = defaultValue,
@@ -139,7 +124,7 @@ class ConfidenceFeatureProvider private constructor(
         return when (v) {
             is Value.Boolean -> v.boolean as T
             is Value.Double -> v.double as T
-            is Value.Instant -> v.instant.toString() as T
+            is Value.Date -> v.date as T
             is Value.Integer -> v.integer as T
             is Value.List -> v as T
             is Value.String -> v.string as T
@@ -150,15 +135,13 @@ class ConfidenceFeatureProvider private constructor(
 
     private fun findValueFromValuePath(value: Value.Structure, valuePath: List<String>): Value? {
         if (valuePath.isEmpty()) return value
-        return when (val currValue = value.structure[valuePath[0]]) {
-            is Value.Structure -> findValueFromValuePath(currValue, valuePath.subList(1, valuePath.count()))
-            else -> {
-                if (valuePath.count() == 1) {
-                    return currValue
-                } else {
-                    return null
-                }
+        val currValue = value.structure[valuePath[0]]
+        return when {
+            currValue is Value.Structure -> {
+                findValueFromValuePath(currValue, valuePath.subList(1, valuePath.count()))
             }
+            valuePath.count() == 1 -> currValue
+            else -> null
         }
     }
 
@@ -209,6 +192,32 @@ class ConfidenceFeatureProvider private constructor(
                 client = configuredClient,
                 flagApplier = flagApplierWithRetries,
                 dispatcher
+            )
+        }
+    }
+
+    private fun <T> ProviderCache.CacheResolveEntry.toProviderEvaluation(
+        parsedKey: FlagKey,
+        defaultValue: T
+    ): ProviderEvaluation<T> = when (resolveReason) {
+        ResolveReason.RESOLVE_REASON_MATCH -> {
+            val resolvedValue: Value = findValueFromValuePath(value, parsedKey.valuePath)
+                ?: throw ParseError(
+                    "Unable to parse flag value: ${parsedKey.valuePath.joinToString(separator = "/")}"
+                )
+            val value = getTyped<T>(resolvedValue) ?: defaultValue
+            flagApplier.apply(parsedKey.flagName, resolveToken)
+            ProviderEvaluation(
+                value = value,
+                variant = variant,
+                reason = Reason.TARGETING_MATCH.toString()
+            )
+        }
+        else -> {
+            flagApplier.apply(parsedKey.flagName, resolveToken)
+            ProviderEvaluation(
+                value = defaultValue,
+                reason = Reason.DEFAULT.toString()
             )
         }
     }

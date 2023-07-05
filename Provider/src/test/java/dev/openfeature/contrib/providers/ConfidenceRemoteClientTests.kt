@@ -8,6 +8,7 @@ import dev.openfeature.contrib.providers.client.ConfidenceRemoteClient
 import dev.openfeature.contrib.providers.client.Flags
 import dev.openfeature.contrib.providers.client.ResolveFlags
 import dev.openfeature.contrib.providers.client.ResolveReason
+import dev.openfeature.contrib.providers.client.ResolveResponse
 import dev.openfeature.contrib.providers.client.ResolvedFlag
 import dev.openfeature.sdk.MutableContext
 import dev.openfeature.sdk.MutableStructure
@@ -138,7 +139,7 @@ internal class ConfidenceRemoteClientTests {
             expectedFlags,
             "token1"
         )
-        assertEquals(expectedParsed, parsedResponse)
+        assertEquals(expectedParsed, (parsedResponse as ResolveResponse.Resolved).flags)
     }
 
     @Test
@@ -180,7 +181,7 @@ internal class ConfidenceRemoteClientTests {
             ),
             "token1"
         )
-        assertEquals(expectedParsed, parsedResponse)
+        assertEquals(expectedParsed, (parsedResponse as ResolveResponse.Resolved).flags)
     }
 
     @Test
@@ -235,7 +236,7 @@ internal class ConfidenceRemoteClientTests {
             ),
             "token1"
         )
-        assertEquals(expectedParsed, parsedResponse)
+        assertEquals(expectedParsed, (parsedResponse as ResolveResponse.Resolved).flags)
     }
 
     @Test
@@ -456,7 +457,7 @@ internal class ConfidenceRemoteClientTests {
                         "mystring" to Value.String("test"),
                         "myinteger" to Value.Integer(7),
                         "mydouble" to Value.Double(3.14),
-                        "mydate" to Value.Instant(date),
+                        "mydate" to Value.Date(date),
                         "mynull" to Value.Null,
                         "mylist" to Value.List(
                             listOf(
