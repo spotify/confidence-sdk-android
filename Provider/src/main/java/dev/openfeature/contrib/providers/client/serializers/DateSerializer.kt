@@ -1,7 +1,6 @@
 package dev.openfeature.contrib.providers.client.serializers
 
 import android.annotation.SuppressLint
-import dev.openfeature.sdk.Value
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
@@ -24,20 +23,6 @@ internal object DateSerializer : KSerializer<Date> {
         ?: throw IllegalArgumentException(
             "Unable to parse ${decoder.decodeString()} as Date with pattern ${simpleDateFormatter.toPattern()}"
         )
-}
-
-internal object InstantSerializer : KSerializer<Value.Instant> {
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("Value.Instant", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: Value.Instant) =
-        encoder.encodeString(value.asInstant()?.let { simpleDateFormatter.format(it) } ?: "")
-
-    override fun deserialize(decoder: Decoder): Value.Instant = simpleDateFormatter.parse(decoder.decodeString())?.let {
-        Value.Instant(it)
-    } ?: throw IllegalArgumentException(
-        "Unable to parse ${decoder.decodeString()} as Date with pattern ${simpleDateFormatter.toPattern()}"
-    )
 }
 
 @SuppressLint("SimpleDateFormat")
