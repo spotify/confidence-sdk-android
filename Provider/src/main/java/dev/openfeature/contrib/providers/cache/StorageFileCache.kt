@@ -6,7 +6,6 @@ import dev.openfeature.sdk.EvaluationContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
-<<<<<<< HEAD
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -20,19 +19,6 @@ class StorageFileCache private constructor(context: Context) : InMemoryCache() {
         resolveToken: String,
         evaluationContext: EvaluationContext
     ) {
-=======
-
-const val CACHE_FILE_NAME = "confidence_cache.json"
-
-class StorageFileCache(context: Context) : InMemoryCache() {
-    private val file: File = File(context.filesDir, CACHE_FILE_NAME)
-
-    init {
-        readFile()
-    }
-
-    override fun refresh(resolvedFlags: List<ResolvedFlag>, resolveToken: String, evaluationContext: EvaluationContext) {
->>>>>>> 43375cb (Transfer codebase)
         super.refresh(resolvedFlags, resolveToken, evaluationContext)
         // TODO Should this happen before in-memory cache is changed?
         writeToFile()
@@ -55,7 +41,6 @@ class StorageFileCache(context: Context) : InMemoryCache() {
         if (fileText.isEmpty()) return
         data = Json.decodeFromString(CacheData.serializer(), fileText)
     }
-<<<<<<< HEAD
 
     companion object {
         suspend fun create(context: Context): StorageFileCache = suspendCoroutine {
@@ -64,6 +49,4 @@ class StorageFileCache(context: Context) : InMemoryCache() {
             it.resume(storage)
         }
     }
-=======
->>>>>>> 43375cb (Transfer codebase)
 }
