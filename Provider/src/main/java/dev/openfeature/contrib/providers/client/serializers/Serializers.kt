@@ -65,9 +65,9 @@ private object StructureValueSerializer : KSerializer<Value> {
             is Value.String -> encoder.encodeString(value.string)
             is Value.Boolean -> encoder.encodeBoolean(value.boolean)
             is Value.Double -> encoder.encodeDouble(value.double)
-            is Value.Instant -> encoder.encodeSerializableValue(
+            is Value.Date -> encoder.encodeSerializableValue(
                 DateSerializer,
-                value.instant
+                value.date
             )
 
             is Value.Integer -> encoder.encodeInt(value.integer)

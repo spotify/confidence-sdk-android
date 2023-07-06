@@ -6,6 +6,7 @@ import dev.openfeature.contrib.providers.client.ConfidenceClient
 import dev.openfeature.contrib.providers.client.Flags
 import dev.openfeature.contrib.providers.client.ResolveFlags
 import dev.openfeature.contrib.providers.client.ResolveReason
+import dev.openfeature.contrib.providers.client.ResolveResponse
 import dev.openfeature.contrib.providers.client.ResolvedFlag
 import dev.openfeature.sdk.MutableContext
 import dev.openfeature.sdk.MutableStructure
@@ -60,7 +61,7 @@ class StorageFileCacheTests {
     fun testOfflineScenarioLoadsStoredCache() = runTest {
         val mockClient: ConfidenceClient = mock()
         val cache1 = StorageFileCache.create(mockContext)
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveFlags(resolvedFlags, "token1"))
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveResponse.Resolved(ResolveFlags(resolvedFlags, "token1")))
         val provider1 = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
