@@ -12,17 +12,6 @@ jobs:
   Tests:
     runs-on: ubuntu-latest
     steps:
-      # Fetch and publish the OpenFeature SDK locally, using remote "main" branch
-      # This should be removed once the SDK artifacts are openly deployed
-      - name: webfactory/ssh-agent
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SDK_REPO_PRIVATE_KEY }}
-      - name: Clone OpenFeature SDK dependency
-        run: git clone git@github.com:spotify/openfeature-kotlin-sdk.git
-      - name: Publish OpenFeature SDK locally
-        run: ./openfeature-kotlin-sdk/gradlew publishToMavenLocal -p openfeature-kotlin-sdk
-
       - name: Checkout
         uses: actions/checkout@v3
       - name: Run checks
