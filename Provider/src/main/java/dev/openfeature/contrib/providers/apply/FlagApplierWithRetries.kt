@@ -4,8 +4,8 @@ import android.content.Context
 import dev.openfeature.contrib.providers.EventProcessor
 import dev.openfeature.contrib.providers.client.AppliedFlag
 import dev.openfeature.contrib.providers.client.ConfidenceClient
-import dev.openfeature.contrib.providers.client.serializers.DateSerializer
 import dev.openfeature.contrib.providers.client.serializers.UUIDSerializer
+import dev.openfeature.sdk.DateSerializer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope

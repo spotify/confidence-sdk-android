@@ -2,9 +2,9 @@ package dev.openfeature.contrib.providers.client.network
 
 import dev.openfeature.contrib.providers.client.ResolveFlagsRequest
 import dev.openfeature.contrib.providers.client.await
-import dev.openfeature.contrib.providers.client.serializers.DateSerializer
 import dev.openfeature.contrib.providers.client.serializers.StructureSerializer
 import dev.openfeature.contrib.providers.client.serializers.UUIDSerializer
+import dev.openfeature.sdk.DateSerializer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString

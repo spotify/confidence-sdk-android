@@ -456,7 +456,7 @@ internal class ConfidenceRemoteClientTests {
                         "mystring" to Value.String("test"),
                         "myinteger" to Value.Integer(7),
                         "mydouble" to Value.Double(3.14),
-                        "mydate" to Value.Instant(date),
+                        "mydate" to Value.Date(date),
                         "mynull" to Value.Null,
                         "mylist" to Value.List(
                             listOf(

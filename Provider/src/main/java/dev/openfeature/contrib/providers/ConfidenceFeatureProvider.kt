@@ -139,7 +139,7 @@ class ConfidenceFeatureProvider private constructor(
         return when (v) {
             is Value.Boolean -> v.boolean as T
             is Value.Double -> v.double as T
-            is Value.Instant -> v.instant.toString() as T
+            is Value.Date -> v.date as T
             is Value.Integer -> v.integer as T
             is Value.List -> v as T
             is Value.String -> v.string as T
