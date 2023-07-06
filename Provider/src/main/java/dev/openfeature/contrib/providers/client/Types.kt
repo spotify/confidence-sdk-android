@@ -4,13 +4,13 @@ import dev.openfeature.sdk.MutableStructure
 import dev.openfeature.sdk.Structure
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
-import java.time.Instant
+import java.util.Date
 
 @Serializable
 data class AppliedFlag(
     val flag: String,
     @Contextual
-    val applyTime: Instant
+    val applyTime: Date
 )
 
 @Serializable

@@ -15,7 +15,6 @@ import kotlinx.serialization.modules.contextual
 import okhttp3.Headers
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
-import java.time.Clock
 
 class ConfidenceRemoteClient : ConfidenceClient {
     private val clientSecret: String
@@ -44,7 +43,7 @@ class ConfidenceRemoteClient : ConfidenceClient {
             ConfidenceRegion.EUROPE -> "https://resolver.eu.confidence.dev"
             ConfidenceRegion.USA -> "https://resolver.us.confidence.dev"
         }
-        this.clock = Clock.systemUTC()
+        this.clock = Clock.CalendarBacked.systemUTC()
         this.dispatcher = dispatcher
 
         this.resolveInteractor = ResolveFlagsInteractorImpl(
@@ -63,7 +62,7 @@ class ConfidenceRemoteClient : ConfidenceClient {
     internal constructor(
         clientSecret: String = "",
         baseUrl: HttpUrl,
-        clock: Clock = Clock.systemUTC(),
+        clock: Clock = Clock.CalendarBacked.systemUTC(),
         dispatcher: CoroutineDispatcher = Dispatchers.IO
     ) {
         this.clientSecret = clientSecret
@@ -117,7 +116,7 @@ class ConfidenceRemoteClient : ConfidenceClient {
     override suspend fun apply(flags: List<AppliedFlag>, resolveToken: String) {
         val request = ApplyFlagsRequest(
             flags.map { AppliedFlag("flags/${it.flag}", it.applyTime) },
-            clock.instant(),
+            clock.currentTime(),
             clientSecret,
             resolveToken
         )

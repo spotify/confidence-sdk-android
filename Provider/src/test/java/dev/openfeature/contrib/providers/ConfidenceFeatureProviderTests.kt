@@ -53,7 +53,7 @@ import java.time.Instant
 internal class ConfidenceFeatureProviderTests {
     private val mockClient: ConfidenceClient = mock()
     private val mockContext: Context = mock()
-    private val instant = Instant.parse("2023-03-01T14:01:46Z")
+    private val instant = Instant.parse("2023-03-01T14:01:46.645Z")
     private val resolvedValueAsMap = mutableMapOf(
         "mystring" to Value.String("red"),
         "myboolean" to Value.Boolean(false),
@@ -114,7 +114,7 @@ internal class ConfidenceFeatureProviderTests {
         assertEquals(false, evalBool.value)
         assertEquals(7, evalInteger.value)
         assertEquals(3.14, evalDouble.value)
-        assertEquals("2023-03-01T14:01:46Z", evalDate.value)
+        assertEquals("2023-03-01T14:01:46.645Z", evalDate.value)
         assertEquals(Value.Structure(mapOf("innerString" to Value.String("innerValue"))), evalObject.value)
         assertEquals("innerValue", evalNested.value)
         assertEquals("error", evalNull.value)
@@ -238,7 +238,7 @@ internal class ConfidenceFeatureProviderTests {
         assertEquals(false, evalBool.value)
         assertEquals(7, evalInteger.value)
         assertEquals(3.14, evalDouble.value)
-        assertEquals("2023-03-01T14:01:46Z", evalDate.value)
+        assertEquals("2023-03-01T14:01:46.645Z", evalDate.value)
         assertEquals(Value.Structure(mapOf("innerString" to Value.String("innerValue"))), evalObject.value)
         assertEquals("innerValue", evalNested.value)
         assertEquals("error", evalNull.value)
@@ -395,23 +395,23 @@ internal class ConfidenceFeatureProviderTests {
             "{\n" +
                 "  \"token1\": {\n" +
                 "    \"fdema-kotlin-flag-0\": {\n" +
-                "      \"time\": \"2023-06-26T11:55:33.184774Z\",\n" +
+                "      \"time\": \"2023-06-26T11:55:33.443Z\",\n" +
                 "      \"sent\": true\n" +
                 "    }\n" +
                 "  },\n" +
                 "  \"token2\": {\n" +
                 "    \"fdema-kotlin-flag-2\": {\n" +
-                "      \"time\": \"2023-06-26T11:55:33.184774Z\",\n" +
+                "      \"time\": \"2023-06-26T11:55:33.444Z\",\n" +
                 "      \"sent\": true\n" +
                 "    },\n" +
                 "    \"fdema-kotlin-flag-3\": {\n" +
-                "      \"time\": \"2023-06-26T11:55:33.184774Z\",\n" +
+                "      \"time\": \"2023-06-26T11:55:33.445Z\",\n" +
                 "      \"sent\": false\n" +
                 "    }\n" +
                 "  },\n" +
                 "  \"token3\": {\n" +
                 "    \"fdema-kotlin-flag-4\": {\n" +
-                "      \"time\": \"2023-06-26T11:55:33.184774Z\",\n" +
+                "      \"time\": \"2023-06-26T11:55:33.446Z\",\n" +
                 "      \"sent\": false\n" +
                 "    }\n" +
                 "  }\n" +

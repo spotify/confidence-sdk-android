@@ -1,5 +1,4 @@
 
-
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
@@ -17,7 +16,6 @@ object Versions {
     const val kotlinMockito = "4.1.0"
     const val mockWebServer = "4.9.1"
     const val providerVersion = "0.0.1-SNAPSHOT"
-    const val desugaringVersion = "2.0.3"
 }
 
 android {
@@ -64,7 +62,6 @@ dependencies {
         "org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}"
     )
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:${Versions.desugaringVersion}")
     testImplementation("junit:junit:${Versions.junit}")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.coroutines}")
     testImplementation("org.mockito.kotlin:mockito-kotlin:${Versions.kotlinMockito}")

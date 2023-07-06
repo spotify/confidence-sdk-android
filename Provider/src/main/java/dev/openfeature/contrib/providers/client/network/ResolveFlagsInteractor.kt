@@ -2,7 +2,7 @@ package dev.openfeature.contrib.providers.client.network
 
 import dev.openfeature.contrib.providers.client.ResolveFlagsRequest
 import dev.openfeature.contrib.providers.client.await
-import dev.openfeature.contrib.providers.client.serializers.InstantSerializer
+import dev.openfeature.contrib.providers.client.serializers.DateSerializer
 import dev.openfeature.contrib.providers.client.serializers.StructureSerializer
 import dev.openfeature.contrib.providers.client.serializers.UUIDSerializer
 import kotlinx.coroutines.CoroutineDispatcher
@@ -49,7 +49,7 @@ internal class ResolveFlagsInteractorImpl(
 private val json = Json {
     serializersModule = SerializersModule {
         contextual(UUIDSerializer)
-        contextual(InstantSerializer)
+        contextual(DateSerializer)
         contextual(StructureSerializer)
     }
 }
