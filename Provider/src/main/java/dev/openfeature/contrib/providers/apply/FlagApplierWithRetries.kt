@@ -22,6 +22,7 @@ import java.io.File
 import java.util.Date
 
 const val APPLY_FILE_NAME = "confidence_apply_cache.json"
+
 data class FlagApplierInput(
     val resolveToken: String,
     val flagName: String
@@ -68,8 +69,10 @@ class FlagApplierWithRetries(
                 )
             },
             processBatchAction = { event, mutableData ->
-                event.flags.forEach {
-                    mutableData[event.resolveToken]?.computeIfPresent(it.flag) { _, v -> v.copy(sent = true) }
+                event.flags.forEach { appliedFlag ->
+                    mutableData[event.resolveToken]?.let { map ->
+                        computeIfPresent(map, appliedFlag.flag) { _, v -> v.copy(sent = true) }
+                    }
                 }
                 writeToFile(mutableData)
             },
@@ -98,8 +101,8 @@ class FlagApplierWithRetries(
         resolveToken: String,
         data: FlagsAppliedMap
     ) {
-        data.putIfAbsent(resolveToken, hashMapOf())
-        data[resolveToken]?.putIfAbsent(flagName, ApplyInstance(Date(), false))
+        putIfAbsent(data, resolveToken, hashMapOf())
+        putIfAbsent(data[resolveToken], flagName, ApplyInstance(Date(), false))
         writeToFile(data)
     }
 
@@ -143,8 +146,10 @@ class FlagApplierWithRetries(
         val newData = json.decodeFromString<FlagsAppliedMap>(fileText)
         newData.entries.forEach { (resolveToken, eventsByFlagName) ->
             eventsByFlagName.entries.forEach { (flagName, applyInstance) ->
-                data.putIfAbsent(resolveToken, hashMapOf())
-                data[resolveToken]?.putIfAbsent(flagName, applyInstance)
+                putIfAbsent(data, resolveToken, hashMapOf())
+                data[resolveToken]?.let { map ->
+                    putIfAbsent(map, flagName, applyInstance)
+                }
             }
         }
     }
@@ -153,6 +158,44 @@ class FlagApplierWithRetries(
         private const val CHUNK_SIZE = 20
     }
 }
+
+private fun computeIfPresent(
+    map: MutableMap<String, ApplyInstance>,
+    key: String,
+    remappingFunction: (key: String, value: ApplyInstance) -> ApplyInstance?
+): ApplyInstance? {
+    map[key]?.let { oldValue ->
+        val newValue = remappingFunction(key, oldValue)
+        if (newValue != null) {
+            map[key] = newValue
+            return newValue
+        } else {
+            map.remove(key)
+            return null
+        }
+    }
+    return null
+}
+
+/**
+ * Method to replicate Map.putIfAbsent() that requires later java version
+ */
+private fun putIfAbsent(map: FlagsAppliedMap, key: String, value: MutableMap<String, ApplyInstance>) {
+    if (!map.containsKey(key)) {
+        map[key] = value
+    }
+}
+
+/**
+ * Method to replicate Map.putIfAbsent() that requires later java version
+ */
+private fun putIfAbsent(map: MutableMap<String, ApplyInstance>?, key: String, value: ApplyInstance) {
+    if (map == null) return
+    if (!map.containsKey(key)) {
+        map[key] = value
+    }
+}
+
 private val json = Json {
     serializersModule = SerializersModule {
         contextual(UUIDSerializer)
