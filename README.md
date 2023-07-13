@@ -1,14 +1,20 @@
 # OpenFeature Kotlin Confidence Provider
-
 Kotlin implementation of the Confidence feature provider, to be used in conjunction with the OpenFeature SDK.
 
 ## Usage
 
 ### Adding the package dependency
-
+[![](https://jitpack.io/v/spotify/confidence-openfeature-provider-kotlin.svg)](https://jitpack.io/#spotify/confidence-openfeature-provider-kotlin)
 Add the following dependency to your gradle file:
 ```
-implementation("dev.openfeature.contrib.providers:confidence:<LATEST>")
+:openfeature-kotlin-sdk:release-pipeline-SNAPSHOT
+implementation("com.github.spotify:confidence-openfeature-provider-kotlin:<VERSION>")
+for the latest version:
+implementation("com.github.spotify:confidence-openfeature-provider-kotlin")
+for using any branch and commit:
+implementation("com.github.spotify:confidence-openfeature-provider-kotlin:[BRANCH]-[SNAPSHOT/Version]")
+for using specific commit:
+implementation("com.github.spotify:confidence-openfeature-provider-kotlin:[COMMIT SHA]")
 ```
 
 Where `<LATEST>` is the most recent version of this SDK. Released versions can be found under "Releases" within this repository.
