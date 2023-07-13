@@ -23,6 +23,8 @@ for using specific commit:
 implementation("com.github.spotify:confidence-openfeature-provider-kotlin:[COMMIT SHA]")
 ```
 
+The Android project must include `maven("https://jitpack.io")` in `settings.gradle` in the repositories block.
+
 Where `<LATEST>` is the most recent version of this SDK. Released versions can be found under "Releases" within this repository.
 
 
