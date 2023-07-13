@@ -1,10 +1,11 @@
+[![](https://jitpack.io/v/spotify/confidence-openfeature-provider-kotlin.svg)](https://jitpack.io/#spotify/confidence-openfeature-provider-kotlin)
+
 # OpenFeature Kotlin Confidence Provider
 Kotlin implementation of the Confidence feature provider, to be used in conjunction with the OpenFeature SDK.
 
 ## Usage
 
 ### Adding the package dependency
-[![](https://jitpack.io/v/spotify/confidence-openfeature-provider-kotlin.svg)](https://jitpack.io/#spotify/confidence-openfeature-provider-kotlin)
 Add the following dependency to your gradle file:
 ```
 implementation("com.github.spotify:confidence-openfeature-provider-kotlin:<VERSION>")
