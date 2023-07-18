@@ -20,4 +20,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Provider"
-include(":Provider")
+include(":Provider", ":ConfidenceDemoApp")
