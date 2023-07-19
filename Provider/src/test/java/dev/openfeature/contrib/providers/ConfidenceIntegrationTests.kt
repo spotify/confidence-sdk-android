@@ -3,7 +3,7 @@ package dev.openfeature.contrib.providers
 import android.content.Context
 import dev.openfeature.contrib.providers.cache.FLAGS_FILE_NAME
 import dev.openfeature.contrib.providers.cache.InMemoryCache
-import dev.openfeature.sdk.MutableContext
+import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
@@ -34,7 +34,7 @@ class ConfidenceIntegrationTests {
         runBlocking {
             OpenFeatureAPI.setProvider(
                 ConfidenceFeatureProvider.create(mockContext, clientSecret, cache = InMemoryCache()),
-                MutableContext(
+                ImmutableContext(
                     targetingKey = UUID.randomUUID().toString(),
                     attributes = mutableMapOf(
                         "user" to Value.Structure(
@@ -62,7 +62,7 @@ class ConfidenceIntegrationTests {
         runBlocking {
             OpenFeatureAPI.setProvider(
                 ConfidenceFeatureProvider.create(mockContext, clientSecret),
-                MutableContext(
+                ImmutableContext(
                     targetingKey = UUID.randomUUID().toString(),
                     attributes = mutableMapOf(
                         "user" to Value.Structure(

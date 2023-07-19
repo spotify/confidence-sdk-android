@@ -14,8 +14,8 @@ import dev.openfeature.contrib.providers.client.ResolveResponse
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FeatureProvider
 import dev.openfeature.sdk.Hook
-import dev.openfeature.sdk.Metadata
 import dev.openfeature.sdk.ProviderEvaluation
+import dev.openfeature.sdk.ProviderMetadata
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.exceptions.OpenFeatureError.FlagNotFoundError
@@ -27,7 +27,7 @@ import kotlinx.coroutines.withContext
 
 class ConfidenceFeatureProvider private constructor(
     override val hooks: List<Hook<*>>,
-    override val metadata: Metadata,
+    override val metadata: ProviderMetadata,
     private val cache: ProviderCache,
     private val client: ConfidenceClient,
     private val flagApplier: FlagApplier,
@@ -160,7 +160,7 @@ class ConfidenceFeatureProvider private constructor(
         }
     }
     companion object {
-        private class ConfidenceMetadata(override var name: String? = "confidence") : Metadata
+        private class ConfidenceMetadata(override var name: String? = "confidence") : ProviderMetadata
 
         @Suppress("LongParameterList")
         suspend fun create(
@@ -169,7 +169,7 @@ class ConfidenceFeatureProvider private constructor(
             region: ConfidenceRegion = ConfidenceRegion.EUROPE,
             hooks: List<Hook<*>> = listOf(),
             client: ConfidenceClient? = null,
-            metadata: Metadata = ConfidenceMetadata(),
+            metadata: ProviderMetadata = ConfidenceMetadata(),
             cache: ProviderCache? = null,
             flagApplier: FlagApplier? = null,
             dispatcher: CoroutineDispatcher = Dispatchers.IO

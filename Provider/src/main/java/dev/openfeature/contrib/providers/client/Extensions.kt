@@ -1,7 +1,7 @@
 package dev.openfeature.contrib.providers.client
 
 import dev.openfeature.sdk.EvaluationContext
-import dev.openfeature.sdk.MutableStructure
+import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Structure
 import dev.openfeature.sdk.Value
 import kotlinx.coroutines.CancellableContinuation
@@ -18,7 +18,7 @@ internal fun EvaluationContext.toEvaluationContextStruct(): Structure {
     val ctxAttributes: MutableMap<String, Value> =
         mutableMapOf(Pair("targeting_key", Value.String(getTargetingKey())))
     ctxAttributes.putAll(asMap())
-    return MutableStructure(ctxAttributes)
+    return ImmutableStructure(ctxAttributes)
 }
 
 internal suspend inline fun Call.await(): Response {
