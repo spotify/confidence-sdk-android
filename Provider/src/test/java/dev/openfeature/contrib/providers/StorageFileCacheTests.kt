@@ -8,8 +8,8 @@ import dev.openfeature.contrib.providers.client.ResolveFlags
 import dev.openfeature.contrib.providers.client.ResolveReason
 import dev.openfeature.contrib.providers.client.ResolveResponse
 import dev.openfeature.contrib.providers.client.ResolvedFlag
-import dev.openfeature.sdk.MutableContext
-import dev.openfeature.sdk.MutableStructure
+import dev.openfeature.sdk.ImmutableContext
+import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
 import junit.framework.TestCase
@@ -31,7 +31,7 @@ class StorageFileCacheTests {
             ResolvedFlag(
                 "fdema-kotlin-flag-1",
                 "flags/fdema-kotlin-flag-1/variants/variant-1",
-                MutableStructure(
+                ImmutableStructure(
                     mutableMapOf(
                         "mystring" to Value.String("red"),
                         "myboolean" to Value.Boolean(false),
@@ -69,7 +69,7 @@ class StorageFileCacheTests {
             cache = cache1
         )
         runBlocking {
-            provider1.initialize(MutableContext(targetingKey = "user1"))
+            provider1.initialize(ImmutableContext(targetingKey = "user1"))
         }
 
         // Simulate offline scenario
@@ -82,14 +82,14 @@ class StorageFileCacheTests {
             client = mockClient,
             cache = cache2
         )
-        val evalString = provider2.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default", MutableContext("user1"))
-        val evalBool = provider2.getBooleanEvaluation("fdema-kotlin-flag-1.myboolean", true, MutableContext("user1"))
-        val evalInteger = provider2.getIntegerEvaluation("fdema-kotlin-flag-1.myinteger", 1, MutableContext("user1"))
-        val evalDouble = provider2.getDoubleEvaluation("fdema-kotlin-flag-1.mydouble", 7.28, MutableContext("user1"))
-        val evalDate = provider2.getStringEvaluation("fdema-kotlin-flag-1.mydate", "error", MutableContext("user1"))
-        val evalObject = provider2.getObjectEvaluation("fdema-kotlin-flag-1.mystruct", Value.Structure(mapOf()), MutableContext("user1"))
-        val evalNested = provider2.getStringEvaluation("fdema-kotlin-flag-1.mystruct.innerString", "error", MutableContext("user1"))
-        val evalNull = provider2.getStringEvaluation("fdema-kotlin-flag-1.mynull", "error", MutableContext("user1"))
+        val evalString = provider2.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default", ImmutableContext("user1"))
+        val evalBool = provider2.getBooleanEvaluation("fdema-kotlin-flag-1.myboolean", true, ImmutableContext("user1"))
+        val evalInteger = provider2.getIntegerEvaluation("fdema-kotlin-flag-1.myinteger", 1, ImmutableContext("user1"))
+        val evalDouble = provider2.getDoubleEvaluation("fdema-kotlin-flag-1.mydouble", 7.28, ImmutableContext("user1"))
+        val evalDate = provider2.getStringEvaluation("fdema-kotlin-flag-1.mydate", "error", ImmutableContext("user1"))
+        val evalObject = provider2.getObjectEvaluation("fdema-kotlin-flag-1.mystruct", Value.Structure(mapOf()), ImmutableContext("user1"))
+        val evalNested = provider2.getStringEvaluation("fdema-kotlin-flag-1.mystruct.innerString", "error", ImmutableContext("user1"))
+        val evalNull = provider2.getStringEvaluation("fdema-kotlin-flag-1.mynull", "error", ImmutableContext("user1"))
 
         TestCase.assertEquals("red", evalString.value)
         TestCase.assertEquals(false, evalBool.value)
