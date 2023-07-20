@@ -10,8 +10,8 @@ import dev.openfeature.contrib.providers.client.ResolveFlags
 import dev.openfeature.contrib.providers.client.ResolveReason
 import dev.openfeature.contrib.providers.client.ResolveResponse
 import dev.openfeature.contrib.providers.client.ResolvedFlag
-import dev.openfeature.sdk.MutableContext
-import dev.openfeature.sdk.MutableStructure
+import dev.openfeature.sdk.ImmutableContext
+import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
 import junit.framework.TestCase.assertEquals
@@ -110,13 +110,13 @@ internal class ConfidenceRemoteClientTests {
             baseUrl = mockWebServer.url("/v1/flags:resolve"),
             dispatcher = testDispatcher
         )
-            .resolve(listOf(), MutableContext("user1"))
+            .resolve(listOf(), ImmutableContext("user1"))
         val expectedFlags = Flags(
             listOf(
                 ResolvedFlag(
                     "fdema-kotlin-flag-1",
                     "flags/fdema-kotlin-flag-1/variants/variant-1",
-                    MutableStructure(
+                    ImmutableStructure(
                         mutableMapOf(
                             "mystring" to Value.String("red"),
                             "myboolean" to Value.Boolean(false),
@@ -168,7 +168,7 @@ internal class ConfidenceRemoteClientTests {
                 baseUrl = mockWebServer.url("/v1/flags:resolve"),
                 dispatcher = testDispatcher
             )
-                .resolve(listOf(), MutableContext("user1"))
+                .resolve(listOf(), ImmutableContext("user1"))
         val expectedParsed = ResolveFlags(
             Flags(
                 listOf(
@@ -218,14 +218,14 @@ internal class ConfidenceRemoteClientTests {
                 baseUrl = mockWebServer.url("/v1/flags:resolve"),
                 dispatcher = testDispatcher
             )
-                .resolve(listOf(), MutableContext("user1"))
+                .resolve(listOf(), ImmutableContext("user1"))
         val expectedParsed = ResolveFlags(
             Flags(
                 listOf(
                     ResolvedFlag(
                         "fdema-kotlin-flag-1",
                         "flags/fdema-kotlin-flag-1/variants/variant-1",
-                        MutableStructure(
+                        ImmutableStructure(
                             mutableMapOf(
                                 "mydouble" to Value.Double(3.0)
                             )
@@ -274,7 +274,7 @@ internal class ConfidenceRemoteClientTests {
                     baseUrl = mockWebServer.url("/v1/flags:resolve"),
                     dispatcher = testDispatcher
                 )
-                    .resolve(listOf(), MutableContext("user1"))
+                    .resolve(listOf(), ImmutableContext("user1"))
             }
         }
         assertEquals("Incompatible value \"myinteger\" for schema", ex.message)
@@ -315,7 +315,7 @@ internal class ConfidenceRemoteClientTests {
                     baseUrl = mockWebServer.url("/v1/flags:resolve"),
                     dispatcher = testDispatcher
                 )
-                    .resolve(listOf(), MutableContext("user1"))
+                    .resolve(listOf(), ImmutableContext("user1"))
             }
         }
         assertEquals("Couldn't find value \"myinteger\" in schema", ex.message)
@@ -353,7 +353,7 @@ internal class ConfidenceRemoteClientTests {
                     baseUrl = mockWebServer.url("/v1/flags:resolve"),
                     dispatcher = testDispatcher
                 )
-                    .resolve(listOf(), MutableContext("user1"))
+                    .resolve(listOf(), ImmutableContext("user1"))
             }
         }
         assertEquals("Unrecognized flag schema identifier: [WRONG-SCHEMA-IDENTIFIED]", ex.message)
@@ -392,7 +392,7 @@ internal class ConfidenceRemoteClientTests {
                     baseUrl = mockWebServer.url("/v1/flags:resolve"),
                     dispatcher = testDispatcher
                 )
-                    .resolve(listOf(), MutableContext("user1"))
+                    .resolve(listOf(), ImmutableContext("user1"))
             }
         }
         assertEquals("Unexpected flag name in resolve flag data: fdema-kotlin-flag-1", ex.message)
@@ -450,7 +450,7 @@ internal class ConfidenceRemoteClientTests {
         )
             .resolve(
                 listOf("flag1", "flag2"),
-                MutableContext(
+                ImmutableContext(
                     "user1",
                     mutableMapOf(
                         "myboolean" to Value.Boolean(true),

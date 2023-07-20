@@ -1,6 +1,6 @@
 package dev.openfeature.contrib.providers.client
 
-import dev.openfeature.sdk.MutableStructure
+import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Structure
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -36,7 +36,7 @@ data class Flags(
 data class ResolvedFlag(
     val flag: String,
     val variant: String,
-    val value: Structure = MutableStructure(mutableMapOf()),
+    val value: Structure = ImmutableStructure(mutableMapOf()),
     val reason: ResolveReason
 )
 

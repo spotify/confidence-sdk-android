@@ -5,7 +5,7 @@ import dev.openfeature.contrib.providers.client.ResolveReason
 import dev.openfeature.contrib.providers.client.ResolvedFlag
 import dev.openfeature.contrib.providers.client.SchemaType
 import dev.openfeature.sdk.DateSerializer
-import dev.openfeature.sdk.MutableStructure
+import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Structure
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.ValueSerializer
@@ -80,7 +80,7 @@ private object StructureValueSerializer : KSerializer<Value> {
             Value.Null -> encoder.encodeNull()
             is Value.Structure -> encoder.encodeSerializableValue(
                 StructureSerializer,
-                MutableStructure(value.structure.toMutableMap())
+                ImmutableStructure(value.structure.toMutableMap())
             )
         }
     }
@@ -168,7 +168,7 @@ internal object NetworkResolvedFlagSerializer : KSerializer<ResolvedFlag> {
                 flag = flag,
                 variant = variant,
                 reason = resolvedReason,
-                value = MutableStructure(mutableMapOf())
+                value = ImmutableStructure(mutableMapOf())
             )
         }
     }
@@ -193,7 +193,7 @@ internal class FlagValueSerializer(
             } ?: throw OpenFeatureError.ParseError("Couldn't find value \"$key\" in schema")
         }
 
-        return MutableStructure(valueMap)
+        return ImmutableStructure(valueMap)
     }
 
     override fun serialize(encoder: Encoder, value: Structure) {

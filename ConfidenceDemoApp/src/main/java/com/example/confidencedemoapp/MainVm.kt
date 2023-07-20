@@ -20,7 +20,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
     }
 
     private var client: Client
-    private var ctx: EvaluationContext = MutableContext(targetingKey = UUID.randomUUID().toString())
+    private var ctx: EvaluationContext = ImmutableContext(targetingKey = UUID.randomUUID().toString())
     private val _message: MutableLiveData<String> = MutableLiveData("initial")
     private val _color: MutableLiveData<Color> = MutableLiveData(Color.Gray)
     val message: LiveData<String> = _message
@@ -67,7 +67,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
 
     fun updateContext() {
         val start = System.currentTimeMillis()
-        ctx = MutableContext(
+        ctx = ImmutableContext(
             attributes = mutableMapOf(
                 "user_id" to Value.String(UUID.randomUUID().toString()),
                 "picture" to Value.String("hej"),

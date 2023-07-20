@@ -37,7 +37,7 @@ runBlocking {
             applicationContext,
             "mysecret"
         ).build(),
-        MutableContext(targetingKey = "myTargetingKey")
+        ImmutableContext(targetingKey = "myTargetingKey")
     )
 }
 val result = client.getBooleanValue("flag.my-boolean", false)
