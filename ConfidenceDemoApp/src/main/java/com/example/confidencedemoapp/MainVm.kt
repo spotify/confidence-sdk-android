@@ -1,6 +1,7 @@
 package com.example.confidencedemoapp
 
 import android.app.Application
+import android.content.pm.PackageManager
 import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.AndroidViewModel
@@ -9,7 +10,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import dev.openfeature.contrib.providers.ConfidenceFeatureProvider
 import dev.openfeature.sdk.*
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.*
 
@@ -28,14 +28,21 @@ class MainVm(app: Application) : AndroidViewModel(app) {
 
     init {
         val start = System.currentTimeMillis()
+        val applicationContext = app.applicationContext
+        val metadataBundle = applicationContext.packageManager.getApplicationInfo(
+            applicationContext.packageName,
+            PackageManager.GET_META_DATA
+        ).metaData
+        val clientSecret = metadataBundle.getString("com.example.confidencedemoapp.clientSecret")!!
         viewModelScope.launch {
             OpenFeatureAPI.setProvider(
                 ConfidenceFeatureProvider.create(
                     app.applicationContext,
-                    "xa0fQ4WKSvuxdjPtesupleiSbZeik6Gf"
+                    clientSecret
                 ),
                 initialContext = ctx
             )
+            Log.d(TAG, "client secret is $clientSecret")
             Log.d(TAG, "init took ${System.currentTimeMillis() - start} ms")
             refreshUi()
         }
@@ -45,8 +52,12 @@ class MainVm(app: Application) : AndroidViewModel(app) {
 
     fun refreshUi() {
         Log.d(TAG, "refreshing UI")
-        val messageValue = client.getStringValue("hawkflag.message", "default")
-        val colorFlag = client.getStringDetails("hawkflag.color", "Gray").apply {
+        val flagMessageKey = "myFlag.message"
+        val flagMessageDefault = "default"
+        val messageValue = client.getStringValue(flagMessageKey, flagMessageDefault)
+        val flagColorKey = "myFlag.color"
+        val flagColorDefault = "Gray"
+        val colorFlag = client.getStringDetails(flagColorKey, flagColorDefault).apply {
             Log.d(TAG, "reason=$reason")
             Log.d(TAG, "variant=$variant")
         }.toComposeColor()

@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">ConfidenceDemoApp</string>
+    <string name="client_secret">Some client secret</string>
 </resources>
