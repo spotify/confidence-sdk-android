@@ -23,6 +23,7 @@ import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
+import dev.openfeature.sdk.async.awaitProviderReady
 import dev.openfeature.sdk.exceptions.OpenFeatureError.FlagNotFoundError
 import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
 import junit.framework.TestCase.assertEquals
@@ -483,7 +484,13 @@ internal class ConfidenceFeatureProviderTests {
         runBlocking {
             confidenceFeatureProvider.initialize(ImmutableContext("foo"))
         }
-        val evalRootObject = confidenceFeatureProvider.getObjectEvaluation("fdema-kotlin-flag-1", Value.Structure(mapOf()), ImmutableContext("foo"))
+        awaitProviderReady()
+        val evalRootObject = confidenceFeatureProvider
+            .getObjectEvaluation(
+                "fdema-kotlin-flag-1",
+                Value.Structure(mapOf()),
+                ImmutableContext("foo")
+            )
 
         assertEquals(resolvedValueAsMap, evalRootObject.value.asStructure())
         assertEquals(Reason.TARGETING_MATCH.toString(), evalRootObject.reason)
@@ -594,7 +601,13 @@ internal class ConfidenceFeatureProviderTests {
             confidenceFeatureProvider.initialize(ImmutableContext("user1"))
         }
 
-        val evalString = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default", ImmutableContext("user1"))
+        awaitProviderReady()
+        val evalString = confidenceFeatureProvider
+            .getStringEvaluation(
+                "fdema-kotlin-flag-1.mystring",
+                "default",
+                ImmutableContext("user1")
+            )
 
         assertNull(evalString.errorMessage)
         assertNull(evalString.errorCode)
@@ -678,6 +691,7 @@ internal class ConfidenceFeatureProviderTests {
         runBlocking {
             confidenceFeatureProvider.initialize(ImmutableContext("user2"))
         }
+        awaitProviderReady()
         val ex = assertThrows(ParseError::class.java) {
             confidenceFeatureProvider.getStringEvaluation(
                 "fdema-kotlin-flag-1.wrongid",
