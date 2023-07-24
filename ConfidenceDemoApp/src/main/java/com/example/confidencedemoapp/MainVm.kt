@@ -46,13 +46,13 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         )
         client = OpenFeatureAPI.getClient()
 
-        viewModelScope.launch(Dispatchers.IO) {
-            awaitProviderReady()
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                awaitProviderReady()
+            }
             Log.d(TAG, "client secret is $clientSecret")
             Log.d(TAG, "init took ${System.currentTimeMillis() - start} ms")
-            withContext(Dispatchers.Main) {
-                refreshUi()
-            }
+            refreshUi()
         }
     }
 

@@ -7,6 +7,9 @@ import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
+import dev.openfeature.sdk.async.awaitProviderReady
+import dev.openfeature.sdk.events.EventHandler
+import dev.openfeature.sdk.events.OpenFeatureEvents
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -27,26 +30,34 @@ class ConfidenceIntegrationTests {
     @Before
     fun setup() {
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
+        EventHandler.eventsPublisher().publish(OpenFeatureEvents.ProviderShutDown)
     }
 
     @Test
     fun testSimpleResolveInMemoryCache() {
-        runBlocking {
-            OpenFeatureAPI.setProvider(
-                ConfidenceFeatureProvider.create(mockContext, clientSecret, cache = InMemoryCache()),
-                ImmutableContext(
-                    targetingKey = UUID.randomUUID().toString(),
-                    attributes = mutableMapOf(
-                        "user" to Value.Structure(
-                            mapOf(
-                                "country" to Value.String("SE")
-                            )
+        EventHandler.eventsPublisher().publish(OpenFeatureEvents.ProviderShutDown)
+        OpenFeatureAPI.setProvider(
+            ConfidenceFeatureProvider.create(mockContext, clientSecret, cache = InMemoryCache()),
+            ImmutableContext(
+                targetingKey = UUID.randomUUID().toString(),
+                attributes = mutableMapOf(
+                    "user" to Value.Structure(
+                        mapOf(
+                            "country" to Value.String("SE")
                         )
                     )
                 )
             )
+        )
+        runBlocking {
+            awaitProviderReady()
         }
-        val intDetails = OpenFeatureAPI.getClient().getIntegerDetails("test-flag-1.my-integer", 0)
+
+        val intDetails = OpenFeatureAPI.getClient()
+            .getIntegerDetails(
+                "test-flag-1.my-integer",
+                0
+            )
         assertNull(intDetails.errorCode)
         assertNull(intDetails.errorMessage)
         assertNotNull(intDetails.value)
@@ -59,21 +70,23 @@ class ConfidenceIntegrationTests {
     fun testSimpleResolveStoredCache() {
         val cacheFile = File(mockContext.filesDir, FLAGS_FILE_NAME)
         assertEquals(0L, cacheFile.length())
-        runBlocking {
-            OpenFeatureAPI.setProvider(
-                ConfidenceFeatureProvider.create(mockContext, clientSecret),
-                ImmutableContext(
-                    targetingKey = UUID.randomUUID().toString(),
-                    attributes = mutableMapOf(
-                        "user" to Value.Structure(
-                            mapOf(
-                                "country" to Value.String("SE")
-                            )
+        OpenFeatureAPI.setProvider(
+            ConfidenceFeatureProvider.create(mockContext, clientSecret),
+            ImmutableContext(
+                targetingKey = UUID.randomUUID().toString(),
+                attributes = mutableMapOf(
+                    "user" to Value.Structure(
+                        mapOf(
+                            "country" to Value.String("SE")
                         )
                     )
                 )
             )
+        )
+        runBlocking {
+            awaitProviderReady()
         }
+
         assertNotEquals(0L, cacheFile.length())
         val intDetails = OpenFeatureAPI.getClient().getIntegerDetails("test-flag-1.my-integer", 0)
         assertNull(intDetails.errorCode)

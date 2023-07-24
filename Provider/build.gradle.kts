@@ -8,7 +8,7 @@ plugins {
 }
 
 object Versions {
-    const val openFeatureSDK = "v0.1.2"
+    const val openFeatureSDK = "v0.1.3"
     const val okHttp = "4.10.0"
     const val kotlinxSerialization = "1.5.1"
     const val coroutines = "1.7.1"

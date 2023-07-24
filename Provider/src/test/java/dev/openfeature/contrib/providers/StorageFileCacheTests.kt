@@ -12,6 +12,7 @@ import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
+import dev.openfeature.sdk.async.awaitProviderReady
 import junit.framework.TestCase
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -70,8 +71,8 @@ class StorageFileCacheTests {
         )
         runBlocking {
             provider1.initialize(ImmutableContext(targetingKey = "user1"))
+            awaitProviderReady()
         }
-
         // Simulate offline scenario
         whenever(mockClient.resolve(eq(listOf()), any())).thenThrow(Error())
         // Create new cache to force reading cache data from storage

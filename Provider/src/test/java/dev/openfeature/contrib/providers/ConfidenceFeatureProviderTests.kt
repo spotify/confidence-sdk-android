@@ -714,6 +714,7 @@ internal class ConfidenceFeatureProviderTests {
         runBlocking {
             confidenceFeatureProvider.initialize(ImmutableContext("user2"))
         }
+        awaitProviderReady()
         val ex = assertThrows(ParseError::class.java) {
             confidenceFeatureProvider.getStringEvaluation(
                 "fdema-kotlin-flag-1.mystring.extrapath",
