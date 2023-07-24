@@ -183,7 +183,7 @@ class ConfidenceFeatureProvider private constructor(
         private class ConfidenceMetadata(override var name: String? = "confidence") : ProviderMetadata
 
         @Suppress("LongParameterList")
-        suspend fun create(
+        fun create(
             context: Context,
             clientSecret: String,
             region: ConfidenceRegion = ConfidenceRegion.EUROPE,
