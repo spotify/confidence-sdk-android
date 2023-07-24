@@ -18,37 +18,57 @@ import dev.openfeature.sdk.ProviderEvaluation
 import dev.openfeature.sdk.ProviderMetadata
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
+import dev.openfeature.sdk.events.EventHandler
+import dev.openfeature.sdk.events.EventsPublisher
+import dev.openfeature.sdk.events.OpenFeatureEvents
 import dev.openfeature.sdk.exceptions.OpenFeatureError.FlagNotFoundError
 import dev.openfeature.sdk.exceptions.OpenFeatureError.InvalidContextError
 import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
+@Suppress(
+    "TooManyFunctions",
+    "LongParameterList"
+)
 class ConfidenceFeatureProvider private constructor(
     override val hooks: List<Hook<*>>,
     override val metadata: ProviderMetadata,
     private val cache: ProviderCache,
     private val client: ConfidenceClient,
     private val flagApplier: FlagApplier,
-    private val dispatcher: CoroutineDispatcher
+    private val eventsPublisher: EventsPublisher,
+    dispatcher: CoroutineDispatcher
 ) : FeatureProvider {
-    override suspend fun initialize(initialContext: EvaluationContext?) {
+    private val coroutineScope = CoroutineScope(SupervisorJob() + dispatcher)
+    private val networkExceptionHandler by lazy {
+        CoroutineExceptionHandler { _, _ ->
+            // network failed, provider is ready but with default/cache values
+            eventsPublisher.publish(OpenFeatureEvents.ProviderReady)
+        }
+    }
+    override fun initialize(initialContext: EvaluationContext?) {
         if (initialContext == null) return
-        withContext(dispatcher) {
-            try {
-                val resolveResponse = client.resolve(listOf(), initialContext)
-                if (resolveResponse is ResolveResponse.Resolved) {
-                    val (flags, resolveToken) = resolveResponse.flags
-                    cache.refresh(flags.list, resolveToken, initialContext)
-                }
-            } catch (_: Throwable) {
-                // Can't refresh cache at this time. Do we retry at a later time?
+        coroutineScope.launch(networkExceptionHandler) {
+            val resolveResponse = client.resolve(listOf(), initialContext)
+            if (resolveResponse is ResolveResponse.Resolved) {
+                val (flags, resolveToken) = resolveResponse.flags
+                cache.refresh(flags.list, resolveToken, initialContext)
+                eventsPublisher.publish(OpenFeatureEvents.ProviderReady)
             }
         }
     }
 
-    override suspend fun onContextSet(
+    override fun shutdown() {
+        coroutineScope.cancel()
+    }
+
+    override fun onContextSet(
         oldContext: EvaluationContext?,
         newContext: EvaluationContext
     ) {
@@ -172,6 +192,7 @@ class ConfidenceFeatureProvider private constructor(
             metadata: ProviderMetadata = ConfidenceMetadata(),
             cache: ProviderCache? = null,
             flagApplier: FlagApplier? = null,
+            eventsPublisher: EventsPublisher = EventHandler.eventsPublisher(Dispatchers.IO),
             dispatcher: CoroutineDispatcher = Dispatchers.IO
         ): ConfidenceFeatureProvider {
             val configuredClient = client ?: ConfidenceRemoteClient(
@@ -191,6 +212,7 @@ class ConfidenceFeatureProvider private constructor(
                 cache = cache ?: StorageFileCache.create(context),
                 client = configuredClient,
                 flagApplier = flagApplierWithRetries,
+                eventsPublisher,
                 dispatcher
             )
         }
