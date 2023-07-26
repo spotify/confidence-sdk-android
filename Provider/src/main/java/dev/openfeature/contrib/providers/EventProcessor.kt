@@ -40,6 +40,14 @@ class EventProcessor<INPUT, BatchProcessInputs, DATA>(
             // ensures we don't have any shared mutability
             val data: DATA = onInitialised()
 
+            // Try send events retrieved via "onInitialised()"
+            onProcessBatch(
+                data,
+                dataSentChannel,
+                coroutineScope,
+                exceptionHandler
+            )
+
             // the select clause makes sure that we don't
             // share the data/file write operations between coroutines
             // at any certain time there is only one of these events being handled
