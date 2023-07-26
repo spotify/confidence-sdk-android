@@ -23,9 +23,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.confidencedemoapp.ui.theme.MyApplicationTheme
 
 class MainActivity : ComponentActivity() {
-
     private lateinit var vm: MainVm
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

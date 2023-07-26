@@ -27,11 +27,18 @@ The Android project must include `maven("https://jitpack.io")` in `settings.grad
 
 Where `<LATEST>` is the most recent version of this SDK. Released versions can be found under "Releases" within this repository.
 
-
 ### Enabling the provider, setting the evaluation context and resolving flags
 
+`setProvider` makes the Provider reading the flags from the cache and launch a network request to refresh the flags.
+In both cases of success or the failure of the network request, the `ProviderReady` signal will be emitted.
+The `ProviderReady` event will be emitted only when we are done with the network request, either a successful or a failed network response.
+If the network response is failed, we continue with the flags we have stored in the cache and emit the `ProviderReady`, if the network request
+is successful we update the cache and then emit `ProviderReady`.
+
+The `awaitProviderReady()` suspend function is an utility function after which we can be sure about consistency of the flags.
+flags are either loaded from the cache or refreshed from the network as explained above.
+
 ```kotlin
-runBlocking {
     OpenFeatureAPI.setProvider(
         ConfidenceFeatureProvider.Builder(
             applicationContext,
@@ -39,8 +46,11 @@ runBlocking {
         ).build(),
         ImmutableContext(targetingKey = "myTargetingKey")
     )
+
+coroutineScope.launch {
+    awaitProviderReady()
+    val result = client.getBooleanValue("flag.my-boolean", false)
 }
-val result = client.getBooleanValue("flag.my-boolean", false)
 ```
 
 Notes:
