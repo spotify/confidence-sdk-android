@@ -14,7 +14,10 @@ import dev.openfeature.sdk.FlagEvaluationDetails
 import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.Value
+import dev.openfeature.sdk.async.awaitProviderReady
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.UUID
 
 class MainVm(app: Application) : AndroidViewModel(app) {
@@ -33,20 +36,22 @@ class MainVm(app: Application) : AndroidViewModel(app) {
     init {
         val start = System.currentTimeMillis()
         val clientSecret = ClientSecretProvider.clientSecret()
+        OpenFeatureAPI.setProvider(
+            ConfidenceFeatureProvider.create(
+                app.applicationContext,
+                clientSecret
+            ),
+            initialContext = ctx
+        )
+        client = OpenFeatureAPI.getClient()
         viewModelScope.launch {
-            OpenFeatureAPI.setProvider(
-                ConfidenceFeatureProvider.create(
-                    app.applicationContext,
-                    clientSecret
-                ),
-                initialContext = ctx
-            )
+            withContext(Dispatchers.IO) {
+                awaitProviderReady()
+            }
             Log.d(TAG, "client secret is $clientSecret")
             Log.d(TAG, "init took ${System.currentTimeMillis() - start} ms")
             refreshUi()
         }
-        client = OpenFeatureAPI.getClient()
-
     }
 
     fun refreshUi() {

@@ -6,8 +6,6 @@ import dev.openfeature.sdk.EvaluationContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 const val FLAGS_FILE_NAME = "confidence_flags_cache.json"
 
@@ -43,10 +41,10 @@ class StorageFileCache private constructor(context: Context) : InMemoryCache() {
     }
 
     companion object {
-        suspend fun create(context: Context): StorageFileCache = suspendCoroutine {
+        fun create(context: Context): StorageFileCache {
             val storage = StorageFileCache(context)
             storage.readFile()
-            it.resume(storage)
+            return storage
         }
     }
 }
