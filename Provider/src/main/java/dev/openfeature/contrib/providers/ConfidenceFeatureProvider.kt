@@ -29,7 +29,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 
 @Suppress(
@@ -43,9 +43,10 @@ class ConfidenceFeatureProvider private constructor(
     private val client: ConfidenceClient,
     private val flagApplier: FlagApplier,
     private val eventsPublisher: EventsPublisher,
-    dispatcher: CoroutineDispatcher
+    private val dispatcher: CoroutineDispatcher
 ) : FeatureProvider {
-    private val coroutineScope = CoroutineScope(SupervisorJob() + dispatcher)
+    private val job = SupervisorJob()
+    private val coroutineScope = CoroutineScope(job + dispatcher)
     private val networkExceptionHandler by lazy {
         CoroutineExceptionHandler { _, _ ->
             // network failed, provider is ready but with default/cache values
@@ -65,7 +66,7 @@ class ConfidenceFeatureProvider private constructor(
     }
 
     override fun shutdown() {
-        coroutineScope.cancel()
+        job.cancelChildren()
     }
 
     override fun onContextSet(

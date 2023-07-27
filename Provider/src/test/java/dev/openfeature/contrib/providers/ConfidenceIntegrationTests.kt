@@ -35,7 +35,6 @@ class ConfidenceIntegrationTests {
 
     @Test
     fun testSimpleResolveInMemoryCache() {
-        EventHandler.eventsPublisher().publish(OpenFeatureEvents.ProviderShutDown)
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(mockContext, clientSecret, cache = InMemoryCache()),
             ImmutableContext(
@@ -83,6 +82,7 @@ class ConfidenceIntegrationTests {
                 )
             )
         )
+
         runBlocking {
             awaitProviderReady()
         }
