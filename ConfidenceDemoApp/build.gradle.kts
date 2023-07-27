@@ -1,3 +1,6 @@
+import java.io.File
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -20,11 +23,22 @@ object Versions {
     const val uiTestManifest = "1.2.0"
 }
 
+val localPropertiesFile = File(rootProject.projectDir, "local.properties")
+val localProperties = Properties()
+
+// Load the properties from local.properties file
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
+}
+
+val clientSecret: String = localProperties.getProperty("CLIENT_SECRET")?: "CLIENT_SECRET"
+
 android {
     namespace = "com.example.confidencedemoapp"
     compileSdk = 33
 
     defaultConfig {
+        buildConfigField("String","CLIENT_SECRET", "\"$clientSecret\"")
         applicationId = "com.example.confidencedemoapp"
         minSdk = 21
         targetSdk = 33

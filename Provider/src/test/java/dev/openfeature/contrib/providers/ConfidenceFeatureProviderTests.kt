@@ -52,6 +52,31 @@ import java.io.File
 import java.nio.file.Files
 import java.time.Instant
 
+private const val cacheFileData = "{\n" +
+    "  \"token1\": {\n" +
+    "    \"fdema-kotlin-flag-0\": {\n" +
+    "      \"time\": \"2023-06-26T11:55:33.443Z\",\n" +
+    "      \"sent\": true\n" +
+    "    }\n" +
+    "  },\n" +
+    "  \"token2\": {\n" +
+    "    \"fdema-kotlin-flag-2\": {\n" +
+    "      \"time\": \"2023-06-26T11:55:33.444Z\",\n" +
+    "      \"sent\": true\n" +
+    "    },\n" +
+    "    \"fdema-kotlin-flag-3\": {\n" +
+    "      \"time\": \"2023-06-26T11:55:33.445Z\",\n" +
+    "      \"sent\": false\n" +
+    "    }\n" +
+    "  },\n" +
+    "  \"token3\": {\n" +
+    "    \"fdema-kotlin-flag-4\": {\n" +
+    "      \"time\": \"2023-06-26T11:55:33.446Z\",\n" +
+    "      \"sent\": false\n" +
+    "    }\n" +
+    "  }\n" +
+    "}\n"
+
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class ConfidenceFeatureProviderTests {
     private val mockClient: ConfidenceClient = mock()
@@ -404,34 +429,9 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
-    fun testApplyCacheRemovesSentResolveTokens() = runTest {
+    fun testOnProcessBatchOnInitAndEval() = runTest {
         val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
-        cacheFile.writeText(
-            "{\n" +
-                "  \"token1\": {\n" +
-                "    \"fdema-kotlin-flag-0\": {\n" +
-                "      \"time\": \"2023-06-26T11:55:33.443Z\",\n" +
-                "      \"sent\": true\n" +
-                "    }\n" +
-                "  },\n" +
-                "  \"token2\": {\n" +
-                "    \"fdema-kotlin-flag-2\": {\n" +
-                "      \"time\": \"2023-06-26T11:55:33.444Z\",\n" +
-                "      \"sent\": true\n" +
-                "    },\n" +
-                "    \"fdema-kotlin-flag-3\": {\n" +
-                "      \"time\": \"2023-06-26T11:55:33.445Z\",\n" +
-                "      \"sent\": false\n" +
-                "    }\n" +
-                "  },\n" +
-                "  \"token3\": {\n" +
-                "    \"fdema-kotlin-flag-4\": {\n" +
-                "      \"time\": \"2023-06-26T11:55:33.446Z\",\n" +
-                "      \"sent\": false\n" +
-                "    }\n" +
-                "  }\n" +
-                "}\n"
-        )
+        cacheFile.writeText(cacheFileData)
 
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
@@ -459,6 +459,27 @@ internal class ConfidenceFeatureProviderTests {
             "fdema-kotlin-flag-1.mystring",
             "default",
             evaluationContext
+        )
+
+        advanceUntilIdle()
+        verify(mockClient, times(0)).apply(any(), eq("token1"))
+        verify(mockClient, times(2)).apply(any(), eq("token2"))
+        verify(mockClient, times(1)).apply(any(), eq("token3"))
+        assertEquals(0, Json.parseToJsonElement(cacheFile.readText()).jsonObject.size)
+    }
+
+    @Test
+    fun testOnProcessBatchOnInit() = runTest {
+        val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
+        cacheFile.writeText(cacheFileData)
+
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val test = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            cache = InMemoryCache(),
+            client = mockClient,
+            dispatcher = testDispatcher
         )
 
         advanceUntilIdle()
