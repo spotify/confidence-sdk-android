@@ -23,12 +23,11 @@ import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
-import dev.openfeature.sdk.async.awaitProviderReady
+import dev.openfeature.sdk.events.EventHandler
 import dev.openfeature.sdk.exceptions.OpenFeatureError.FlagNotFoundError
 import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -119,12 +118,12 @@ internal class ConfidenceFeatureProviderTests {
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
+            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher
         )
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveResponse.Resolved(ResolveFlags(resolvedFlags, "token1")))
-        runBlocking {
-            confidenceFeatureProvider.initialize(ImmutableContext("foo"))
-        }
+        confidenceFeatureProvider.initialize(ImmutableContext("foo"))
+        advanceUntilIdle()
         verify(mockClient, times(1)).resolve(any(), eq(ImmutableContext("foo")))
         val evalString = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default", ImmutableContext("foo"))
         val evalBool = confidenceFeatureProvider.getBooleanEvaluation("fdema-kotlin-flag-1.myboolean", true, ImmutableContext("foo"))
@@ -191,6 +190,7 @@ internal class ConfidenceFeatureProviderTests {
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
+            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
             client = mockClient,
             dispatcher = testDispatcher
         )
@@ -200,9 +200,8 @@ internal class ConfidenceFeatureProviderTests {
         whenever(mockClient.apply(any(), any())).thenThrow(Error())
 
         val evaluationContext = ImmutableContext("foo")
-        runBlocking {
-            confidenceFeatureProvider.initialize(evaluationContext)
-        }
+        confidenceFeatureProvider.initialize(evaluationContext)
+        advanceUntilIdle()
 
         verify(mockClient, times(1)).resolve(any(), eq(evaluationContext))
 
@@ -316,6 +315,7 @@ internal class ConfidenceFeatureProviderTests {
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
+            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher
         )
         val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
@@ -329,9 +329,8 @@ internal class ConfidenceFeatureProviderTests {
                 ResolveFlags(resolvedFlags, "token1")
             )
         )
-        runBlocking {
-            confidenceFeatureProvider.initialize(evaluationContext1)
-        }
+        confidenceFeatureProvider.initialize(evaluationContext1)
+        advanceUntilIdle()
         verify(mockClient, times(1)).resolve(any(), eq(evaluationContext1))
 
         val evalString1 = confidenceFeatureProvider.getStringEvaluation(
@@ -366,9 +365,8 @@ internal class ConfidenceFeatureProviderTests {
                 ResolveFlags(resolvedFlags, "token2")
             )
         )
-        runBlocking {
-            confidenceFeatureProvider.onContextSet(evaluationContext1, evaluationContext2)
-        }
+        confidenceFeatureProvider.onContextSet(evaluationContext1, evaluationContext2)
+        advanceUntilIdle()
         verify(mockClient, times(1)).resolve(any(), eq(evaluationContext2))
 
         // Third evaluation with different context should trigger apply
@@ -406,6 +404,7 @@ internal class ConfidenceFeatureProviderTests {
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
+            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher
         )
 
@@ -417,9 +416,8 @@ internal class ConfidenceFeatureProviderTests {
         whenever(mockClient.apply(any(), any())).then {}
 
         val evaluationContext = ImmutableContext("foo")
-        runBlocking {
-            confidenceFeatureProvider.initialize(evaluationContext)
-        }
+        confidenceFeatureProvider.initialize(evaluationContext)
+        advanceUntilIdle()
 
         verify(mockClient, times(1)).resolve(any(), eq(evaluationContext))
 
@@ -439,6 +437,7 @@ internal class ConfidenceFeatureProviderTests {
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
+            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher
         )
 
@@ -451,9 +450,8 @@ internal class ConfidenceFeatureProviderTests {
 
         val evaluationContext = ImmutableContext("foo")
 
-        runBlocking {
-            confidenceFeatureProvider.initialize(evaluationContext)
-        }
+        confidenceFeatureProvider.initialize(evaluationContext)
+        advanceUntilIdle()
 
         confidenceFeatureProvider.getStringEvaluation(
             "fdema-kotlin-flag-1.mystring",
@@ -479,6 +477,7 @@ internal class ConfidenceFeatureProviderTests {
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
+            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher
         )
 
@@ -491,10 +490,13 @@ internal class ConfidenceFeatureProviderTests {
 
     @Test
     fun testMatchingRootObject() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
+            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            dispatcher = testDispatcher,
             client = mockClient
         )
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
@@ -502,10 +504,8 @@ internal class ConfidenceFeatureProviderTests {
                 ResolveFlags(resolvedFlags, "token1")
             )
         )
-        runBlocking {
-            confidenceFeatureProvider.initialize(ImmutableContext("foo"))
-        }
-        awaitProviderReady()
+        confidenceFeatureProvider.initialize(ImmutableContext("foo"))
+        advanceUntilIdle()
         val evalRootObject = confidenceFeatureProvider
             .getObjectEvaluation(
                 "fdema-kotlin-flag-1",
@@ -523,10 +523,13 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testStale() = runTest {
         val cache = InMemoryCache()
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = cache,
+            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            dispatcher = testDispatcher,
             client = mockClient
         )
 
@@ -596,10 +599,13 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testNonMatching() = runTest {
         val cache = InMemoryCache()
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = cache,
+            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            dispatcher = testDispatcher,
             client = mockClient
         )
 
@@ -618,11 +624,10 @@ internal class ConfidenceFeatureProviderTests {
                 ResolveFlags(resolvedNonMatchingFlags, "token1")
             )
         )
-        runBlocking {
-            confidenceFeatureProvider.initialize(ImmutableContext("user1"))
-        }
 
-        awaitProviderReady()
+        confidenceFeatureProvider.initialize(ImmutableContext("user1"))
+        advanceUntilIdle()
+
         val evalString = confidenceFeatureProvider
             .getStringEvaluation(
                 "fdema-kotlin-flag-1.mystring",
@@ -639,11 +644,14 @@ internal class ConfidenceFeatureProviderTests {
 
     @Test
     fun testFlagNotFound() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val cache = InMemoryCache()
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = cache,
+            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            dispatcher = testDispatcher,
             client = mockClient
         )
 
@@ -664,16 +672,18 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testErrorInNetwork() = runTest {
         val cache = InMemoryCache()
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = cache,
+            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            dispatcher = testDispatcher,
             client = mockClient
         )
         whenever(mockClient.resolve(eq(listOf()), any())).thenThrow(Error())
-        runBlocking {
-            confidenceFeatureProvider.initialize(ImmutableContext("user1"))
-        }
+        confidenceFeatureProvider.initialize(ImmutableContext("user1"))
+        advanceUntilIdle()
         val ex = assertThrows(FlagNotFoundError::class.java) {
             confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-2.mystring", "default", ImmutableContext("user1"))
         }
@@ -682,26 +692,31 @@ internal class ConfidenceFeatureProviderTests {
 
     @Test
     fun whenResolveIsNotModifiedDoNotUpdateCache() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val cache = mock<InMemoryCache>()
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = cache,
+            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            dispatcher = testDispatcher,
             client = mockClient
         )
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveResponse.NotModified)
-        runBlocking {
-            confidenceFeatureProvider.initialize(ImmutableContext("user1"))
-        }
+        confidenceFeatureProvider.initialize(ImmutableContext("user1"))
+        advanceUntilIdle()
         verify(cache, never()).refresh(any(), any(), any())
     }
 
     @Test
     fun testValueNotFound() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
+            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            dispatcher = testDispatcher,
             client = mockClient
         )
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
@@ -709,10 +724,8 @@ internal class ConfidenceFeatureProviderTests {
                 ResolveFlags(resolvedFlags, "token1")
             )
         )
-        runBlocking {
-            confidenceFeatureProvider.initialize(ImmutableContext("user2"))
-        }
-        awaitProviderReady()
+        confidenceFeatureProvider.initialize(ImmutableContext("user2"))
+        advanceUntilIdle()
         val ex = assertThrows(ParseError::class.java) {
             confidenceFeatureProvider.getStringEvaluation(
                 "fdema-kotlin-flag-1.wrongid",
@@ -725,17 +738,18 @@ internal class ConfidenceFeatureProviderTests {
 
     @Test
     fun testValueNotFoundLongPath() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
+            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            dispatcher = testDispatcher,
             client = mockClient
         )
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveResponse.Resolved(ResolveFlags(resolvedFlags, "token1")))
-        runBlocking {
-            confidenceFeatureProvider.initialize(ImmutableContext("user2"))
-        }
-        awaitProviderReady()
+        confidenceFeatureProvider.initialize(ImmutableContext("user2"))
+        advanceUntilIdle()
         val ex = assertThrows(ParseError::class.java) {
             confidenceFeatureProvider.getStringEvaluation(
                 "fdema-kotlin-flag-1.mystring.extrapath",
