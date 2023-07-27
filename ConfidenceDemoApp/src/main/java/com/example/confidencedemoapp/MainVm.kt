@@ -1,7 +1,6 @@
 package com.example.confidencedemoapp
 
 import android.app.Application
-import android.content.pm.PackageManager
 import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.AndroidViewModel
@@ -9,9 +8,14 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import dev.openfeature.contrib.providers.ConfidenceFeatureProvider
-import dev.openfeature.sdk.*
+import dev.openfeature.sdk.Client
+import dev.openfeature.sdk.EvaluationContext
+import dev.openfeature.sdk.FlagEvaluationDetails
+import dev.openfeature.sdk.ImmutableContext
+import dev.openfeature.sdk.OpenFeatureAPI
+import dev.openfeature.sdk.Value
 import kotlinx.coroutines.launch
-import java.util.*
+import java.util.UUID
 
 class MainVm(app: Application) : AndroidViewModel(app) {
 
@@ -28,12 +32,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
 
     init {
         val start = System.currentTimeMillis()
-        val applicationContext = app.applicationContext
-        val metadataBundle = applicationContext.packageManager.getApplicationInfo(
-            applicationContext.packageName,
-            PackageManager.GET_META_DATA
-        ).metaData
-        val clientSecret = metadataBundle.getString("com.example.confidencedemoapp.clientSecret")!!
+        val clientSecret = ClientSecretProvider.clientSecret()
         viewModelScope.launch {
             OpenFeatureAPI.setProvider(
                 ConfidenceFeatureProvider.create(
@@ -52,10 +51,10 @@ class MainVm(app: Application) : AndroidViewModel(app) {
 
     fun refreshUi() {
         Log.d(TAG, "refreshing UI")
-        val flagMessageKey = "myFlag.message"
+        val flagMessageKey = "hawkflag.message"
         val flagMessageDefault = "default"
         val messageValue = client.getStringValue(flagMessageKey, flagMessageDefault)
-        val flagColorKey = "myFlag.color"
+        val flagColorKey = "hawkflag.color"
         val flagColorDefault = "Gray"
         val colorFlag = client.getStringDetails(flagColorKey, flagColorDefault).apply {
             Log.d(TAG, "reason=$reason")
