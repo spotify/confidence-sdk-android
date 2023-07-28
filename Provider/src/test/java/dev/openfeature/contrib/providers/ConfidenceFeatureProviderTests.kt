@@ -27,6 +27,7 @@ import dev.openfeature.sdk.exceptions.OpenFeatureError.FlagNotFoundError
 import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -99,6 +100,12 @@ internal class ConfidenceFeatureProviderTests {
             ResolvedFlag(
                 "fdema-kotlin-flag-1",
                 "flags/fdema-kotlin-flag-1/variants/variant-1",
+                ImmutableStructure(resolvedValueAsMap),
+                ResolveReason.RESOLVE_REASON_MATCH
+            ),
+            ResolvedFlag(
+                "fdema-kotlin-flag-2",
+                "flags/fdema-kotlin-flag-2/variants/variant-1",
                 ImmutableStructure(resolvedValueAsMap),
                 ResolveReason.RESOLVE_REASON_MATCH
             )
@@ -317,12 +324,16 @@ internal class ConfidenceFeatureProviderTests {
             client = mockClient,
             dispatcher = testDispatcher
         )
+        // Empty cache on init
         val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
-        whenever(mockClient.apply(any(), any())).then {}
+        // Apply network is success
+        whenever(mockClient.apply(any(), any())).then {
+            // Perhaps add "delay" or "sleep" here?
+        }
 
         val evaluationContext1 = ImmutableContext("foo")
-        val evaluationContext2 = ImmutableContext("bar")
 
+        // "resolve" returns 2 flags from network/backend
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
             ResolveResponse.Resolved(
                 ResolveFlags(resolvedFlags, "token1")
@@ -333,63 +344,81 @@ internal class ConfidenceFeatureProviderTests {
         }
         verify(mockClient, times(1)).resolve(any(), eq(evaluationContext1))
 
-        val evalString1 = confidenceFeatureProvider.getStringEvaluation(
-            "fdema-kotlin-flag-1.mystring",
-            "default",
-            evaluationContext1
-        )
-        // Second evaluation shouldn't trigger apply
+
+        /*
+        What we want to test is two "apply" generated real quick, and the network being slow
+        Does the retry mechanism generates duplicates in this scenario?
+         */
+
+        println(">> App eval `flag1`")
         confidenceFeatureProvider.getStringEvaluation(
             "fdema-kotlin-flag-1.mystring",
             "default",
             evaluationContext1
         )
-
-        advanceUntilIdle()
-        verify(mockClient, times(1)).apply(any(), eq("token1"))
-        assertEquals(0, Json.parseToJsonElement(cacheFile.readText()).jsonObject.size)
-
-        val captor1 = argumentCaptor<List<AppliedFlag>>()
-        verify(mockClient, times(1)).apply(captor1.capture(), eq("token1"))
-
-        assertEquals(1, captor1.firstValue.count())
-        assertEquals("fdema-kotlin-flag-1", captor1.firstValue.first().flag)
-        assertEquals("red", evalString1.value)
-        assertEquals(Reason.TARGETING_MATCH.toString(), evalString1.reason)
-        assertEquals("flags/fdema-kotlin-flag-1/variants/variant-1", evalString1.variant)
-        assertNull(evalString1.errorMessage)
-        assertNull(evalString1.errorCode)
-
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
-            ResolveResponse.Resolved(
-                ResolveFlags(resolvedFlags, "token2")
-            )
-        )
-        runBlocking {
-            confidenceFeatureProvider.onContextSet(evaluationContext1, evaluationContext2)
-        }
-        verify(mockClient, times(1)).resolve(any(), eq(evaluationContext2))
-
-        // Third evaluation with different context should trigger apply
-        val evalString2 = confidenceFeatureProvider.getStringEvaluation(
-            "fdema-kotlin-flag-1.mystring",
+        println(">> App eval `flag2`")
+        // Second evaluation shouldn't trigger apply
+        confidenceFeatureProvider.getStringEvaluation(
+            "fdema-kotlin-flag-2.mystring",
             "default",
-            evaluationContext2
+            evaluationContext1
         )
 
         advanceUntilIdle()
-        verify(mockClient, times(1)).apply(any(), eq("token2"))
+        verify(mockClient, times(2)).apply(any(), eq("token1"))
         assertEquals(0, Json.parseToJsonElement(cacheFile.readText()).jsonObject.size)
-        val captor = argumentCaptor<List<AppliedFlag>>()
-        verify(mockClient, times(1)).apply(captor.capture(), eq("token2"))
 
-        assertEquals(1, captor.firstValue.count())
-        assertEquals("fdema-kotlin-flag-1", captor.firstValue.first().flag)
-        assertEquals("red", evalString2.value)
-        assertEquals(Reason.TARGETING_MATCH.toString(), evalString2.reason)
-        assertEquals("flags/fdema-kotlin-flag-1/variants/variant-1", evalString2.variant)
-        assertNull(evalString2.errorMessage)
-        assertNull(evalString2.errorCode)
+//        val captor1 = argumentCaptor<List<AppliedFlag>>()
+//        verify(mockClient, times(1)).apply(captor1.capture(), eq("token1"))
+//
+//        assertEquals(1, captor1.firstValue.count())
+//        assertEquals("fdema-kotlin-flag-1", captor1.firstValue.first().flag)
+//        assertEquals("red", evalString1.value)
+//        assertEquals(Reason.TARGETING_MATCH.toString(), evalString1.reason)
+//        assertEquals("flags/fdema-kotlin-flag-1/variants/variant-1", evalString1.variant)
+//        assertNull(evalString1.errorMessage)
+//        assertNull(evalString1.errorCode)
+
+//        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
+//            ResolveResponse.Resolved(
+//                ResolveFlags(resolvedFlags, "token2")
+//            )
+//        )
+//
+//
+//
+//
+//
+//
+//
+//        val evaluationContext2 = ImmutableContext("bar")
+//
+//
+//        runBlocking {
+//            confidenceFeatureProvider.onContextSet(evaluationContext1, evaluationContext2)
+//        }
+//        verify(mockClient, times(1)).resolve(any(), eq(evaluationContext2))
+//
+//        // Third evaluation with different context should trigger apply
+//        val evalString2 = confidenceFeatureProvider.getStringEvaluation(
+//            "fdema-kotlin-flag-1.mystring",
+//            "default",
+//            evaluationContext2
+//        )
+//
+//        advanceUntilIdle()
+//        verify(mockClient, times(1)).apply(any(), eq("token2"))
+//        assertEquals(0, Json.parseToJsonElement(cacheFile.readText()).jsonObject.size)
+//        val captor = argumentCaptor<List<AppliedFlag>>()
+//        verify(mockClient, times(1)).apply(captor.capture(), eq("token2"))
+//
+//        assertEquals(1, captor.firstValue.count())
+//        assertEquals("fdema-kotlin-flag-1", captor.firstValue.first().flag)
+//        assertEquals("red", evalString2.value)
+//        assertEquals(Reason.TARGETING_MATCH.toString(), evalString2.reason)
+//        assertEquals("flags/fdema-kotlin-flag-1/variants/variant-1", evalString2.variant)
+//        assertNull(evalString2.errorMessage)
+//        assertNull(evalString2.errorCode)
     }
 
     @Test

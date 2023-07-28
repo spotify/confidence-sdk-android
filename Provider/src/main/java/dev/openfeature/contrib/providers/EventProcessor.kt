@@ -52,19 +52,31 @@ class EventProcessor<INPUT, BatchProcessInputs, DATA>(
             // share the data/file write operations between coroutines
             // at any certain time there is only one of these events being handled
             while (true) {
+                // TODO What if we have `writeRequestChannel` event in queue and `dataSentChannel` in queue?
+                // Looks like "select" prioritizes the first executable first (so we should move dataSentChannel up top)
                 select {
                     writeRequestChannel.onReceive { writeRequest ->
+                        println(">> Entered writeRequestChannel")
+                        // Add new event to in-mem (send = false) and write in-mem to file
                         onApply(writeRequest, data)
+                        // Try to send everything that is send = false in-mem
+                        // TODO Does this wait for network to finish before returning? If not, we still can't guarantee
+                        // that in transit events are processed before new ones come in
                         onProcessBatch(
                             data,
                             dataSentChannel,
                             coroutineScope,
                             exceptionHandler
                         )
+                        println(">> Exits writeRequestChannel")
                     }
 
+                    // TODO Move up to give it priority?
                     dataSentChannel.onReceive { event ->
+                        println(">> Entered dataSentChannel")
+                        // Set "sent" to true and write in-mem to file
                         processBatchAction(event, data)
+                        println(">> Exits dataSentChannel")
                     }
                 }
             }
@@ -72,8 +84,11 @@ class EventProcessor<INPUT, BatchProcessInputs, DATA>(
     }
 
     override fun apply(input: INPUT) {
+        println(">> APPLY ENTERS, processor gets new apply event")
         coroutineScope.launch {
             writeRequestChannel.send(input)
+            println(">> Wrote in writeRequestChannel!")
         }
+        println(">> APPLY RETURNS, application code can continue now...")
     }
 }

@@ -47,12 +47,14 @@ class ConfidenceIntegrationTests {
             )
         }
         val intDetails = OpenFeatureAPI.getClient().getIntegerDetails("test-flag-1.my-integer", 0)
+        val test = OpenFeatureAPI.getClient().getBooleanDetails("test-flag-4.enabled", false)
         assertNull(intDetails.errorCode)
         assertNull(intDetails.errorMessage)
         assertNotNull(intDetails.value)
         assertNotEquals(0, intDetails.value)
         assertEquals(Reason.TARGETING_MATCH.name, intDetails.reason)
         assertNotNull(intDetails.variant)
+        Thread.sleep(20000)
     }
 
     @Test

@@ -6,12 +6,8 @@ import dev.openfeature.contrib.providers.client.AppliedFlag
 import dev.openfeature.contrib.providers.client.ConfidenceClient
 import dev.openfeature.contrib.providers.client.serializers.UUIDSerializer
 import dev.openfeature.sdk.DateSerializer
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -119,7 +115,14 @@ class FlagApplierWithRetries(
             // TODO chunk size 20 is an arbitrary value, replace with appropriate size
             appliedFlagsKeyed.chunked(CHUNK_SIZE).forEach { appliedFlagsKeyedChunk ->
                 coroutineScope.launch(coroutineExceptionHandler) {
+                    println(">> Network starts")
                     client.apply(appliedFlagsKeyedChunk, token)
+                    delay(7000)
+                    println(">> Network returns")
+                    // TODO delay vs. sleep: how to really emulate slow network in unit tests?
+//                  //  delay(5000)
+                    // Thread.sleep(5000)
+                    println(">> [✉️] for $appliedFlagsKeyedChunk")
                     sendChannel.send(FlagApplierBatchProcessedInput(token, appliedFlagsKeyedChunk))
                 }
             }
