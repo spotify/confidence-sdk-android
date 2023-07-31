@@ -45,7 +45,7 @@ enum class EventStatus {
 data class ApplyInstance(
     @Contextual
     val time: Date,
-    val sent: EventStatus
+    val eventStatus: EventStatus
 )
 
 internal typealias FlagsAppliedMap =
@@ -67,8 +67,9 @@ class FlagApplierWithRetries(
             onInitialised = {
                 val data: FlagsAppliedMap = mutableMapOf()
                 readFile(data)
-                setSendingEventsCreating(data)
-                data
+                // we consider all the sending events as not sent to not miss them
+                // there is a chance that they are sending status because the network response is dropped
+                changeSendingEventsToCreate(data)
             },
             onApply = { flagApplierInput, mutableData ->
                 val data = internalApply(
@@ -111,20 +112,6 @@ class FlagApplierWithRetries(
         )
     }
 
-    // we consider all the sending events as not sent to not miss them
-    // there is a chance that they are sending status because the network response is dropped
-    private fun setSendingEventsCreating(data: FlagsAppliedMap) {
-        data.entries.forEach {
-            it.value.mapValues { entry ->
-                if (entry.value.sent == EventStatus.SENDING) {
-                    EventStatus.CREATED
-                } else {
-                    entry.value.sent
-                }
-            }
-        }
-    }
-
     init {
         eventProcessor.start()
     }
@@ -152,7 +139,7 @@ class FlagApplierWithRetries(
         data.entries.forEach { (token, flagsForToken) ->
             val appliedFlagsKeyed: List<AppliedFlag> = flagsForToken.entries
                 .filter { e ->
-                    e.value.sent == EventStatus.CREATED
+                    e.value.eventStatus == EventStatus.CREATED
                 }
                 .map { e -> AppliedFlag(e.key, e.value.time) }
             // TODO chunk size 20 is an arbitrary value, replace with appropriate size
@@ -181,11 +168,23 @@ class FlagApplierWithRetries(
         appliedFlag.forEach { applied ->
             data[token]?.let { map ->
                 computeIfPresent(map, applied.flag) { _, v ->
-                    v.copy(sent = eventStatus)
+                    v.copy(eventStatus = eventStatus)
                 }
             }
         }
     }
+
+    private fun changeSendingEventsToCreate(data: FlagsAppliedMap) = data.mapValues { entryValue ->
+        entryValue.value
+            .mapValues { entry ->
+                if (entry.value.eventStatus == EventStatus.SENDING) {
+                    entry.value.copy(eventStatus = EventStatus.CREATED)
+                } else {
+                    entry.value
+                }
+            }
+            .toMutableMap()
+    }.toMutableMap()
 
     private fun writeToFile(
         data: Map<String, MutableMap<String, ApplyInstance>>
@@ -193,7 +192,7 @@ class FlagApplierWithRetries(
         // All apply events have been sent for this token, don't add this token to the file
         val toStoreData = data
             .filter {
-                !it.value.values.all { applyInstance -> applyInstance.sent == EventStatus.SENT }
+                !it.value.values.all { applyInstance -> applyInstance.eventStatus == EventStatus.SENT }
             }
         file.writeText(json.encodeToString(toStoreData))
     }
