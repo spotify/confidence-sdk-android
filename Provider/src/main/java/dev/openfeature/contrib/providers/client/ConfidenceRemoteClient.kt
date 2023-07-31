@@ -114,14 +114,18 @@ class ConfidenceRemoteClient : ConfidenceClient {
         }
     }
 
-    override suspend fun apply(flags: List<AppliedFlag>, resolveToken: String) {
+    override suspend fun apply(flags: List<AppliedFlag>, resolveToken: String): Result {
         val request = ApplyFlagsRequest(
             flags.map { AppliedFlag("flags/${it.flag}", it.applyTime) },
             clock.currentTime(),
             clientSecret,
             resolveToken
         )
-        applyInteractor(request)
+        applyInteractor(request).runCatching {
+            return Result.Failure
+        }
+
+        return Result.Success
     }
 }
 

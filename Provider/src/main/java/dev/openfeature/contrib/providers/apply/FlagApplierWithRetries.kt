@@ -4,6 +4,7 @@ import android.content.Context
 import dev.openfeature.contrib.providers.EventProcessor
 import dev.openfeature.contrib.providers.client.AppliedFlag
 import dev.openfeature.contrib.providers.client.ConfidenceClient
+import dev.openfeature.contrib.providers.client.Result
 import dev.openfeature.contrib.providers.client.serializers.UUIDSerializer
 import dev.openfeature.sdk.DateSerializer
 import kotlinx.coroutines.CoroutineDispatcher
@@ -30,17 +31,24 @@ data class FlagApplierInput(
 
 data class FlagApplierBatchProcessedInput(
     val resolveToken: String,
-    val flags: List<AppliedFlag>
+    val flags: List<AppliedFlag>,
+    val result: Result
 )
+
+enum class EventStatus {
+    CREATED,
+    SENDING,
+    SENT
+}
 
 @Serializable
 data class ApplyInstance(
     @Contextual
     val time: Date,
-    val sent: Boolean
+    val sent: EventStatus
 )
 
-private typealias FlagsAppliedMap =
+internal typealias FlagsAppliedMap =
     MutableMap<String, MutableMap<String, ApplyInstance>>
 
 class FlagApplierWithRetries(
@@ -59,22 +67,37 @@ class FlagApplierWithRetries(
             onInitialised = {
                 val data: FlagsAppliedMap = mutableMapOf()
                 readFile(data)
+                setSendingEventsCreating(data)
                 data
             },
             onApply = { flagApplierInput, mutableData ->
-                internalApply(
+                val data = internalApply(
                     flagApplierInput.flagName,
                     flagApplierInput.resolveToken,
                     mutableData
                 )
+                writeToFile(data)
             },
             processBatchAction = { event, mutableData ->
-                event.flags.forEach { appliedFlag ->
-                    mutableData[event.resolveToken]?.let { map ->
-                        computeIfPresent(map, appliedFlag.flag) { _, v -> v.copy(sent = true) }
+                when (event.result) {
+                    is Result.Success -> {
+                        changeFlagStatus(
+                            event.resolveToken,
+                            event.flags,
+                            mutableData,
+                            EventStatus.SENT
+                        )
+                        writeToFile(mutableData)
+                    }
+                    is Result.Failure -> {
+                        changeFlagStatus(
+                            event.resolveToken,
+                            event.flags,
+                            mutableData,
+                            EventStatus.CREATED
+                        )
                     }
                 }
-                writeToFile(mutableData)
             },
             onProcessBatch = { mutableData, sendChannel, coroutineScope, coroutineExceptionHandler ->
                 processBatch(
@@ -86,6 +109,20 @@ class FlagApplierWithRetries(
             },
             dispatcher = dispatcher
         )
+    }
+
+    // we consider all the sending events as not sent to not miss them
+    // there is a chance that they are sending status because the network response is dropped
+    private fun setSendingEventsCreating(data: FlagsAppliedMap) {
+        data.entries.forEach {
+            it.value.mapValues { entry ->
+                if (entry.value.sent == EventStatus.SENDING) {
+                    EventStatus.CREATED
+                } else {
+                    entry.value.sent
+                }
+            }
+        }
     }
 
     init {
@@ -100,10 +137,10 @@ class FlagApplierWithRetries(
         flagName: String,
         resolveToken: String,
         data: FlagsAppliedMap
-    ) {
+    ): FlagsAppliedMap {
         putIfAbsent(data, resolveToken, hashMapOf())
-        putIfAbsent(data[resolveToken], flagName, ApplyInstance(Date(), false))
-        writeToFile(data)
+        putIfAbsent(data[resolveToken], flagName, ApplyInstance(Date(), EventStatus.CREATED))
+        return data
     }
 
     private fun processBatch(
@@ -114,13 +151,37 @@ class FlagApplierWithRetries(
     ) {
         data.entries.forEach { (token, flagsForToken) ->
             val appliedFlagsKeyed: List<AppliedFlag> = flagsForToken.entries
-                .filter { e -> !e.value.sent }
+                .filter { e ->
+                    e.value.sent == EventStatus.CREATED
+                }
                 .map { e -> AppliedFlag(e.key, e.value.time) }
             // TODO chunk size 20 is an arbitrary value, replace with appropriate size
             appliedFlagsKeyed.chunked(CHUNK_SIZE).forEach { appliedFlagsKeyedChunk ->
+                changeFlagStatus(
+                    token,
+                    appliedFlagsKeyedChunk,
+                    data,
+                    EventStatus.SENDING
+                )
                 coroutineScope.launch(coroutineExceptionHandler) {
-                    client.apply(appliedFlagsKeyedChunk, token)
-                    sendChannel.send(FlagApplierBatchProcessedInput(token, appliedFlagsKeyedChunk))
+                    val result = client.apply(appliedFlagsKeyedChunk, token)
+                    val event = FlagApplierBatchProcessedInput(token, appliedFlagsKeyedChunk, result)
+                    sendChannel.send(event)
+                }
+            }
+        }
+    }
+
+    private fun changeFlagStatus(
+        token: String,
+        appliedFlag: List<AppliedFlag>,
+        data: FlagsAppliedMap,
+        eventStatus: EventStatus
+    ) {
+        appliedFlag.forEach { applied ->
+            data[token]?.let { map ->
+                computeIfPresent(map, applied.flag) { _, v ->
+                    v.copy(sent = eventStatus)
                 }
             }
         }
@@ -132,7 +193,7 @@ class FlagApplierWithRetries(
         // All apply events have been sent for this token, don't add this token to the file
         val toStoreData = data
             .filter {
-                !it.value.values.all { applyInstance -> applyInstance.sent }
+                !it.value.values.all { applyInstance -> applyInstance.sent == EventStatus.SENT }
             }
         file.writeText(json.encodeToString(toStoreData))
     }
@@ -196,7 +257,7 @@ private fun putIfAbsent(map: MutableMap<String, ApplyInstance>?, key: String, va
     }
 }
 
-private val json = Json {
+internal val json = Json {
     serializersModule = SerializersModule {
         contextual(UUIDSerializer)
         contextual(DateSerializer)
