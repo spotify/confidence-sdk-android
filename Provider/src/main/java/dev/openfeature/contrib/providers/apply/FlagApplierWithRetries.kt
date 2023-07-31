@@ -87,7 +87,6 @@ class FlagApplierWithRetries(
                             mutableData,
                             EventStatus.SENT
                         )
-                        
                         writeToFile(mutableData)
                     }
                     is Result.Failure -> {
