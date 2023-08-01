@@ -11,6 +11,9 @@ package dev.openfeature.contrib.providers
 
 import android.content.Context
 import dev.openfeature.contrib.providers.apply.APPLY_FILE_NAME
+import dev.openfeature.contrib.providers.apply.EventStatus
+import dev.openfeature.contrib.providers.apply.FlagsAppliedMap
+import dev.openfeature.contrib.providers.apply.json
 import dev.openfeature.contrib.providers.cache.InMemoryCache
 import dev.openfeature.contrib.providers.client.AppliedFlag
 import dev.openfeature.contrib.providers.client.ConfidenceClient
@@ -19,6 +22,7 @@ import dev.openfeature.contrib.providers.client.ResolveFlags
 import dev.openfeature.contrib.providers.client.ResolveReason
 import dev.openfeature.contrib.providers.client.ResolveResponse
 import dev.openfeature.contrib.providers.client.ResolvedFlag
+import dev.openfeature.contrib.providers.client.Result
 import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Reason
@@ -32,9 +36,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -55,23 +57,23 @@ private const val cacheFileData = "{\n" +
     "  \"token1\": {\n" +
     "    \"fdema-kotlin-flag-0\": {\n" +
     "      \"time\": \"2023-06-26T11:55:33.443Z\",\n" +
-    "      \"sent\": true\n" +
+    "      \"eventStatus\": \"SENT\"\n" +
     "    }\n" +
     "  },\n" +
     "  \"token2\": {\n" +
     "    \"fdema-kotlin-flag-2\": {\n" +
     "      \"time\": \"2023-06-26T11:55:33.444Z\",\n" +
-    "      \"sent\": true\n" +
+    "      \"eventStatus\": \"SENT\"\n" +
     "    },\n" +
     "    \"fdema-kotlin-flag-3\": {\n" +
     "      \"time\": \"2023-06-26T11:55:33.445Z\",\n" +
-    "      \"sent\": false\n" +
+    "      \"eventStatus\": \"CREATED\"\n" +
     "    }\n" +
     "  },\n" +
     "  \"token3\": {\n" +
     "    \"fdema-kotlin-flag-4\": {\n" +
     "      \"time\": \"2023-06-26T11:55:33.446Z\",\n" +
-    "      \"sent\": false\n" +
+    "      \"eventStatus\": \"CREATED\"\n" +
     "    }\n" +
     "  }\n" +
     "}\n"
@@ -197,7 +199,7 @@ internal class ConfidenceFeatureProviderTests {
         val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
 
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveResponse.Resolved(ResolveFlags(resolvedFlags, "token1")))
-        whenever(mockClient.apply(any(), any())).thenThrow(Error())
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Failure)
 
         val evaluationContext = ImmutableContext("foo")
         confidenceFeatureProvider.initialize(evaluationContext)
@@ -248,8 +250,10 @@ internal class ConfidenceFeatureProviderTests {
 
         advanceUntilIdle()
         verify(mockClient, times(8)).apply(any(), eq("token1"))
-        assertEquals(false, Json.parseToJsonElement(cacheFile.readText()).jsonObject["token1"]?.jsonObject?.get("fdema-kotlin-flag-1")?.jsonObject?.get("sent")?.jsonPrimitive?.boolean)
-        whenever(mockClient.apply(any(), any())).then {}
+        val expectedStatus = json.decodeFromString<FlagsAppliedMap>(cacheFile.readText())["token1"]
+            ?.get("fdema-kotlin-flag-1")?.eventStatus
+        assertEquals(EventStatus.CREATED, expectedStatus)
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
 
         // Evaluate a flag property in order to trigger an apply
         confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "empty", evaluationContext)
@@ -319,7 +323,7 @@ internal class ConfidenceFeatureProviderTests {
             dispatcher = testDispatcher
         )
         val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
-        whenever(mockClient.apply(any(), any())).then {}
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
 
         val evaluationContext1 = ImmutableContext("foo")
         val evaluationContext2 = ImmutableContext("bar")
@@ -395,7 +399,7 @@ internal class ConfidenceFeatureProviderTests {
     fun testApplyFromStoredCache() = runTest {
         val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
         cacheFile.writeText(
-            "{\"token1\":{\"fdema-kotlin-flag-1\":{\"time\":\"2023-06-26T11:55:33.184774Z\",\"sent\":false}}}"
+            "{\"token1\":{\"fdema-kotlin-flag-1\":{\"time\":\"2023-06-26T11:55:33.184774Z\",\"eventStatus\":\"CREATED\"}}}"
         )
 
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
@@ -413,7 +417,7 @@ internal class ConfidenceFeatureProviderTests {
                 ResolveFlags(resolvedFlags, "token1")
             )
         )
-        whenever(mockClient.apply(any(), any())).then {}
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
 
         val evaluationContext = ImmutableContext("foo")
         confidenceFeatureProvider.initialize(evaluationContext)
@@ -427,10 +431,12 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
-    fun testOnProcessBatchOnInitAndEval() = runTest {
+    fun testApplyFromStoredCacheSendingStatus() = runTest {
         val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
-        cacheFile.writeText(cacheFileData)
-
+        cacheFile.writeText(
+            "{\"token1\":{\"fdema-kotlin-flag-1\":{\"time\":\"2023-06-26T11:55:33.184774Z\",\"eventStatus\":\"SENDING\"}}}"
+        )
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
@@ -441,7 +447,111 @@ internal class ConfidenceFeatureProviderTests {
             dispatcher = testDispatcher
         )
 
-        whenever(mockClient.apply(any(), any())).then {}
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
+            ResolveResponse.Resolved(
+                ResolveFlags(resolvedFlags, "token1")
+            )
+        )
+
+        val evaluationContext = ImmutableContext("foo")
+        confidenceFeatureProvider.initialize(evaluationContext)
+        advanceUntilIdle()
+
+        verify(mockClient, times(1)).resolve(any(), eq(evaluationContext))
+
+        confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "empty", evaluationContext)
+        advanceUntilIdle()
+        verify(mockClient, times(1)).apply(any(), eq("token1"))
+    }
+
+    @Test
+    fun testNotSendDuplicateWhileSending() = runTest {
+        val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
+        cacheFile.writeText(
+            "{\"token1\":{\"fdema-kotlin-flag-1\":{\"time\":\"2023-06-26T11:55:33.184774Z\",\"eventStatus\":\"CREATED\"}}}"
+        )
+        whenever(mockClient.apply(any(), any())).then { }
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            cache = InMemoryCache(),
+            client = mockClient,
+            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            dispatcher = testDispatcher
+        )
+
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
+            ResolveResponse.Resolved(
+                ResolveFlags(resolvedFlags, "token1")
+            )
+        )
+
+        val evaluationContext = ImmutableContext("foo")
+        confidenceFeatureProvider.initialize(evaluationContext)
+        advanceUntilIdle()
+
+        verify(mockClient, times(1)).resolve(any(), eq(evaluationContext))
+
+        confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "empty", evaluationContext)
+        advanceUntilIdle()
+        confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.myboolean", "false", evaluationContext)
+        advanceUntilIdle()
+        verify(mockClient, times(1)).apply(any(), eq("token1"))
+    }
+
+    @Test
+    fun testDoSendAgainWhenNetworkRequestFailed() = runTest {
+        val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
+        cacheFile.writeText(
+            "{\"token1\":{\"fdema-kotlin-flag-1\":{\"time\":\"2023-06-26T11:55:33.184774Z\",\"eventStatus\":\"CREATED\"}}}"
+        )
+
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Failure)
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            cache = InMemoryCache(),
+            client = mockClient,
+            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            dispatcher = testDispatcher
+        )
+
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
+            ResolveResponse.Resolved(
+                ResolveFlags(resolvedFlags, "token1")
+            )
+        )
+
+        val evaluationContext = ImmutableContext("foo")
+        confidenceFeatureProvider.initialize(evaluationContext)
+        advanceUntilIdle()
+
+        verify(mockClient, times(1)).resolve(any(), eq(evaluationContext))
+
+        confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "empty", evaluationContext)
+        advanceUntilIdle()
+        confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.myboolean", "false", evaluationContext)
+        advanceUntilIdle()
+        verify(mockClient, times(3)).apply(any(), eq("token1"))
+    }
+
+    @Test
+    fun testOnProcessBatchOnInitAndEval() = runTest {
+        val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
+        cacheFile.writeText(cacheFileData)
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            cache = InMemoryCache(),
+            client = mockClient,
+            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            dispatcher = testDispatcher
+        )
+
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
             ResolveResponse.Resolved(
                 ResolveFlags(resolvedFlags, "token2")
@@ -452,7 +562,6 @@ internal class ConfidenceFeatureProviderTests {
 
         confidenceFeatureProvider.initialize(evaluationContext)
         advanceUntilIdle()
-
         confidenceFeatureProvider.getStringEvaluation(
             "fdema-kotlin-flag-1.mystring",
             "default",
@@ -470,9 +579,9 @@ internal class ConfidenceFeatureProviderTests {
     fun testOnProcessBatchOnInit() = runTest {
         val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
         cacheFile.writeText(cacheFileData)
-
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val test = ConfidenceFeatureProvider.create(
+        ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
