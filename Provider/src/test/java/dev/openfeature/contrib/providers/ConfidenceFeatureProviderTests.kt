@@ -28,6 +28,7 @@ import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.events.EventHandler
+import dev.openfeature.sdk.exceptions.ErrorCode
 import dev.openfeature.sdk.exceptions.OpenFeatureError.FlagNotFoundError
 import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
 import junit.framework.TestCase.assertEquals
@@ -703,6 +704,44 @@ internal class ConfidenceFeatureProviderTests {
         assertNull(evalObject.errorCode)
         assertNull(evalNested.errorCode)
         assertNull(evalNull.errorCode)
+    }
+
+    @Test
+    fun testInvalidTargetingKey() = runTest {
+        val cache = InMemoryCache()
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            cache = cache,
+            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            dispatcher = testDispatcher,
+            client = mockClient
+        )
+
+        val resolvedFlagInvalidKey = Flags(
+            listOf(
+                ResolvedFlag(
+                    "fdema-kotlin-flag-1",
+                    "",
+                    ImmutableStructure(mapOf()),
+                    ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR
+                )
+            )
+        )
+
+        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
+            ResolveResponse.Resolved(
+                ResolveFlags(resolvedFlagInvalidKey, "token1")
+            )
+        )
+
+        cache.refresh(resolvedFlagInvalidKey.list, "token", ImmutableContext("user1"))
+        val evalString = confidenceFeatureProvider.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default", ImmutableContext("user1"))
+        assertEquals("default", evalString.value)
+        assertEquals(Reason.ERROR.toString(), evalString.reason)
+        assertEquals(evalString.errorMessage, "Invalid targeting key")
+        assertEquals(evalString.errorCode, ErrorCode.INVALID_CONTEXT)
     }
 
     @Test
