@@ -21,6 +21,7 @@ import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.events.EventHandler
 import dev.openfeature.sdk.events.EventsPublisher
 import dev.openfeature.sdk.events.OpenFeatureEvents
+import dev.openfeature.sdk.exceptions.ErrorCode
 import dev.openfeature.sdk.exceptions.OpenFeatureError.FlagNotFoundError
 import dev.openfeature.sdk.exceptions.OpenFeatureError.InvalidContextError
 import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
@@ -234,6 +235,14 @@ class ConfidenceFeatureProvider private constructor(
                 value = value,
                 variant = variant,
                 reason = Reason.TARGETING_MATCH.toString()
+            )
+        }
+        ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR -> {
+            ProviderEvaluation(
+                value = defaultValue,
+                reason = Reason.ERROR.toString(),
+                errorCode = ErrorCode.INVALID_CONTEXT,
+                errorMessage = "Invalid targeting key"
             )
         }
         else -> {
