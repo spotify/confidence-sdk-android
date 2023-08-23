@@ -51,8 +51,8 @@ internal class ConfidenceRemoteClientTests {
         val jsonPayload = "{\n" +
             " \"resolvedFlags\": [\n" +
             "  {\n" +
-            "   \"flag\": \"flags/fdema-kotlin-flag-1\",\n" +
-            "   \"variant\": \"flags/fdema-kotlin-flag-1/variants/variant-1\",\n" +
+            "   \"flag\": \"flags/test-kotlin-flag-1\",\n" +
+            "   \"variant\": \"flags/test-kotlin-flag-1/variants/variant-1\",\n" +
             "   \"value\": {\n" +
             "    \"mystring\": \"red\",\n" +
             "    \"myboolean\": false,\n" +
@@ -114,8 +114,8 @@ internal class ConfidenceRemoteClientTests {
         val expectedFlags = Flags(
             listOf(
                 ResolvedFlag(
-                    "fdema-kotlin-flag-1",
-                    "flags/fdema-kotlin-flag-1/variants/variant-1",
+                    "test-kotlin-flag-1",
+                    "flags/test-kotlin-flag-1/variants/variant-1",
                     ImmutableStructure(
                         mutableMapOf(
                             "mystring" to Value.String("red"),
@@ -148,7 +148,7 @@ internal class ConfidenceRemoteClientTests {
         val jsonPayload = "{\n" +
             " \"resolvedFlags\": [\n" +
             "  {\n" +
-            "   \"flag\": \"flags/fdema-kotlin-flag-1\",\n" +
+            "   \"flag\": \"flags/test-kotlin-flag-1\",\n" +
             "   \"variant\": \"\",\n" +
             "   \"value\": null,\n" +
             "   \"flagSchema\": null,\n" +
@@ -173,7 +173,7 @@ internal class ConfidenceRemoteClientTests {
             Flags(
                 listOf(
                     ResolvedFlag(
-                        flag = "fdema-kotlin-flag-1",
+                        flag = "test-kotlin-flag-1",
                         variant = "",
                         reason = ResolveReason.RESOLVE_REASON_NO_SEGMENT_MATCH
                     )
@@ -190,8 +190,8 @@ internal class ConfidenceRemoteClientTests {
         val jsonPayload = "{\n" +
             " \"resolvedFlags\": [\n" +
             "  {\n" +
-            "   \"flag\": \"flags/fdema-kotlin-flag-1\",\n" +
-            "   \"variant\": \"flags/fdema-kotlin-flag-1/variants/variant-1\",\n" +
+            "   \"flag\": \"flags/test-kotlin-flag-1\",\n" +
+            "   \"variant\": \"flags/test-kotlin-flag-1/variants/variant-1\",\n" +
             "   \"value\": {\n" +
             "    \"mydouble\": 3\n" +
             "   },\n" +
@@ -223,8 +223,8 @@ internal class ConfidenceRemoteClientTests {
             Flags(
                 listOf(
                     ResolvedFlag(
-                        "fdema-kotlin-flag-1",
-                        "flags/fdema-kotlin-flag-1/variants/variant-1",
+                        "test-kotlin-flag-1",
+                        "flags/test-kotlin-flag-1/variants/variant-1",
                         ImmutableStructure(
                             mutableMapOf(
                                 "mydouble" to Value.Double(3.0)
@@ -244,8 +244,8 @@ internal class ConfidenceRemoteClientTests {
         val jsonPayload = "{\n" +
             " \"resolvedFlags\": [\n" +
             "  {\n" +
-            "   \"flag\": \"flags/fdema-kotlin-flag-1\",\n" +
-            "   \"variant\": \"flags/fdema-kotlin-flag-1/variants/variant-1\",\n" +
+            "   \"flag\": \"flags/test-kotlin-flag-1\",\n" +
+            "   \"variant\": \"flags/test-kotlin-flag-1/variants/variant-1\",\n" +
             "   \"value\": {\n" +
             "    \"myinteger\": 3.1\n" +
             "   },\n" +
@@ -285,8 +285,8 @@ internal class ConfidenceRemoteClientTests {
         val jsonPayload = "{\n" +
             " \"resolvedFlags\": [\n" +
             "  {\n" +
-            "   \"flag\": \"flags/fdema-kotlin-flag-1\",\n" +
-            "   \"variant\": \"flags/fdema-kotlin-flag-1/variants/variant-1\",\n" +
+            "   \"flag\": \"flags/test-kotlin-flag-1\",\n" +
+            "   \"variant\": \"flags/test-kotlin-flag-1/variants/variant-1\",\n" +
             "   \"value\": {\n" +
             "    \"myinteger\": 3\n" +
             "   },\n" +
@@ -325,8 +325,8 @@ internal class ConfidenceRemoteClientTests {
         val jsonPayload = "{\n" +
             " \"resolvedFlags\": [\n" +
             "  {\n" +
-            "   \"flag\": \"flags/fdema-kotlin-flag-1\",\n" +
-            "   \"variant\": \"flags/fdema-kotlin-flag-1/variants/variant-1\",\n" +
+            "   \"flag\": \"flags/test-kotlin-flag-1\",\n" +
+            "   \"variant\": \"flags/test-kotlin-flag-1/variants/variant-1\",\n" +
             "   \"value\": {},\n" +
             "   \"flagSchema\": {\n" +
             "    \"schema\": {\n" +
@@ -364,8 +364,8 @@ internal class ConfidenceRemoteClientTests {
         val jsonPayload = "{\n" +
             " \"resolvedFlags\": [\n" +
             "  {\n" +
-            "   \"flag\": \"fdema-kotlin-flag-1\",\n" +
-            "   \"variant\": \"flags/fdema-kotlin-flag-1/variants/variant-1\",\n" +
+            "   \"flag\": \"test-kotlin-flag-1\",\n" +
+            "   \"variant\": \"flags/test-kotlin-flag-1/variants/variant-1\",\n" +
             "   \"value\": {},\n" +
             "   \"flagSchema\": {\n" +
             "    \"schema\": {\n" +
@@ -395,7 +395,7 @@ internal class ConfidenceRemoteClientTests {
                     .resolve(listOf(), ImmutableContext("user1"))
             }
         }
-        assertEquals("Unexpected flag name in resolve flag data: fdema-kotlin-flag-1", ex.message)
+        assertEquals("Unexpected flag name in resolve flag data: test-kotlin-flag-1", ex.message)
     }
 
     @Test

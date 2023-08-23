@@ -30,8 +30,8 @@ class StorageFileCacheTests {
     private val resolvedFlags = Flags(
         listOf(
             ResolvedFlag(
-                "fdema-kotlin-flag-1",
-                "flags/fdema-kotlin-flag-1/variants/variant-1",
+                "test-kotlin-flag-1",
+                "flags/test-kotlin-flag-1/variants/variant-1",
                 ImmutableStructure(
                     mutableMapOf(
                         "mystring" to Value.String("red"),
@@ -83,14 +83,14 @@ class StorageFileCacheTests {
             client = mockClient,
             cache = cache2
         )
-        val evalString = provider2.getStringEvaluation("fdema-kotlin-flag-1.mystring", "default", ImmutableContext("user1"))
-        val evalBool = provider2.getBooleanEvaluation("fdema-kotlin-flag-1.myboolean", true, ImmutableContext("user1"))
-        val evalInteger = provider2.getIntegerEvaluation("fdema-kotlin-flag-1.myinteger", 1, ImmutableContext("user1"))
-        val evalDouble = provider2.getDoubleEvaluation("fdema-kotlin-flag-1.mydouble", 7.28, ImmutableContext("user1"))
-        val evalDate = provider2.getStringEvaluation("fdema-kotlin-flag-1.mydate", "error", ImmutableContext("user1"))
-        val evalObject = provider2.getObjectEvaluation("fdema-kotlin-flag-1.mystruct", Value.Structure(mapOf()), ImmutableContext("user1"))
-        val evalNested = provider2.getStringEvaluation("fdema-kotlin-flag-1.mystruct.innerString", "error", ImmutableContext("user1"))
-        val evalNull = provider2.getStringEvaluation("fdema-kotlin-flag-1.mynull", "error", ImmutableContext("user1"))
+        val evalString = provider2.getStringEvaluation("test-kotlin-flag-1.mystring", "default", ImmutableContext("user1"))
+        val evalBool = provider2.getBooleanEvaluation("test-kotlin-flag-1.myboolean", true, ImmutableContext("user1"))
+        val evalInteger = provider2.getIntegerEvaluation("test-kotlin-flag-1.myinteger", 1, ImmutableContext("user1"))
+        val evalDouble = provider2.getDoubleEvaluation("test-kotlin-flag-1.mydouble", 7.28, ImmutableContext("user1"))
+        val evalDate = provider2.getStringEvaluation("test-kotlin-flag-1.mydate", "error", ImmutableContext("user1"))
+        val evalObject = provider2.getObjectEvaluation("test-kotlin-flag-1.mystruct", Value.Structure(mapOf()), ImmutableContext("user1"))
+        val evalNested = provider2.getStringEvaluation("test-kotlin-flag-1.mystruct.innerString", "error", ImmutableContext("user1"))
+        val evalNull = provider2.getStringEvaluation("test-kotlin-flag-1.mynull", "error", ImmutableContext("user1"))
 
         TestCase.assertEquals("red", evalString.value)
         TestCase.assertEquals(false, evalBool.value)
