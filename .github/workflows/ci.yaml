@@ -30,13 +30,15 @@ jobs:
 
       - name: Grant Permission for Gradlew to Execute
         run: chmod +x gradlew
+
+      - name: Run Lint
+        run: ./gradlew lintDebug
+      - name: Run Ktlint
+        run: ./gradlew ktlintCheck
+
       - name: Run build debug
         run: ./gradlew assembleDebug
       - name: Run Tests
         run: ./gradlew :Provider:testDebugUnitTest --no-daemon --stacktrace
       - name: Run build release
         run: ./gradlew assembleRelease
-      - name: Run Lint
-        run: ./gradlew lintDebug
-      - name: Run Ktlint
-        run: ./gradlew ktlintCheck
