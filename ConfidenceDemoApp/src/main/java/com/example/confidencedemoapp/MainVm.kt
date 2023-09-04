@@ -8,6 +8,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import dev.openfeature.contrib.providers.ConfidenceFeatureProvider
+import dev.openfeature.contrib.providers.InitialisationStrategy
 import dev.openfeature.sdk.Client
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FlagEvaluationDetails
@@ -36,10 +37,18 @@ class MainVm(app: Application) : AndroidViewModel(app) {
     init {
         val start = System.currentTimeMillis()
         val clientSecret = ClientSecretProvider.clientSecret()
+
+        val strategy = if(ConfidenceFeatureProvider.isStorageEmpty(app.applicationContext)) {
+            InitialisationStrategy.FetchAndActivate
+        } else {
+            InitialisationStrategy.ActivateAndFetchAsync
+        }
+
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
                 app.applicationContext,
-                clientSecret
+                clientSecret,
+                initialisationStrategy = strategy
             ),
             initialContext = ctx
         )

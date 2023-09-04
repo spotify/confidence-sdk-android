@@ -58,6 +58,7 @@ class ConfidenceFeatureProvider private constructor(
             eventsPublisher.publish(OpenFeatureEvents.ProviderReady)
         }
     }
+
     override fun initialize(initialContext: EvaluationContext?) {
         if (initialContext == null) return
 
@@ -215,6 +216,14 @@ class ConfidenceFeatureProvider private constructor(
     }
     companion object {
         private class ConfidenceMetadata(override var name: String? = "confidence") : ProviderMetadata
+
+        fun isStorageEmpty(
+            context: Context
+        ): Boolean {
+            val storage = StorageFileCache.create(context)
+            val data = storage.read()
+            return data == null
+        }
 
         @Suppress("LongParameterList")
         fun create(
