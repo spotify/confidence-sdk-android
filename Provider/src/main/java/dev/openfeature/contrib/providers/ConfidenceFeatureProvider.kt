@@ -48,7 +48,7 @@ class ConfidenceFeatureProvider private constructor(
     private val client: ConfidenceClient,
     private val flagApplier: FlagApplier,
     private val eventsPublisher: EventsPublisher,
-    private val dispatcher: CoroutineDispatcher
+    dispatcher: CoroutineDispatcher
 ) : FeatureProvider {
     private val job = SupervisorJob()
     private val coroutineScope = CoroutineScope(job + dispatcher)
@@ -300,7 +300,7 @@ class ConfidenceFeatureProvider private constructor(
     }
 }
 
-sealed class InitialisationStrategy {
-    object FetchAndActivate : InitialisationStrategy()
-    object ActivateAndFetchAsync : InitialisationStrategy()
+sealed interface InitialisationStrategy {
+    object FetchAndActivate : InitialisationStrategy
+    object ActivateAndFetchAsync : InitialisationStrategy
 }

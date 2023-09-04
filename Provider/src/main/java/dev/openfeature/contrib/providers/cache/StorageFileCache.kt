@@ -11,17 +11,6 @@ import java.io.File
 
 const val FLAGS_FILE_NAME = "confidence_flags_cache.json"
 
-interface DiskStorage {
-    fun store(
-        resolvedFlags: List<ResolvedFlag>,
-        resolveToken: String,
-        evaluationContext: EvaluationContext
-    ): CacheData
-    fun read(): CacheData?
-
-    fun clear()
-}
-
 class StorageFileCache private constructor(context: Context) : DiskStorage {
     private val file: File = File(context.filesDir, FLAGS_FILE_NAME)
 

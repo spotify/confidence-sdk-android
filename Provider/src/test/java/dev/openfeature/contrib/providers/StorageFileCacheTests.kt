@@ -13,8 +13,11 @@ import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.async.awaitProviderReady
+import dev.openfeature.sdk.events.EventHandler
+import dev.openfeature.sdk.events.OpenFeatureEvents
 import junit.framework.TestCase
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -61,12 +64,16 @@ class StorageFileCacheTests {
     @Test
     fun testOfflineScenarioLoadsStoredCache() = runTest {
         val mockClient: ConfidenceClient = mock()
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventPublisher = EventHandler.eventsPublisher(testDispatcher)
+        eventPublisher.publish(OpenFeatureEvents.ProviderStale)
         val cache1 = InMemoryCache()
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveResponse.Resolved(ResolveFlags(resolvedFlags, "token1")))
         val provider1 = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             client = mockClient,
+            eventsPublisher = eventPublisher,
             cache = cache1
         )
         runBlocking {
