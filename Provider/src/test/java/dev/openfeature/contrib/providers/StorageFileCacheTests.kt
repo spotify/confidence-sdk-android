@@ -1,7 +1,7 @@
 package dev.openfeature.contrib.providers
 
 import android.content.Context
-import dev.openfeature.contrib.providers.cache.StorageFileCache
+import dev.openfeature.contrib.providers.cache.InMemoryCache
 import dev.openfeature.contrib.providers.client.ConfidenceClient
 import dev.openfeature.contrib.providers.client.Flags
 import dev.openfeature.contrib.providers.client.ResolveFlags
@@ -61,7 +61,7 @@ class StorageFileCacheTests {
     @Test
     fun testOfflineScenarioLoadsStoredCache() = runTest {
         val mockClient: ConfidenceClient = mock()
-        val cache1 = StorageFileCache.create(mockContext)
+        val cache1 = InMemoryCache()
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveResponse.Resolved(ResolveFlags(resolvedFlags, "token1")))
         val provider1 = ConfidenceFeatureProvider.create(
             context = mockContext,
@@ -75,14 +75,14 @@ class StorageFileCacheTests {
         }
         // Simulate offline scenario
         whenever(mockClient.resolve(eq(listOf()), any())).thenThrow(Error())
-        // Create new cache to force reading cache data from storage
-        val cache2 = StorageFileCache.create(mockContext)
         val provider2 = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             client = mockClient,
-            cache = cache2
+            cache = InMemoryCache()
         )
+        provider2.initialize(ImmutableContext("user1"))
+
         val evalString = provider2.getStringEvaluation("test-kotlin-flag-1.mystring", "default", ImmutableContext("user1"))
         val evalBool = provider2.getBooleanEvaluation("test-kotlin-flag-1.myboolean", true, ImmutableContext("user1"))
         val evalInteger = provider2.getIntegerEvaluation("test-kotlin-flag-1.myinteger", 1, ImmutableContext("user1"))
