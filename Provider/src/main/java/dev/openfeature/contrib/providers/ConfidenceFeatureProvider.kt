@@ -3,6 +3,8 @@ package dev.openfeature.contrib.providers
 import android.content.Context
 import dev.openfeature.contrib.providers.apply.FlagApplier
 import dev.openfeature.contrib.providers.apply.FlagApplierWithRetries
+import dev.openfeature.contrib.providers.cache.DiskStorage
+import dev.openfeature.contrib.providers.cache.InMemoryCache
 import dev.openfeature.contrib.providers.cache.ProviderCache
 import dev.openfeature.contrib.providers.cache.ProviderCache.CacheResolveResult
 import dev.openfeature.contrib.providers.cache.StorageFileCache
@@ -41,6 +43,8 @@ class ConfidenceFeatureProvider private constructor(
     override val hooks: List<Hook<*>>,
     override val metadata: ProviderMetadata,
     private val cache: ProviderCache,
+    private val storage: DiskStorage,
+    private val initialisationStrategy: InitialisationStrategy,
     private val client: ConfidenceClient,
     private val flagApplier: FlagApplier,
     private val eventsPublisher: EventsPublisher,
@@ -56,12 +60,40 @@ class ConfidenceFeatureProvider private constructor(
     }
     override fun initialize(initialContext: EvaluationContext?) {
         if (initialContext == null) return
+
+        // refresh cache with the last stored data
+        storage.read()?.let(cache::refresh)
+
+        if (initialisationStrategy == InitialisationStrategy.ActivateAndFetchAsync) {
+            eventsPublisher.publish(OpenFeatureEvents.ProviderReady)
+        }
+
         coroutineScope.launch(networkExceptionHandler) {
             val resolveResponse = client.resolve(listOf(), initialContext)
             if (resolveResponse is ResolveResponse.Resolved) {
                 val (flags, resolveToken) = resolveResponse.flags
-                cache.refresh(flags.list, resolveToken, initialContext)
-                eventsPublisher.publish(OpenFeatureEvents.ProviderReady)
+
+                // update the cache and emit the ready signal when the strategy is expected
+                // to wait for the network response
+
+                // we store the flag anyways
+                val storedData = storage.store(
+                    flags.list,
+                    resolveToken,
+                    initialContext
+                )
+
+                when (initialisationStrategy) {
+                    InitialisationStrategy.FetchAndActivate -> {
+                        // refresh the cache from the stored data
+                        cache.refresh(data = storedData)
+                        eventsPublisher.publish(OpenFeatureEvents.ProviderReady)
+                    }
+
+                    InitialisationStrategy.ActivateAndFetchAsync -> {
+                        // do nothing
+                    }
+                }
             }
         }
     }
@@ -189,10 +221,12 @@ class ConfidenceFeatureProvider private constructor(
             context: Context,
             clientSecret: String,
             region: ConfidenceRegion = ConfidenceRegion.EUROPE,
+            initialisationStrategy: InitialisationStrategy = InitialisationStrategy.FetchAndActivate,
             hooks: List<Hook<*>> = listOf(),
             client: ConfidenceClient? = null,
             metadata: ProviderMetadata = ConfidenceMetadata(),
             cache: ProviderCache? = null,
+            storage: DiskStorage? = null,
             flagApplier: FlagApplier? = null,
             eventsPublisher: EventsPublisher = EventHandler.eventsPublisher(Dispatchers.IO),
             dispatcher: CoroutineDispatcher = Dispatchers.IO
@@ -211,7 +245,9 @@ class ConfidenceFeatureProvider private constructor(
             return ConfidenceFeatureProvider(
                 hooks = hooks,
                 metadata = metadata,
-                cache = cache ?: StorageFileCache.create(context),
+                cache = cache ?: InMemoryCache(),
+                storage = storage ?: StorageFileCache.create(context),
+                initialisationStrategy = initialisationStrategy,
                 client = configuredClient,
                 flagApplier = flagApplierWithRetries,
                 eventsPublisher,
@@ -253,4 +289,9 @@ class ConfidenceFeatureProvider private constructor(
             )
         }
     }
+}
+
+sealed class InitialisationStrategy {
+    object FetchAndActivate : InitialisationStrategy()
+    object ActivateAndFetchAsync : InitialisationStrategy()
 }

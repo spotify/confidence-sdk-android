@@ -1,13 +1,12 @@
 package dev.openfeature.contrib.providers.cache
 
 import dev.openfeature.contrib.providers.client.ResolveReason
-import dev.openfeature.contrib.providers.client.ResolvedFlag
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.Value
 import kotlinx.serialization.Serializable
 
 interface ProviderCache {
-    fun refresh(resolvedFlags: List<ResolvedFlag>, resolveToken: String, evaluationContext: EvaluationContext)
+    fun refresh(data: CacheData)
     fun resolve(flagName: String, ctx: EvaluationContext): CacheResolveResult
     fun clear()
 
