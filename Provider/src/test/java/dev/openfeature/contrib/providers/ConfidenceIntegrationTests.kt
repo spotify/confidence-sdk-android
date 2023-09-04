@@ -33,7 +33,7 @@ class ConfidenceIntegrationTests {
     @Before
     fun setup() {
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
-        EventHandler.eventsPublisher().publish(OpenFeatureEvents.ProviderShutDown)
+        EventHandler.eventsPublisher().publish(OpenFeatureEvents.ProviderStale)
     }
 
     @Test
