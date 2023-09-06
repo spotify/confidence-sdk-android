@@ -71,7 +71,7 @@ class StorageFileCacheTests {
         )
         runBlocking {
             provider1.initialize(ImmutableContext(targetingKey = "user1"))
-            awaitProviderReady()
+            provider1.awaitProviderReady()
         }
         // Simulate offline scenario
         whenever(mockClient.resolve(eq(listOf()), any())).thenThrow(Error())

@@ -19,8 +19,11 @@ import dev.openfeature.sdk.ProviderMetadata
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.events.EventHandler
+import dev.openfeature.sdk.events.EventObserver
 import dev.openfeature.sdk.events.EventsPublisher
 import dev.openfeature.sdk.events.OpenFeatureEvents
+import dev.openfeature.sdk.events.ProviderStatus
+import dev.openfeature.sdk.events.observe
 import dev.openfeature.sdk.exceptions.ErrorCode
 import dev.openfeature.sdk.exceptions.OpenFeatureError.FlagNotFoundError
 import dev.openfeature.sdk.exceptions.OpenFeatureError.InvalidContextError
@@ -30,8 +33,12 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 @Suppress(
     "TooManyFunctions",
@@ -43,11 +50,23 @@ class ConfidenceFeatureProvider private constructor(
     private val cache: ProviderCache,
     private val client: ConfidenceClient,
     private val flagApplier: FlagApplier,
-    private val eventsPublisher: EventsPublisher,
-    private val dispatcher: CoroutineDispatcher
+    private val eventsHandler: EventHandler,
+    dispatcher: CoroutineDispatcher
 ) : FeatureProvider {
     private val job = SupervisorJob()
     private val coroutineScope = CoroutineScope(job + dispatcher)
+    private val eventsPublisher: EventsPublisher by lazy {
+        eventsHandler
+    }
+
+    val eventsObserver: EventObserver by lazy {
+        eventsHandler
+    }
+
+    val providerStatus: ProviderStatus by lazy {
+        eventsHandler
+    }
+
     private val networkExceptionHandler by lazy {
         CoroutineExceptionHandler { _, _ ->
             // network failed, provider is ready but with default/cache values
@@ -214,7 +233,7 @@ class ConfidenceFeatureProvider private constructor(
                 cache = cache ?: StorageFileCache.create(context),
                 client = configuredClient,
                 flagApplier = flagApplierWithRetries,
-                eventsPublisher,
+                EventHandler(dispatcher),
                 dispatcher
             )
         }
@@ -254,3 +273,37 @@ class ConfidenceFeatureProvider private constructor(
         }
     }
 }
+
+suspend fun ConfidenceFeatureProvider.awaitProviderReady(
+    dispatcher: CoroutineDispatcher = Dispatchers.IO
+) = suspendCancellableCoroutine { continuation ->
+    val coroutineScope = CoroutineScope(dispatcher)
+    coroutineScope.launch {
+        observeProviderReady()
+            .take(1)
+            .collect {
+                continuation.resumeWith(Result.success(Unit))
+            }
+    }
+
+    coroutineScope.launch {
+        EventHandler.eventsObserver()
+            .observe<OpenFeatureEvents.ProviderError>()
+            .take(1)
+            .collect {
+                continuation.resumeWith(Result.failure(it.error))
+            }
+    }
+
+    continuation.invokeOnCancellation {
+        coroutineScope.cancel()
+    }
+}
+
+internal fun ConfidenceFeatureProvider.observeProviderReady() = eventsObserver
+    .observe<OpenFeatureEvents.ProviderReady>()
+    .onStart {
+        if (providerStatus.isProviderReady()) {
+            this.emit(OpenFeatureEvents.ProviderReady)
+        }
+    }

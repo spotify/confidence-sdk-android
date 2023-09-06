@@ -8,13 +8,13 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import dev.openfeature.contrib.providers.ConfidenceFeatureProvider
+import dev.openfeature.contrib.providers.awaitProviderReady
 import dev.openfeature.sdk.Client
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FlagEvaluationDetails
 import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.Value
-import dev.openfeature.sdk.async.awaitProviderReady
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -36,17 +36,18 @@ class MainVm(app: Application) : AndroidViewModel(app) {
     init {
         val start = System.currentTimeMillis()
         val clientSecret = ClientSecretProvider.clientSecret()
+        val provider = ConfidenceFeatureProvider.create(
+            app.applicationContext,
+            clientSecret
+        )
         OpenFeatureAPI.setProvider(
-            ConfidenceFeatureProvider.create(
-                app.applicationContext,
-                clientSecret
-            ),
+            provider,
             initialContext = ctx
         )
         client = OpenFeatureAPI.getClient()
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                awaitProviderReady()
+                provider.awaitProviderReady()
             }
             Log.d(TAG, "client secret is $clientSecret")
             Log.d(TAG, "init took ${System.currentTimeMillis() - start} ms")

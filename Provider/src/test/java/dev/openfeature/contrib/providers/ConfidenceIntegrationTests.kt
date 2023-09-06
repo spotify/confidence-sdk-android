@@ -8,8 +8,6 @@ import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.async.awaitProviderReady
-import dev.openfeature.sdk.events.EventHandler
-import dev.openfeature.sdk.events.OpenFeatureEvents
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -30,13 +28,13 @@ class ConfidenceIntegrationTests {
     @Before
     fun setup() {
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
-        EventHandler.eventsPublisher().publish(OpenFeatureEvents.ProviderShutDown)
     }
 
     @Test
     fun testSimpleResolveInMemoryCache() {
+        val provider = ConfidenceFeatureProvider.create(mockContext, clientSecret, cache = InMemoryCache())
         OpenFeatureAPI.setProvider(
-            ConfidenceFeatureProvider.create(mockContext, clientSecret, cache = InMemoryCache()),
+            provider,
             ImmutableContext(
                 targetingKey = UUID.randomUUID().toString(),
                 attributes = mutableMapOf(
@@ -49,7 +47,7 @@ class ConfidenceIntegrationTests {
             )
         )
         runBlocking {
-            awaitProviderReady()
+            provider.awaitProviderReady()
         }
 
         val intDetails = OpenFeatureAPI.getClient()
@@ -69,8 +67,9 @@ class ConfidenceIntegrationTests {
     fun testSimpleResolveStoredCache() {
         val cacheFile = File(mockContext.filesDir, FLAGS_FILE_NAME)
         assertEquals(0L, cacheFile.length())
+        val provider = ConfidenceFeatureProvider.create(mockContext, clientSecret)
         OpenFeatureAPI.setProvider(
-            ConfidenceFeatureProvider.create(mockContext, clientSecret),
+            provider,
             ImmutableContext(
                 targetingKey = UUID.randomUUID().toString(),
                 attributes = mutableMapOf(
@@ -84,7 +83,7 @@ class ConfidenceIntegrationTests {
         )
 
         runBlocking {
-            awaitProviderReady()
+            provider.awaitProviderReady()
         }
 
         assertNotEquals(0L, cacheFile.length())
