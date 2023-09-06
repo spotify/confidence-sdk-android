@@ -1,32 +1,14 @@
 package dev.openfeature.contrib.providers.cache
 
-import dev.openfeature.contrib.providers.cache.ProviderCache.CacheEntry
 import dev.openfeature.contrib.providers.cache.ProviderCache.CacheResolveEntry
 import dev.openfeature.contrib.providers.cache.ProviderCache.CacheResolveResult
-import dev.openfeature.contrib.providers.client.ResolvedFlag
 import dev.openfeature.sdk.EvaluationContext
-import dev.openfeature.sdk.Value
-import kotlinx.serialization.Serializable
 
 open class InMemoryCache : ProviderCache {
-    var data: CacheData? = null
+    private var data: CacheData? = null
 
-    override fun refresh(
-        resolvedFlags: List<ResolvedFlag>,
-        resolveToken: String,
-        evaluationContext: EvaluationContext
-    ) {
-        data = CacheData(
-            values = resolvedFlags.associate {
-                it.flag to CacheEntry(
-                    it.variant,
-                    Value.Structure(it.value.asMap()),
-                    it.reason
-                )
-            },
-            evaluationContextHash = evaluationContext.hashCode(),
-            resolveToken = resolveToken
-        )
+    override fun refresh(cacheData: CacheData) {
+        data = cacheData
     }
 
     override fun resolve(flagName: String, ctx: EvaluationContext): CacheResolveResult {
@@ -43,11 +25,4 @@ open class InMemoryCache : ProviderCache {
     override fun clear() {
         data = null
     }
-
-    @Serializable
-    data class CacheData(
-        val resolveToken: String,
-        val evaluationContextHash: Int,
-        val values: Map<String, CacheEntry>
-    )
 }

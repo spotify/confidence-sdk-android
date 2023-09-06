@@ -15,6 +15,7 @@ import dev.openfeature.contrib.providers.apply.EventStatus
 import dev.openfeature.contrib.providers.apply.FlagsAppliedMap
 import dev.openfeature.contrib.providers.apply.json
 import dev.openfeature.contrib.providers.cache.InMemoryCache
+import dev.openfeature.contrib.providers.cache.toCacheData
 import dev.openfeature.contrib.providers.client.AppliedFlag
 import dev.openfeature.contrib.providers.client.ConfidenceClient
 import dev.openfeature.contrib.providers.client.Flags
@@ -650,7 +651,8 @@ internal class ConfidenceFeatureProviderTests {
         )
 
         // Simulate a case where the context in the cache is not synced with the evaluation's context
-        cache.refresh(resolvedFlags.list, "token2", ImmutableContext("user1"))
+        val cacheData = toCacheData(resolvedFlags.list, "token2", ImmutableContext("user1"))
+        cache.refresh(cacheData)
         val evalString = confidenceFeatureProvider.getStringEvaluation("test-kotlin-flag-1.mystring", "default", ImmutableContext("user2"))
         val evalBool = confidenceFeatureProvider.getBooleanEvaluation("test-kotlin-flag-1.myboolean", true, ImmutableContext("user2"))
         val evalInteger = confidenceFeatureProvider.getIntegerEvaluation("test-kotlin-flag-1.myinteger", 1, ImmutableContext("user2"))
@@ -736,7 +738,12 @@ internal class ConfidenceFeatureProviderTests {
             )
         )
 
-        cache.refresh(resolvedFlagInvalidKey.list, "token", ImmutableContext("user1"))
+        val cacheData = toCacheData(
+            resolvedFlagInvalidKey.list,
+            "token",
+            ImmutableContext("user1")
+        )
+        cache.refresh(cacheData)
         val evalString = confidenceFeatureProvider.getStringEvaluation("test-kotlin-flag-1.mystring", "default", ImmutableContext("user1"))
         assertEquals("default", evalString.value)
         assertEquals(Reason.ERROR.toString(), evalString.reason)
@@ -810,7 +817,12 @@ internal class ConfidenceFeatureProviderTests {
         )
         // Simulate a case where the context in the cache is not synced with the evaluation's context
         // This shouldn't have an effect in this test, given that not found values are priority over stale values
-        cache.refresh(resolvedFlags.list, "token2", ImmutableContext("user1"))
+        val cacheData = toCacheData(
+            resolvedFlags.list,
+            "token2",
+            ImmutableContext("user1")
+        )
+        cache.refresh(cacheData)
         val ex = assertThrows(FlagNotFoundError::class.java) {
             confidenceFeatureProvider.getStringEvaluation("test-kotlin-flag-2.mystring", "default", ImmutableContext("user2"))
         }
@@ -853,7 +865,7 @@ internal class ConfidenceFeatureProviderTests {
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveResponse.NotModified)
         confidenceFeatureProvider.initialize(ImmutableContext("user1"))
         advanceUntilIdle()
-        verify(cache, never()).refresh(any(), any(), any())
+        verify(cache, never()).refresh(any())
     }
 
     @Test

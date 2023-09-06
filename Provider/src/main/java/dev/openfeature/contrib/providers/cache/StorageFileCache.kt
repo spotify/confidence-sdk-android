@@ -3,48 +3,73 @@ package dev.openfeature.contrib.providers.cache
 import android.content.Context
 import dev.openfeature.contrib.providers.client.ResolvedFlag
 import dev.openfeature.sdk.EvaluationContext
+import dev.openfeature.sdk.Value
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 
 const val FLAGS_FILE_NAME = "confidence_flags_cache.json"
 
-class StorageFileCache private constructor(context: Context) : InMemoryCache() {
+class StorageFileCache private constructor(context: Context) : DiskStorage {
     private val file: File = File(context.filesDir, FLAGS_FILE_NAME)
 
-    override fun refresh(
+    override fun store(
         resolvedFlags: List<ResolvedFlag>,
         resolveToken: String,
         evaluationContext: EvaluationContext
-    ) {
-        super.refresh(resolvedFlags, resolveToken, evaluationContext)
-        // TODO Should this happen before in-memory cache is changed?
-        writeToFile()
+    ): CacheData {
+        val data = toCacheData(
+            resolvedFlags,
+            resolveToken,
+            evaluationContext
+        )
+
+        write(Json.encodeToString(data))
+        return data
     }
 
     override fun clear() {
-        super.clear()
-        // TODO Should this happen before in-memory cache is changed?
         file.delete()
     }
 
-    private fun writeToFile() {
-        val fileData = Json.encodeToString(data)
-        file.writeText(fileData)
+    private fun write(data: String) {
+        file.writeText(data)
     }
 
-    private fun readFile() {
-        if (!file.exists()) return
+    override fun read(): CacheData? {
+        if (!file.exists()) return null
         val fileText: String = file.bufferedReader().use { it.readText() }
-        if (fileText.isEmpty()) return
-        data = Json.decodeFromString(CacheData.serializer(), fileText)
+        if (fileText.isEmpty()) return null
+        return Json.decodeFromString(fileText)
     }
 
     companion object {
-        fun create(context: Context): StorageFileCache {
-            val storage = StorageFileCache(context)
-            storage.readFile()
-            return storage
+        fun create(context: Context): DiskStorage {
+            return StorageFileCache(context)
         }
     }
 }
+
+internal fun toCacheData(
+    resolvedFlags: List<ResolvedFlag>,
+    resolveToken: String,
+    evaluationContext: EvaluationContext
+) = CacheData(
+    values = resolvedFlags.associate {
+        it.flag to ProviderCache.CacheEntry(
+            it.variant,
+            Value.Structure(it.value.asMap()),
+            it.reason
+        )
+    },
+    evaluationContextHash = evaluationContext.hashCode(),
+    resolveToken = resolveToken
+)
+
+@Serializable
+data class CacheData(
+    val resolveToken: String,
+    val evaluationContextHash: Int,
+    val values: Map<String, ProviderCache.CacheEntry>
+)
