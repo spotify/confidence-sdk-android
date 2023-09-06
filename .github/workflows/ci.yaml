@@ -12,9 +12,6 @@ jobs:
   Tests:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    resources:
-        cpu: 2 # Adjust the number of CPU cores as needed
-        memory: 4GB # Adjust the memory size as needed
     steps:
       - name: Checkout project sources
         uses: actions/checkout@v3
@@ -29,6 +26,6 @@ jobs:
       - name: Run build debug
         run: ./gradlew assembleDebug
       - name: Run Tests
-        run: ./gradlew :Provider:testDebugUnitTest --no-daemon --stacktrace
+        run: ./gradlew :Provider:testDebugUnitTest --stacktrace
       - name: Run build release
         run: ./gradlew assembleRelease
