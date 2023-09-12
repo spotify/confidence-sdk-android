@@ -60,12 +60,22 @@ class ConfidenceFeatureProvider private constructor(
     }
 
     override fun initialize(initialContext: EvaluationContext?) {
-        if (initialContext == null) return
+        initialContext?.let {
+            internalInitialize(
+                initialContext,
+                initialisationStrategy
+            )
+        }
+    }
 
+    private fun internalInitialize(
+        initialContext: EvaluationContext,
+        strategy: InitialisationStrategy
+    ) {
         // refresh cache with the last stored data
         storage.read()?.let(cache::refresh)
 
-        if (initialisationStrategy == InitialisationStrategy.ActivateAndFetchAsync) {
+        if (strategy == InitialisationStrategy.ActivateAndFetchAsync) {
             eventsPublisher.publish(OpenFeatureEvents.ProviderReady)
         }
 
@@ -84,7 +94,7 @@ class ConfidenceFeatureProvider private constructor(
                     initialContext
                 )
 
-                when (initialisationStrategy) {
+                when (strategy) {
                     InitialisationStrategy.FetchAndActivate -> {
                         // refresh the cache from the stored data
                         cache.refresh(data = storedData)
@@ -108,7 +118,14 @@ class ConfidenceFeatureProvider private constructor(
         newContext: EvaluationContext
     ) {
         if (newContext != oldContext) {
-            initialize(newContext)
+            eventsPublisher.publish(OpenFeatureEvents.ProviderStale)
+
+            // on the new context we want to fetch new values and update
+            // the storage & cache right away which is why we pass `InitialisationStrategy.FetchAndActivate`
+            internalInitialize(
+                newContext,
+                InitialisationStrategy.FetchAndActivate
+            )
         }
     }
 

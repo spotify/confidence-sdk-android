@@ -85,6 +85,9 @@ internal class ConfidenceFeatureProviderTests {
     private val mockClient: ConfidenceClient = mock()
     private val mockContext: Context = mock()
     private val instant = Instant.parse("2023-03-01T14:01:46.645Z")
+    private val blueStringValues = mutableMapOf(
+        "mystring" to Value.String("blue")
+    )
     private val resolvedValueAsMap = mutableMapOf(
         "mystring" to Value.String("red"),
         "myboolean" to Value.Boolean(false),
@@ -311,6 +314,53 @@ internal class ConfidenceFeatureProviderTests {
         assertNull(evalObject.errorCode)
         assertNull(evalNested.errorCode)
         assertNull(evalNull.errorCode)
+    }
+
+    @Test
+    fun testNewContextFetchValuesAgain() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            clientSecret = "",
+            cache = InMemoryCache(),
+            client = mockClient,
+            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            dispatcher = testDispatcher
+        )
+
+        val evaluationContext1 = ImmutableContext("foo")
+        val evaluationContext2 = ImmutableContext("bar")
+
+        whenever(mockClient.resolve(eq(listOf()), eq(evaluationContext1))).thenReturn(
+            ResolveResponse.Resolved(
+                ResolveFlags(resolvedFlags, "token1")
+            )
+        )
+
+        val newExpectedValue = resolvedFlags.list[0].copy(value = ImmutableStructure(blueStringValues))
+        whenever(mockClient.resolve(eq(listOf()), eq(evaluationContext2))).thenReturn(
+            ResolveResponse.Resolved(
+                ResolveFlags(Flags(listOf(newExpectedValue)), "token1")
+            )
+        )
+
+        confidenceFeatureProvider.initialize(evaluationContext1)
+        advanceUntilIdle()
+
+        val evalString1 = confidenceFeatureProvider.getStringEvaluation(
+            "test-kotlin-flag-1.mystring",
+            "default",
+            evaluationContext1
+        )
+        assertEquals("red", evalString1.value)
+        confidenceFeatureProvider.onContextSet(evaluationContext1, evaluationContext2)
+        advanceUntilIdle()
+        val evalString2 = confidenceFeatureProvider.getStringEvaluation(
+            "test-kotlin-flag-1.mystring",
+            "default",
+            evaluationContext2
+        )
+        assertEquals("blue", evalString2.value)
     }
 
     @Test
