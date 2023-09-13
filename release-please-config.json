@@ -5,7 +5,9 @@
             "release-type": "simple",
             "bump-minor-pre-major": true,
             "bump-patch-for-minor-pre-major": true,
-            "versioning": "default"
+            "versioning": "default",
+            "include-v-in-tag": false,
+            "extra-files": ["README.md"]
         }
     },
     "changelog-sections": [
