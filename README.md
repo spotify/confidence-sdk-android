@@ -55,6 +55,11 @@ coroutineScope.launch {
 }
 ```
 
+### Changing context after the provider initialization 
+The evaluation context can be changed during the app session using `setEvaluationContext(...)`.
+After calling this method the new context is set for the provider and the flags will be fetched again and the cache and storage will be updated accordingly.
+the `ProviderStale` and `ProviderReady` events will be emitted in order.
+
 Notes:
 - If a flag can't be resolved from cache, the provider doesn't automatically resort to calling remote: refreshing the cache from remote only happens when setting a new provider and/or evaluation context in the global OpenFeatureAPI
 - It's advised not to perform resolves while `setProvider` and `setEvaluationContext` are running: resolves might return the default value with reason `STALE` during such operations.
