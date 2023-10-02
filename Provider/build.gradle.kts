@@ -19,12 +19,12 @@ object Versions {
 }
 
 android {
-    namespace = "dev.openfeature.contrib.providers"
+    namespace = "com.spotify.confidence"
     compileSdk = 33
 
     defaultConfig {
         minSdk = 21
-        version = "0.0.1"
+        version = Versions.providerVersion
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -64,8 +64,8 @@ afterEvaluate {
     publishing {
         publications {
             register<MavenPublication>("release") {
-                groupId = "dev.openfeature.contrib.providers"
-                artifactId = "confidence"
+                groupId = "com.spotify"
+                artifactId = "confidence-openfeature-provider-kotlin"
                 version = Versions.providerVersion
 
                 from(components["release"])

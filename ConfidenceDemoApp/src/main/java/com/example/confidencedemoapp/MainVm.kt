@@ -7,8 +7,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import dev.openfeature.contrib.providers.ConfidenceFeatureProvider
-import dev.openfeature.contrib.providers.InitialisationStrategy
+import com.spotify.confidence.ConfidenceFeatureProvider
+import com.spotify.confidence.InitialisationStrategy
 import dev.openfeature.sdk.Client
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FlagEvaluationDetails
