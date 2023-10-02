@@ -11,8 +11,7 @@ import java.io.File
 
 const val FLAGS_FILE_NAME = "confidence_flags_cache.json"
 
-class StorageFileCache private constructor(context: Context) : DiskStorage {
-    private val file: File = File(context.filesDir, FLAGS_FILE_NAME)
+class StorageFileCache private constructor(private val file: File) : DiskStorage {
 
     override fun store(
         resolvedFlags: List<ResolvedFlag>,
@@ -46,7 +45,14 @@ class StorageFileCache private constructor(context: Context) : DiskStorage {
 
     companion object {
         fun create(context: Context): DiskStorage {
-            return StorageFileCache(context)
+            return StorageFileCache(File(context.filesDir, FLAGS_FILE_NAME))
+        }
+
+        /**
+         * Testing purposes only!
+         */
+        fun forFile(file: File): DiskStorage {
+            return StorageFileCache(file)
         }
     }
 }
