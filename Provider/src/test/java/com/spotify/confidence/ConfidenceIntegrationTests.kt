@@ -1,7 +1,6 @@
 package com.spotify.confidence
 
 import android.content.Context
-import com.spotify.confidence.cache.FLAGS_FILE_NAME
 import com.spotify.confidence.cache.StorageFileCache
 import com.spotify.confidence.client.ResolveReason
 import com.spotify.confidence.client.ResolvedFlag
@@ -24,7 +23,6 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import java.io.File
 import java.nio.file.Files
 import java.util.UUID
 
@@ -153,10 +151,16 @@ class ConfidenceIntegrationTests {
         val eventsHandler = EventHandler(Dispatchers.IO).apply {
             publish(OpenFeatureEvents.ProviderStale)
         }
-        val cacheFile = File(mockContext.filesDir, FLAGS_FILE_NAME)
+        val cacheFile = tmpFile.newFile()
+        val storage = StorageFileCache.forFile(cacheFile)
         assertEquals(0L, cacheFile.length())
         OpenFeatureAPI.setProvider(
-            ConfidenceFeatureProvider.create(mockContext, clientSecret, eventsPublisher = eventsHandler),
+            ConfidenceFeatureProvider.create(
+                mockContext,
+                clientSecret,
+                eventsPublisher = eventsHandler,
+                storage = storage
+            ),
             ImmutableContext(
                 targetingKey = UUID.randomUUID().toString(),
                 attributes = mutableMapOf(
