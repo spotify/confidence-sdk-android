@@ -13,6 +13,7 @@ import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.async.awaitProviderReady
 import dev.openfeature.sdk.events.EventHandler
 import dev.openfeature.sdk.events.OpenFeatureEvents
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -33,7 +34,6 @@ class ConfidenceIntegrationTests {
     @Before
     fun setup() {
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
-        EventHandler.eventsPublisher().publish(OpenFeatureEvents.ProviderStale)
     }
 
     @Test
@@ -73,11 +73,15 @@ class ConfidenceIntegrationTests {
             )
         }
 
+        val eventsPublisher = EventHandler.eventsPublisher(Dispatchers.IO).apply {
+            publish(OpenFeatureEvents.ProviderStale)
+        }
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
                 mockContext,
                 clientSecret,
-                initialisationStrategy = InitialisationStrategy.ActivateAndFetchAsync
+                initialisationStrategy = InitialisationStrategy.ActivateAndFetchAsync,
+                eventsPublisher = eventsPublisher
             ),
             context
         )
@@ -100,11 +104,15 @@ class ConfidenceIntegrationTests {
 
     @Test
     fun testSimpleResolveInMemoryCache() {
+        val eventsPublisher = EventHandler.eventsPublisher(Dispatchers.IO).apply {
+            publish(OpenFeatureEvents.ProviderStale)
+        }
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
                 mockContext,
                 clientSecret,
-                initialisationStrategy = InitialisationStrategy.FetchAndActivate
+                initialisationStrategy = InitialisationStrategy.FetchAndActivate,
+                eventsPublisher = eventsPublisher
             ),
             ImmutableContext(
                 targetingKey = UUID.randomUUID().toString(),
@@ -136,10 +144,13 @@ class ConfidenceIntegrationTests {
 
     @Test
     fun testSimpleResolveStoredCache() {
+        val eventsPublisher = EventHandler.eventsPublisher(Dispatchers.IO).apply {
+            publish(OpenFeatureEvents.ProviderStale)
+        }
         val cacheFile = File(mockContext.filesDir, FLAGS_FILE_NAME)
         assertEquals(0L, cacheFile.length())
         OpenFeatureAPI.setProvider(
-            ConfidenceFeatureProvider.create(mockContext, clientSecret),
+            ConfidenceFeatureProvider.create(mockContext, clientSecret, eventsPublisher = eventsPublisher),
             ImmutableContext(
                 targetingKey = UUID.randomUUID().toString(),
                 attributes = mutableMapOf(
