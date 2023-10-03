@@ -12,11 +12,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 suspend fun awaitProviderReady(
-
     eventsHandler: EventHandler,
-
     dispatcher: CoroutineDispatcher = Dispatchers.IO
-
 ) = suspendCancellableCoroutine { continuation ->
 
     fun observeProviderReady() = eventsHandler
@@ -28,7 +25,6 @@ suspend fun awaitProviderReady(
         }
 
     val coroutineScope = CoroutineScope(dispatcher)
-
     coroutineScope.launch {
         observeProviderReady()
             .take(1)
