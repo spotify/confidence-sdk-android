@@ -65,7 +65,7 @@ afterEvaluate {
         publications {
             register<MavenPublication>("release") {
                 groupId = "com.spotify"
-                artifactId = "confidence-openfeature-provider-kotlin"
+                artifactId = "confidence-openfeature-provider-android"
                 version = Versions.providerVersion
 
                 from(components["release"])
