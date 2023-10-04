@@ -1,0 +1,63 @@
+name: Temporary signing
+
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  Sign:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Cache Gradle and wrapper
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - uses: actions/checkout@v4
+
+      - name: Configure GPG Key
+        run: |
+            echo -n "$GPG_SIGNING_KEY" | base64 --decode | gpg --import --no-tty --batch --yes
+            gpg --pinentry-mode=loopback --passphrase $GPG_SIGNING_KEY_PASSWORD --export-secret-key $GPG_SIGNING_KEY_ID > ~/.gnupg/secring.gpg
+        env:
+            GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
+            GPG_SIGNING_KEY_PASSWORD: ${{ secrets.GPG_SIGNING_KEY_PASSWORD }}
+
+      - name: Add signing secrets to gradle.properties
+        run: |
+            mkdir ~/.gradle/
+            echo "signing.keyId=$GPG_SIGNING_KEY_ID" >> ~/.gradle/gradle.properties
+            echo "signing.password=$GPG_SIGNING_KEY_PASSWORD" >> ~/.gradle/gradle.properties
+            echo "signing.secretKeyRingFile=/home/runner/.gnupg/secring.gpg" >> ~/.gradle/gradle.properties
+        env:
+            GPG_SIGNING_KEY_ID: ${{ secrets.GPG_SIGNING_KEY_ID }}
+            GPG_SIGNING_KEY_PASSWORD: ${{ secrets.GPG_SIGNING_KEY_PASSWORD }}
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+            java-version: 11
+            distribution: 'zulu'
+
+      - name: Grant Permission for Gradlew to Execute
+        run: chmod +x gradlew
+
+      - name: Build AAR ⚙️🛠
+        env:
+            OF_KOTLIN_RELEASE_VERSION: ${{ needs.release-please.outputs.version }}
+            OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+            OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+        run: bash ./gradlew :Provider:publish
+
+      - name: Clean up signing secrets
+        run: rm -rf ~/.gradle/gradle.properties
