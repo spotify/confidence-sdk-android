@@ -136,6 +136,7 @@ private fun Response.toResolveFlags(): ResolveResponse {
     val networkJson = Json {
         serializersModule = SerializersModule {
             contextual(FlagsSerializer)
+            ignoreUnknownKeys = true
         }
     }
     return ResolveResponse.Resolved(networkJson.decodeFromString(bodyString))
