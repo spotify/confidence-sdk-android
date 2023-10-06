@@ -5,6 +5,7 @@ plugins {
     id("maven-publish")
     id("org.jlleitschuh.gradle.ktlint")
     kotlin("plugin.serialization")
+    id("signing")
 }
 
 object Versions {
@@ -45,6 +46,13 @@ android {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
+
+    publishing {
+        singleVariant("release") {
+            withJavadocJar()
+            withSourcesJar()
+        }
+    }
 }
 
 dependencies {
@@ -60,31 +68,30 @@ dependencies {
     testImplementation("com.squareup.okhttp3:mockwebserver:${Versions.mockWebServer}")
 }
 
-afterEvaluate {
-    publishing {
-        publications {
-            register<MavenPublication>("release") {
-                groupId = "com.spotify"
-                artifactId = "confidence-openfeature-provider-android"
-                version = Versions.providerVersion
+publishing {
+    publications {
+        register<MavenPublication>("release") {
+            groupId = "com.spotify.confidence"
+            artifactId = "openfeature-provider-android"
+            version = Versions.providerVersion
 
-                from(components["release"])
-                artifact(androidSourcesJar.get())
-
-                pom {
-                    name.set("SpotifyConfidenceProvider")
+            repositories {
+                maven {
+                    name = "Sonatype"
+                    url = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
+                    credentials {
+                        username = System.getenv("OSSRH_USERNAME")
+                        password = System.getenv("OSSRH_PASSWORD")
+                    }
                 }
+            }
+            afterEvaluate {
+                from(components["release"])
             }
         }
     }
 }
 
-val androidSourcesJar by tasks.registering(Jar::class) {
-    archiveClassifier.set("sources")
-    from(android.sourceSets.getByName("main").java.srcDirs)
-}
-
-// Assembling should be performed before publishing package
-tasks.named("publish") {
-    dependsOn("assemble")
+signing {
+    sign(publishing.publications["release"])
 }
