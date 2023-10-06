@@ -6,7 +6,7 @@ import dev.openfeature.sdk.Value
 import kotlinx.serialization.Serializable
 
 interface ProviderCache {
-    fun refresh(data: CacheData)
+    fun refresh(cacheData: CacheData)
     fun resolve(flagName: String, ctx: EvaluationContext): CacheResolveResult
     fun clear()
 

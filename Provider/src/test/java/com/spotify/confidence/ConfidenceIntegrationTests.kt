@@ -18,10 +18,13 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
+import java.nio.file.Files
 import java.util.UUID
 
 private const val CLIENT_SECRET = "ldZWlt6ywPIiPNf16WINSTh0yoHzSQEc"
@@ -31,6 +34,11 @@ class ConfidenceIntegrationTests {
 
     @get:Rule
     var tmpFile = TemporaryFolder()
+
+    @Before
+    fun setup() {
+        whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
+    }
 
     private val evaluationContext = ImmutableContext(
         targetingKey = UUID.randomUUID().toString(),

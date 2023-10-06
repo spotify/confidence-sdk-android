@@ -96,7 +96,7 @@ class ConfidenceFeatureProvider private constructor(
                 when (strategy) {
                     InitialisationStrategy.FetchAndActivate -> {
                         // refresh the cache from the stored data
-                        cache.refresh(data = storedData)
+                        cache.refresh(cacheData = storedData)
                         eventsPublisher.publish(OpenFeatureEvents.ProviderReady)
                     }
 
