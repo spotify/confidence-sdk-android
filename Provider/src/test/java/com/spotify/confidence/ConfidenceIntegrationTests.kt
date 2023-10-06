@@ -59,7 +59,7 @@ class ConfidenceIntegrationTests {
         val storedValue = 10
 
         val storage =
-            StorageFileCache.create(mockContext)
+            StorageFileCache.forFiles(tmpFile.newFile("flagsFile"), tmpFile.newFile("applyFile"))
                 .apply {
                     val flags = listOf(
                         ResolvedFlag(
@@ -115,7 +115,7 @@ class ConfidenceIntegrationTests {
             publish(OpenFeatureEvents.ProviderStale)
         }
         // empty storage
-        val storage = StorageFileCache.create(mockContext)
+        val storage = StorageFileCache.forFiles(tmpFile.newFile("flagsFile"), tmpFile.newFile("applyFile"))
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
                 mockContext,
@@ -181,7 +181,7 @@ class ConfidenceIntegrationTests {
             publish(OpenFeatureEvents.ProviderStale)
         }
         // empty storage
-        val storage = StorageFileCache.create(mockContext)
+        val storage = StorageFileCache.forFiles(tmpFile.newFile("flagsFile"), tmpFile.newFile("applyFile"))
         // incorrect context that does get assignments
         val incorrectContext = ImmutableContext(
             targetingKey = UUID.randomUUID().toString(),
