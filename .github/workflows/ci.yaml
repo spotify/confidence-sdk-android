@@ -43,5 +43,7 @@ jobs:
         run: ./gradlew assembleDebug
       - name: Run Tests
         run: ./gradlew :Provider:testDebugUnitTest --no-daemon --stacktrace --info
+        env:
+            INTEGRATION_TEST_CLIENT_SECRET: ${{ secrets.INTEGRATION_TEST_CLIENT_SECRET }}
       - name: Run build release
         run: ./gradlew assembleRelease

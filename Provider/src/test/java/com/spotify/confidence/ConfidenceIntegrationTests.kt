@@ -29,8 +29,8 @@ import org.mockito.kotlin.whenever
 import java.nio.file.Files
 import java.util.UUID
 
-private const val CLIENT_SECRET = "ldZWlt6ywPIiPNf16WINSTh0yoHzSQEc"
 private val mockContext: Context = mock()
+private val clientSecret = System.getenv("INTEGRATION_TEST_CLIENT_SECRET")!!.toString()
 
 class ConfidenceIntegrationTests {
 
@@ -66,8 +66,8 @@ class ConfidenceIntegrationTests {
                 .apply {
                     val flags = listOf(
                         ResolvedFlag(
-                            "test-flag-1",
-                            variant = "flags/test-flag-1/off",
+                            "e2e-android-provider-flag",
+                            variant = "flags/e2e-android-provider-flag/off",
                             reason = ResolveReason.RESOLVE_REASON_MATCH,
                             value = ImmutableStructure(
                                 mapOf("my-integer" to Value.Integer(storedValue))
@@ -88,7 +88,7 @@ class ConfidenceIntegrationTests {
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
                 mockContext,
-                CLIENT_SECRET,
+                clientSecret,
                 storage = storage,
                 initialisationStrategy = InitialisationStrategy.ActivateAndFetchAsync,
                 eventsPublisher = eventsHandler,
@@ -102,7 +102,7 @@ class ConfidenceIntegrationTests {
 
         val intDetails = OpenFeatureAPI.getClient()
             .getIntegerDetails(
-                "test-flag-1.my-integer",
+                "e2e-android-provider-flag.my-integer",
                 0
             )
         assertNull(intDetails.errorCode)
@@ -124,7 +124,7 @@ class ConfidenceIntegrationTests {
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
                 mockContext,
-                CLIENT_SECRET,
+                clientSecret,
                 initialisationStrategy = InitialisationStrategy.FetchAndActivate,
                 storage = storage,
                 eventsPublisher = eventsHandler,
@@ -138,13 +138,13 @@ class ConfidenceIntegrationTests {
 
         val intDetails = OpenFeatureAPI.getClient()
             .getIntegerDetails(
-                "test-flag-1.my-integer",
+                "e2e-android-provider-flag.my-integer",
                 0
             )
         assertNull(intDetails.errorCode)
         assertNull(intDetails.errorMessage)
         assertNotNull(intDetails.value)
-        assertNotEquals(0, intDetails.value)
+        assertEquals(7, intDetails.value)
         assertEquals(Reason.TARGETING_MATCH.name, intDetails.reason)
         assertNotNull(intDetails.variant)
     }
@@ -161,7 +161,7 @@ class ConfidenceIntegrationTests {
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
                 mockContext,
-                CLIENT_SECRET,
+                clientSecret,
                 eventsPublisher = eventsHandler,
                 storage = storage,
                 dispatcher = testDispatcher
@@ -174,7 +174,7 @@ class ConfidenceIntegrationTests {
         }
 
         assertNotEquals(0L, cacheFileStore.length())
-        val intDetails = OpenFeatureAPI.getClient().getIntegerDetails("test-flag-1.my-non-existing-prop", 0)
+        val intDetails = OpenFeatureAPI.getClient().getIntegerDetails("e2e-android-provider-flag.my-non-existing-prop", 0)
         assertNotNull(intDetails.errorCode)
         assertNotNull(intDetails.errorMessage)
         assertEquals(0, intDetails.value)
@@ -204,7 +204,7 @@ class ConfidenceIntegrationTests {
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
                 mockContext,
-                CLIENT_SECRET,
+                clientSecret,
                 initialisationStrategy = InitialisationStrategy.FetchAndActivate,
                 storage = storage,
                 eventsPublisher = eventsHandler,
@@ -218,7 +218,7 @@ class ConfidenceIntegrationTests {
 
         val intDetailsDefault = OpenFeatureAPI.getClient()
             .getIntegerDetails(
-                "test-flag-1.my-integer",
+                "e2e-android-provider-flag.my-integer",
                 0
             )
         assertNull(intDetailsDefault.errorCode)
@@ -236,13 +236,13 @@ class ConfidenceIntegrationTests {
 
         val intDetails = OpenFeatureAPI.getClient()
             .getIntegerDetails(
-                "test-flag-1.my-integer",
+                "e2e-android-provider-flag.my-integer",
                 0
             )
         assertNull(intDetails.errorCode)
         assertNull(intDetails.errorMessage)
         assertNotNull(intDetails.value)
-        assertNotEquals(0, intDetails.value)
+        assertEquals(7, intDetails.value)
         assertEquals(Reason.TARGETING_MATCH.name, intDetails.reason)
     }
 }
