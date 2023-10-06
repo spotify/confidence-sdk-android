@@ -14,10 +14,10 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import java.io.File
 
-const val FLAGS_FILE_NAME = "confidence_flags_cache.json"
-const val APPLY_FILE_NAME = "confidence_apply_cache.json"
+internal const val FLAGS_FILE_NAME = "confidence_flags_cache.json"
+internal const val APPLY_FILE_NAME = "confidence_apply_cache.json"
 
-class StorageFileCache private constructor(
+internal class StorageFileCache private constructor(
     private val flagsFile: File,
     private val applyFile: File
 ) : DiskStorage {
