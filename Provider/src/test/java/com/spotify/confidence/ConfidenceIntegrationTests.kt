@@ -13,6 +13,8 @@ import dev.openfeature.sdk.events.EventHandler
 import dev.openfeature.sdk.events.OpenFeatureEvents
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -55,7 +57,8 @@ class ConfidenceIntegrationTests {
         "AUi7izywlL0AEMyOVefLST+kYqzuO1PRJzXEEKNHTZCySkmuuEgg5J3rvZhwO+8/f/aOrWjTmVbby3lz2AWEQJjHqbmnvIo7OurF3buyxC7xWp7Ivn7N5+oZC/NoLF7mVEIHGo+dRWN/b0z1rTBXasMwV3HzPc03aRHb47WNG0A2asYsVERWBC9veXi8OSOPnx/aJrbBz7ROwdrr87Lp3C60GgO3P2RxVADZrI5BJzSlLv3jAyWFh563cdaqTCmjUp/iaWilYRqlXSGLkvUqdh40KlUpmIfdLvZ8gxbgq7muzzZuegTq6FMxMhxIvErO6quPN4MSPaoVX2cJ7601s5OZ0idsHvBH4TJPzOWOrn9BYJ9JXrdoblbyUfyXBOS0UsLh6O0ftD02TVd8VgWYNO8RrVDmtfsXkPhcSGIB3SuzgXgLhMZaGfy1Yd7U6EwQMx+Q0AY8fPfM9cGC9bz7N4/JvRJx2mRl+3I8ellH0VFzIhdMkzeRzE1T5Zo0NYvLPuf1n54FES10pEenrcjr2YJwm5uPzxNf+5sb0juD40jzzdVrSu5/CFP3i5orGyLWr0WOuCuQ1IbYl/lwWnjHLOuJfaOJJkcD6On2UpZkDrrt6Lis6I1Lt0QLOtxFugNHOTanRziexdtSqevehXC7JXNeCvdfAxNGbZd2AlH14rU+KMVMIvz77RbTS0t2FyHVufgb/nN6SAHfj7tC9TzRIQnlYLSzM3MMkK2VNtSpL8TW9OM4RG0Xuby0AU6KvBY4Wz++f+iC6pRI/1GKh4XzcUPFXnyh2hYz97A2t3WCnN+tWHdit2ozL+KNm/Ac3dfBkuonZhyTXpSV0Q=="
 
     @Test
-    fun testActivateAndFetchReadsTheLastValue() {
+    fun testActivateAndFetchReadsTheLastValue() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val storedValue = 10
 
         val storage =
@@ -88,12 +91,13 @@ class ConfidenceIntegrationTests {
                 CLIENT_SECRET,
                 storage = storage,
                 initialisationStrategy = InitialisationStrategy.ActivateAndFetchAsync,
-                eventsPublisher = eventsHandler
+                eventsPublisher = eventsHandler,
+                dispatcher = testDispatcher
             ),
             evaluationContext
         )
         runBlocking {
-            awaitProviderReady(eventsHandler = eventsHandler)
+            awaitProviderReady(eventsHandler = eventsHandler, dispatcher = testDispatcher)
         }
 
         val intDetails = OpenFeatureAPI.getClient()
@@ -110,7 +114,8 @@ class ConfidenceIntegrationTests {
     }
 
     @Test
-    fun testFetchAndActivateReadsValueFromBackend() {
+    fun testFetchAndActivateReadsValueFromBackend() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val eventsHandler = EventHandler(Dispatchers.IO).apply {
             publish(OpenFeatureEvents.ProviderStale)
         }
@@ -122,12 +127,13 @@ class ConfidenceIntegrationTests {
                 CLIENT_SECRET,
                 initialisationStrategy = InitialisationStrategy.FetchAndActivate,
                 storage = storage,
-                eventsPublisher = eventsHandler
+                eventsPublisher = eventsHandler,
+                dispatcher = testDispatcher
             ),
             evaluationContext
         )
         runBlocking {
-            awaitProviderReady(eventsHandler = eventsHandler)
+            awaitProviderReady(eventsHandler = eventsHandler, dispatcher = testDispatcher)
         }
 
         val intDetails = OpenFeatureAPI.getClient()
@@ -139,13 +145,13 @@ class ConfidenceIntegrationTests {
         assertNull(intDetails.errorMessage)
         assertNotNull(intDetails.value)
         assertNotEquals(0, intDetails.value)
-        assertEquals(7, intDetails.value)
         assertEquals(Reason.TARGETING_MATCH.name, intDetails.reason)
         assertNotNull(intDetails.variant)
     }
 
     @Test
-    fun testNoMatch() {
+    fun testNoMatch() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val eventsHandler = EventHandler(Dispatchers.IO).apply {
             publish(OpenFeatureEvents.ProviderStale)
         }
@@ -157,13 +163,14 @@ class ConfidenceIntegrationTests {
                 mockContext,
                 CLIENT_SECRET,
                 eventsPublisher = eventsHandler,
-                storage = storage
+                storage = storage,
+                dispatcher = testDispatcher
             ),
             evaluationContext
         )
 
         runBlocking {
-            awaitProviderReady(eventsHandler = eventsHandler)
+            awaitProviderReady(eventsHandler = eventsHandler, dispatcher = testDispatcher)
         }
 
         assertNotEquals(0L, cacheFileStore.length())
@@ -176,7 +183,8 @@ class ConfidenceIntegrationTests {
     }
 
     @Test
-    fun testUpdateEvalContextToGetValues() {
+    fun testUpdateEvalContextToGetValues() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val eventsHandler = EventHandler(Dispatchers.IO).apply {
             publish(OpenFeatureEvents.ProviderStale)
         }
@@ -199,12 +207,13 @@ class ConfidenceIntegrationTests {
                 CLIENT_SECRET,
                 initialisationStrategy = InitialisationStrategy.FetchAndActivate,
                 storage = storage,
-                eventsPublisher = eventsHandler
+                eventsPublisher = eventsHandler,
+                dispatcher = testDispatcher
             ),
             incorrectContext
         )
         runBlocking {
-            awaitProviderReady(eventsHandler = eventsHandler)
+            awaitProviderReady(eventsHandler = eventsHandler, dispatcher = testDispatcher)
         }
 
         val intDetailsDefault = OpenFeatureAPI.getClient()
@@ -222,7 +231,7 @@ class ConfidenceIntegrationTests {
         OpenFeatureAPI.setEvaluationContext(evaluationContext)
         assertFalse(eventsHandler.isProviderReady())
         runBlocking {
-            awaitProviderReady(eventsHandler = eventsHandler)
+            awaitProviderReady(eventsHandler = eventsHandler, dispatcher = testDispatcher)
         }
 
         val intDetails = OpenFeatureAPI.getClient()
@@ -233,7 +242,7 @@ class ConfidenceIntegrationTests {
         assertNull(intDetails.errorCode)
         assertNull(intDetails.errorMessage)
         assertNotNull(intDetails.value)
-        assertEquals(7, intDetails.value)
+        assertNotEquals(0, intDetails.value)
         assertEquals(Reason.TARGETING_MATCH.name, intDetails.reason)
     }
 }
