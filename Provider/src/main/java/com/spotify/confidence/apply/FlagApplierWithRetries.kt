@@ -1,12 +1,10 @@
 package com.spotify.confidence.apply
 
-import android.content.Context
 import com.spotify.confidence.EventProcessor
+import com.spotify.confidence.cache.DiskStorage
 import com.spotify.confidence.client.AppliedFlag
 import com.spotify.confidence.client.ConfidenceClient
 import com.spotify.confidence.client.Result
-import com.spotify.confidence.client.serializers.UUIDSerializer
-import dev.openfeature.sdk.DateSerializer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -15,14 +13,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.contextual
-import java.io.File
 import java.util.Date
-
-const val APPLY_FILE_NAME = "confidence_apply_cache.json"
 
 data class FlagApplierInput(
     val resolveToken: String,
@@ -54,9 +45,8 @@ internal typealias FlagsAppliedMap =
 class FlagApplierWithRetries(
     private val client: ConfidenceClient,
     private val dispatcher: CoroutineDispatcher,
-    context: Context
+    private val diskStorage: DiskStorage
 ) : FlagApplier {
-    private val file: File = File(context.filesDir, APPLY_FILE_NAME)
 
     private val eventProcessor by lazy {
         EventProcessor<
@@ -194,17 +184,14 @@ class FlagApplierWithRetries(
             .filter {
                 !it.value.values.all { applyInstance -> applyInstance.eventStatus == EventStatus.SENT }
             }
-        file.writeText(json.encodeToString(toStoreData))
+        diskStorage.writeApplyData(toStoreData)
     }
 
     private suspend fun readFile(
         data: FlagsAppliedMap
     ) = coroutineScope {
-        if (!file.exists()) return@coroutineScope
-        val fileText: String = file.bufferedReader().use { it.readText() }
-        if (fileText.isEmpty()) return@coroutineScope
-        val newData = json.decodeFromString<FlagsAppliedMap>(fileText)
-        newData.entries.forEach { (resolveToken, eventsByFlagName) ->
+        val readData: MutableMap<String, MutableMap<String, ApplyInstance>> = diskStorage.readApplyData()
+        readData.entries.forEach { (resolveToken, eventsByFlagName) ->
             eventsByFlagName.entries.forEach { (flagName, applyInstance) ->
                 putIfAbsent(data, resolveToken, hashMapOf())
                 data[resolveToken]?.let { map ->
@@ -253,12 +240,5 @@ private fun putIfAbsent(map: MutableMap<String, ApplyInstance>?, key: String, va
     if (map == null) return
     if (!map.containsKey(key)) {
         map[key] = value
-    }
-}
-
-internal val json = Json {
-    serializersModule = SerializersModule {
-        contextual(UUIDSerializer)
-        contextual(DateSerializer)
     }
 }

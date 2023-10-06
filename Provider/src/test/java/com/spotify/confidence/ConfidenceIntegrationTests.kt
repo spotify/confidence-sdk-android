@@ -19,7 +19,9 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.io.File
@@ -30,6 +32,10 @@ private const val clientSecret = "ldZWlt6ywPIiPNf16WINSTh0yoHzSQEc"
 private val mockContext: Context = mock()
 
 class ConfidenceIntegrationTests {
+
+    @get:Rule
+    var tmpFile = TemporaryFolder()
+
     @Before
     fun setup() {
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
@@ -53,7 +59,7 @@ class ConfidenceIntegrationTests {
             )
         )
 
-        StorageFileCache.create(mockContext).apply {
+        val storage = StorageFileCache.create(mockContext).apply {
             val flags = listOf(
                 ResolvedFlag(
                     "test-flag-1",
@@ -79,6 +85,7 @@ class ConfidenceIntegrationTests {
             ConfidenceFeatureProvider.create(
                 mockContext,
                 clientSecret,
+                storage = storage,
                 initialisationStrategy = InitialisationStrategy.ActivateAndFetchAsync,
                 eventsPublisher = eventsHandler
             ),
