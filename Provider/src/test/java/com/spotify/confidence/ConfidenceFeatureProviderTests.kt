@@ -10,11 +10,11 @@
 package com.spotify.confidence
 
 import android.content.Context
-import com.spotify.confidence.apply.APPLY_FILE_NAME
 import com.spotify.confidence.apply.EventStatus
 import com.spotify.confidence.apply.FlagsAppliedMap
-import com.spotify.confidence.apply.json
+import com.spotify.confidence.cache.APPLY_FILE_NAME
 import com.spotify.confidence.cache.InMemoryCache
+import com.spotify.confidence.cache.json
 import com.spotify.confidence.cache.toCacheData
 import com.spotify.confidence.client.AppliedFlag
 import com.spotify.confidence.client.ConfidenceClient

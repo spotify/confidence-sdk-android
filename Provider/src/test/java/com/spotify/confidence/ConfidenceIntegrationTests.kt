@@ -59,7 +59,7 @@ class ConfidenceIntegrationTests {
             )
         )
 
-        val storage = StorageFileCache.forFile(tmpFile.newFile()).apply {
+        val storage = StorageFileCache.create(mockContext).apply {
             val flags = listOf(
                 ResolvedFlag(
                     "test-flag-1",

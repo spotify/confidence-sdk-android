@@ -261,17 +261,18 @@ class ConfidenceFeatureProvider private constructor(
                 region = region,
                 dispatcher = dispatcher
             )
+            val diskStorage = storage ?: StorageFileCache.create(context)
             val flagApplierWithRetries = flagApplier ?: FlagApplierWithRetries(
                 client = configuredClient,
                 dispatcher = dispatcher,
-                context = context
+                diskStorage = diskStorage
             )
 
             return ConfidenceFeatureProvider(
                 hooks = hooks,
                 metadata = metadata,
                 cache = cache ?: InMemoryCache(),
-                storage = storage ?: StorageFileCache.create(context),
+                storage = diskStorage,
                 initialisationStrategy = initialisationStrategy,
                 client = configuredClient,
                 flagApplier = flagApplierWithRetries,
