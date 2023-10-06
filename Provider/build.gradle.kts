@@ -71,8 +71,8 @@ dependencies {
 publishing {
     publications {
         register<MavenPublication>("release") {
-            groupId = "com.spotify"
-            artifactId = "confidence-openfeature-provider-android"
+            groupId = "com.spotify.confidence"
+            artifactId = "openfeature-provider-android"
             version = Versions.providerVersion
 
             repositories {
