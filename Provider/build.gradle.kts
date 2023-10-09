@@ -16,7 +16,10 @@ object Versions {
     const val junit = "4.13.2"
     const val kotlinMockito = "4.1.0"
     const val mockWebServer = "4.9.1"
-    const val providerVersion = "0.1.0"
+
+    // x-release-please-start-version
+    const val providerVersion = "0.1.1"
+    // x-release-please-end
 }
 
 android {
