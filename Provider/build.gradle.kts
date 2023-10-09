@@ -85,6 +85,48 @@ publishing {
                     }
                 }
             }
+            pom {
+                name.set("Confidence Openfeature Provider Android")
+                description.set("An Openfeature Provider for Confidence, made for the Android SDK")
+                url.set("https://github.com/spotify/confidence-openfeature-provider-kotlin")
+                licenses {
+                    license {
+                        name.set("The Apache License, Version 2.0")
+                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("vahidlazio")
+                        name.set("Vahid Torkaman")
+                        email.set("vahidt@spotify.com")
+                    }
+                    developer {
+                        id.set("fabriziodemaria")
+                        name.set("Fabrizio Demaria")
+                        email.set("fdema@spotify.com")
+                    }
+                    developer {
+                        id.set("nicklasl")
+                        name.set("Nicklas Lundin")
+                        email.set("nicklasl@spotify.com")
+                    }
+                    developer {
+                        id.set("nickybondarenko")
+                        name.set("Nicky Bondarenko")
+                        email.set("nickyb@spotify.com")
+                    }
+                }
+                scm {
+                    connection.set(
+                        "scm:git:git://spotify/confidence-openfeature-provider-kotlin.git"
+                    )
+                    developerConnection.set(
+                        "scm:git:ssh://spotify/confidence-openfeature-provider-kotlin.git"
+                    )
+                    url.set("https://github.com/spotify/confidence-openfeature-provider-kotlin")
+                }
+            }
             afterEvaluate {
                 from(components["release"])
             }
