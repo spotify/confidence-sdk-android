@@ -10,6 +10,7 @@ import com.spotify.confidence.client.ResolveFlags
 import com.spotify.confidence.client.ResolveReason
 import com.spotify.confidence.client.ResolveResponse
 import com.spotify.confidence.client.ResolvedFlag
+import com.spotify.confidence.client.Result
 import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Reason
@@ -67,6 +68,7 @@ class StorageFileCacheTests {
     @Test
     fun testOfflineScenarioLoadsStoredCache() = runTest {
         val mockClient: ConfidenceClient = mock()
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val eventPublisher = EventHandler.eventsPublisher(testDispatcher)
         eventPublisher.publish(OpenFeatureEvents.ProviderStale)

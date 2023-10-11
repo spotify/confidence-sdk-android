@@ -128,6 +128,7 @@ internal class ConfidenceFeatureProviderTests {
             eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher
         )
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
             ResolveResponse.Resolved(
                 ResolveFlags(resolvedFlags, "token1")
@@ -241,7 +242,6 @@ internal class ConfidenceFeatureProviderTests {
             dispatcher = testDispatcher
         )
         val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
-
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
             ResolveResponse.Resolved(
                 ResolveFlags(resolvedFlags, "token1")
@@ -380,7 +380,7 @@ internal class ConfidenceFeatureProviderTests {
 
         val evaluationContext1 = ImmutableContext("foo")
         val evaluationContext2 = ImmutableContext("bar")
-
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         whenever(mockClient.resolve(eq(listOf()), eq(evaluationContext1))).thenReturn(
             ResolveResponse.Resolved(
                 ResolveFlags(resolvedFlags, "token1")
@@ -735,6 +735,7 @@ internal class ConfidenceFeatureProviderTests {
             dispatcher = testDispatcher,
             client = mockClient
         )
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
             ResolveResponse.Resolved(
                 ResolveFlags(resolvedFlags, "token1")
@@ -768,7 +769,7 @@ internal class ConfidenceFeatureProviderTests {
             dispatcher = testDispatcher,
             client = mockClient
         )
-
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
             ResolveResponse.Resolved(
                 ResolveFlags(resolvedFlags, "token1")
@@ -888,7 +889,7 @@ internal class ConfidenceFeatureProviderTests {
                 )
             )
         )
-
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
             ResolveResponse.Resolved(
                 ResolveFlags(resolvedFlagInvalidKey, "token1")
@@ -935,6 +936,7 @@ internal class ConfidenceFeatureProviderTests {
                 )
             )
         )
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
             ResolveResponse.Resolved(
                 ResolveFlags(resolvedNonMatchingFlags, "token1")
@@ -970,7 +972,7 @@ internal class ConfidenceFeatureProviderTests {
             dispatcher = testDispatcher,
             client = mockClient
         )
-
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
             ResolveResponse.Resolved(
                 ResolveFlags(resolvedFlags, "token1")
@@ -1006,6 +1008,7 @@ internal class ConfidenceFeatureProviderTests {
             dispatcher = testDispatcher,
             client = mockClient
         )
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         whenever(mockClient.resolve(eq(listOf()), any())).thenThrow(Error())
         confidenceFeatureProvider.initialize(ImmutableContext("user1"))
         advanceUntilIdle()
@@ -1031,6 +1034,7 @@ internal class ConfidenceFeatureProviderTests {
             dispatcher = testDispatcher,
             client = mockClient
         )
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(ResolveResponse.NotModified)
         confidenceFeatureProvider.initialize(ImmutableContext("user1"))
         advanceUntilIdle()
@@ -1048,6 +1052,7 @@ internal class ConfidenceFeatureProviderTests {
             dispatcher = testDispatcher,
             client = mockClient
         )
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
             ResolveResponse.Resolved(
                 ResolveFlags(resolvedFlags, "token1")
@@ -1076,6 +1081,7 @@ internal class ConfidenceFeatureProviderTests {
             dispatcher = testDispatcher,
             client = mockClient
         )
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
             ResolveResponse.Resolved(
                 ResolveFlags(resolvedFlags, "token1")
