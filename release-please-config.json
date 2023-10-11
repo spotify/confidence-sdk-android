@@ -1,7 +1,7 @@
 {
     "bootstrap-sha": "fe4d0c5e5553cf34a4089e52de5324370bb933dd",
     "packages": {
-        "Provider": {
+        ".": {
             "release-type": "simple",
             "bump-minor-pre-major": true,
             "bump-patch-for-minor-pre-major": true,
