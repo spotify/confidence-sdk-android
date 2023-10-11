@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/spotify/confidence-openfeature-provider-kotlin/compare/0.1.1...0.1.1) (2023-10-11)
+
+
+### 🧹 Chore
+
+* manually release 0.1.1 ([305e7fa](https://github.com/spotify/confidence-openfeature-provider-kotlin/commit/305e7fa641b7624a4a50e4c38477e6e8020679ac))
+
 ## [0.1.1](https://github.com/spotify/confidence-openfeature-provider-kotlin/compare/v0.1.0...0.1.1) (2023-10-09)
 
 
