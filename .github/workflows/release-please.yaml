@@ -87,12 +87,3 @@ jobs:
       - name: Clean up signing secrets
         run: rm ~/.gradle/gradle.properties
 
-      - name: Upload Confidence Provider SDK AAR 🗳
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN_PUBLISH }}
-        with:
-          upload_url: ${{ needs.release-please.outputs.upload_url }}
-          asset_path: Provider/build/outputs/aar/Provider-release.aar
-          asset_name: provider-sdk.aar
-          asset_content_type: application/aar
