@@ -23,13 +23,6 @@ jobs:
         run: |
           echo "$RELEASE_PLEASE_OUTPUT"
 
-    # Outputs are namespaced by package when using a manifest in Release Please
-    outputs:
-      release_created: ${{ steps.release.outputs['Provider--release_created'] }}
-      # Version doesn't include `v` as a prefix. This is undocumented
-      version: ${{ steps.release.outputs['Provider--version'] }}
-      upload_url: ${{ steps.release.outputs['Provider--upload_url'] }}
-
   kotlin-release:
     needs: release-please
     runs-on: ubuntu-latest
