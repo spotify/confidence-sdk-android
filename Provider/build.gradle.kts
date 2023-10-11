@@ -18,7 +18,7 @@ object Versions {
     const val mockWebServer = "4.9.1"
 
     // x-release-please-start-version
-    const val providerVersion = "0.1.1"
+    const val providerVersion = "0.1.2"
     // x-release-please-end
 }
 
