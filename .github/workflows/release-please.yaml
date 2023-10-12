@@ -23,6 +23,9 @@ jobs:
         run: |
           echo "$RELEASE_PLEASE_OUTPUT"
 
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+
   kotlin-release:
     needs: release-please
     runs-on: ubuntu-latest
@@ -72,7 +75,6 @@ jobs:
 
       - name: Publish to Sonatype
         env:
-          OF_KOTLIN_RELEASE_VERSION: ${{ needs.release-please.outputs.version }}
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
         run: ./gradlew :Provider:publish --no-daemon --stacktrace
