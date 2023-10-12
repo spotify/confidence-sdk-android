@@ -1,21 +1,24 @@
 [![](https://jitpack.io/v/spotify/confidence-openfeature-provider-kotlin.svg)](https://jitpack.io/#spotify/confidence-openfeature-provider-kotlin)
-
+<a href="https://maven-badges.herokuapp.com/maven-central/com.spotify.confidence/openfeature-provider-android">
+<img alt="Maven Central" src="https://maven-badges.herokuapp.com/maven-central/com.spotify.confidence/openfeature-provider-android/badge.svg" />
+</a>
 # OpenFeature Kotlin Confidence Provider
 Kotlin implementation of the Confidence feature provider, to be used in conjunction with the OpenFeature SDK.
 
 ## Usage
 
 ### Adding the package dependency
+
+The latest release of the Provider is available on Maven central.
+Currently the project must include `maven("https://jitpack.io")` in `settings.gradle` in the repositories 
+block even if the artifact is consumed from maven central.
+
 <!---x-release-please-start-version-->
 Add the following dependency to your gradle file:
 ```
-implementation("com.github.spotify:confidence-openfeature-provider-kotlin:0.1.2")
+implementation("com.spotify.confidence:openfeature-provider-android:0.1.2")
 ```
-for the latest version:
-```
-implementation("com.github.spotify:confidence-openfeature-provider-kotlin")
-```
-for using any branch and commit:
+It can also be consumed from jitpack for using any branch or build:
 ```
 implementation("com.github.spotify:confidence-openfeature-provider-kotlin:[BRANCH]-[SNAPSHOT/Version]")
 ```
@@ -23,8 +26,6 @@ for using specific commit:
 ```
 implementation("com.github.spotify:confidence-openfeature-provider-kotlin:[COMMIT SHA]")
 ```
-
-The Android project must include `maven("https://jitpack.io")` in `settings.gradle` in the repositories block.
 
 Where `0.1.2` is the most recent version of this SDK. Released versions can be found under "Releases" within this repository.
 <!---x-release-please-end-->
