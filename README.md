@@ -10,8 +10,6 @@ Kotlin implementation of the Confidence feature provider, to be used in conjunct
 ### Adding the package dependency
 
 The latest release of the Provider is available on Maven central.
-Currently the project must include `maven("https://jitpack.io")` in `settings.gradle` in the repositories 
-block even if the artifact is consumed from maven central.
 
 <!---x-release-please-start-version-->
 Add the following dependency to your gradle file:
