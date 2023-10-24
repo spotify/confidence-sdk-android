@@ -12,7 +12,7 @@ object Versions {
     const val openFeatureSDK = "v0.0.2"
     const val okHttp = "4.10.0"
     const val kotlinxSerialization = "1.5.1"
-    const val coroutines = "1.7.1"
+    const val coroutines = "1.7.3"
     const val junit = "4.13.2"
     const val kotlinMockito = "4.1.0"
     const val mockWebServer = "4.9.1"
