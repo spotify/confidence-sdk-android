@@ -20,6 +20,7 @@ import java.net.HttpURLConnection
 
 class ConfidenceRemoteClient : ConfidenceClient {
     private val clientSecret: String
+    private val sdkMetadata: SdkMetadata
     private val okHttpClient: OkHttpClient
     private val baseUrl: String
     private val headers: Headers
@@ -30,10 +31,12 @@ class ConfidenceRemoteClient : ConfidenceClient {
 
     constructor(
         clientSecret: String,
+        sdkMetadata: SdkMetadata,
         region: ConfidenceRegion,
         dispatcher: CoroutineDispatcher = Dispatchers.IO
     ) {
         this.clientSecret = clientSecret
+        this.sdkMetadata = sdkMetadata
         this.okHttpClient = OkHttpClient()
         this.headers = Headers.headersOf(
             "Content-Type",
@@ -63,11 +66,13 @@ class ConfidenceRemoteClient : ConfidenceClient {
 
     internal constructor(
         clientSecret: String = "",
+        sdkMetadata: SdkMetadata = SdkMetadata("", ""),
         baseUrl: HttpUrl,
         clock: Clock = Clock.CalendarBacked.systemUTC(),
         dispatcher: CoroutineDispatcher = Dispatchers.IO
     ) {
         this.clientSecret = clientSecret
+        this.sdkMetadata = sdkMetadata
         this.okHttpClient = OkHttpClient()
         this.headers = Headers.headersOf(
             "Content-Type",
@@ -100,7 +105,9 @@ class ConfidenceRemoteClient : ConfidenceClient {
             flags.map { "flags/$it" },
             ctx.toEvaluationContextStruct(),
             clientSecret,
-            false
+            false,
+            sdkMetadata.sdkId,
+            sdkMetadata.sdkVersion
         )
 
         val networkResponse = resolveInteractor(request)
@@ -119,7 +126,9 @@ class ConfidenceRemoteClient : ConfidenceClient {
             flags.map { AppliedFlag("flags/${it.flag}", it.applyTime) },
             clock.currentTime(),
             clientSecret,
-            resolveToken
+            resolveToken,
+            sdkMetadata.sdkId,
+            sdkMetadata.sdkVersion
         )
         applyInteractor(request).runCatching {
             return Result.Failure
@@ -146,3 +155,5 @@ sealed class ResolveResponse {
     object NotModified : ResolveResponse()
     data class Resolved(val flags: ResolveFlags) : ResolveResponse()
 }
+
+data class SdkMetadata(val sdkId: String, val sdkVersion: String)

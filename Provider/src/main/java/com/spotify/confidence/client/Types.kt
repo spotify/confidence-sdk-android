@@ -19,7 +19,9 @@ data class ResolveFlagsRequest(
     @Contextual
     val evaluationContext: Structure,
     val clientSecret: String,
-    val apply: Boolean
+    val apply: Boolean,
+    val sdkId: String,
+    val sdkVersion: String
 )
 
 @Serializable

@@ -54,7 +54,9 @@ internal data class ApplyFlagsRequest(
     @Contextual
     val sendTime: Date,
     val clientSecret: String,
-    val resolveToken: String
+    val resolveToken: String,
+    val sdkId: String,
+    val sdkVersion: String
 )
 
 private val json = Json {

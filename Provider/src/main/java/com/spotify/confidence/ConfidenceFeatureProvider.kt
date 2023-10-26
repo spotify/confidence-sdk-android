@@ -12,6 +12,7 @@ import com.spotify.confidence.client.ConfidenceClient
 import com.spotify.confidence.client.ConfidenceRegion
 import com.spotify.confidence.client.ConfidenceRemoteClient
 import com.spotify.confidence.client.ResolveResponse
+import com.spotify.confidence.client.SdkMetadata
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FeatureProvider
 import dev.openfeature.sdk.Hook
@@ -33,6 +34,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
+
+const val SDK_ID = "SDK_ID_KOTLIN_PROVIDER"
 
 @Suppress(
     "TooManyFunctions",
@@ -258,6 +261,7 @@ class ConfidenceFeatureProvider private constructor(
         ): ConfidenceFeatureProvider {
             val configuredClient = client ?: ConfidenceRemoteClient(
                 clientSecret = clientSecret,
+                sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
                 region = region,
                 dispatcher = dispatcher
             )
