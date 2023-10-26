@@ -44,9 +44,9 @@ internal object StructureSerializer : KSerializer<Structure> {
 
     override fun serialize(encoder: Encoder, value: Structure) {
         encoder.encodeStructure(descriptor) {
-            value.asMap().forEach { (key, value) ->
+            for ((key, mapValue) in value.asMap()) {
                 encodeStringElement(descriptor, 0, key)
-                encodeSerializableElement(descriptor, 1, StructureValueSerializer, value)
+                encodeSerializableElement(descriptor, 1, StructureValueSerializer, mapValue)
             }
         }
     }
