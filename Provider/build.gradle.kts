@@ -31,6 +31,8 @@ android {
         version = Versions.providerVersion
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "SDK_VERSION", "\"" + Versions.providerVersion + "\"")
     }
 
     compileOptions {

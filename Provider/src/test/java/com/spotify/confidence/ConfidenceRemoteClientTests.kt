@@ -10,6 +10,7 @@ import com.spotify.confidence.client.ResolveFlags
 import com.spotify.confidence.client.ResolveReason
 import com.spotify.confidence.client.ResolveResponse
 import com.spotify.confidence.client.ResolvedFlag
+import com.spotify.confidence.client.SdkMetadata
 import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Value
@@ -33,6 +34,7 @@ import java.util.Date
 
 internal class ConfidenceRemoteClientTests {
     private val mockWebServer = MockWebServer()
+    private val sdkMetadata = SdkMetadata(SDK_ID + "_TEST", "")
 
     @Before
     fun setup() {
@@ -426,7 +428,9 @@ internal class ConfidenceRemoteClientTests {
                     "    }\n" +
                     "  },\n" +
                     "  \"clientSecret\": \"secret1\",\n" +
-                    "  \"apply\": false\n" +
+                    "  \"apply\": false,\n" +
+                    "  \"sdkId\": \"SDK_ID_KOTLIN_PROVIDER_TEST\",\n" +
+                    "  \"sdkVersion\": \"\"\n" +
                     "}"
                 assertEquals(
                     expectedSerializedRequest.replace("\\s".toRegex(), ""),
@@ -445,6 +449,7 @@ internal class ConfidenceRemoteClientTests {
 
         ConfidenceRemoteClient(
             "secret1",
+            sdkMetadata,
             mockWebServer.url("/v1/flags:resolve"),
             dispatcher = testDispatcher
         )
@@ -490,7 +495,9 @@ internal class ConfidenceRemoteClientTests {
                     "  ],\n" +
                     "  \"sendTime\": \"2023-03-01T14:03:46.124Z\",\n" +
                     "  \"clientSecret\": \"secret1\",\n" +
-                    "  \"resolveToken\": \"token1\"\n" +
+                    "  \"resolveToken\": \"token1\",\n" +
+                    "  \"sdkId\": \"SDK_ID_KOTLIN_PROVIDER_TEST\",\n" +
+                    "  \"sdkVersion\": \"\"\n" +
                     "}"
                 assertEquals(
                     expectedSerializedRequest.replace("\\s".toRegex(), ""),
@@ -502,6 +509,7 @@ internal class ConfidenceRemoteClientTests {
         }
         ConfidenceRemoteClient(
             "secret1",
+            sdkMetadata,
             mockWebServer.url("/v1/flags:apply"),
             mockClock,
             dispatcher = testDispatcher
