@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.1.3](https://github.com/spotify/confidence-openfeature-provider-kotlin/compare/0.1.2...0.1.3) (2023-11-14)
+
+
+### ✨ New Features
+
+* Add SDK id and version to requests ([#102](https://github.com/spotify/confidence-openfeature-provider-kotlin/issues/102)) ([70cb206](https://github.com/spotify/confidence-openfeature-provider-kotlin/commit/70cb20649d32e715833d4f9de7d0faef6256741d))
+
+
+### 🧹 Chore
+
+* bump coroutines patch ([#100](https://github.com/spotify/confidence-openfeature-provider-kotlin/issues/100)) ([ce7cabb](https://github.com/spotify/confidence-openfeature-provider-kotlin/commit/ce7cabb1d7d672d2ff6e68248abdbd53d308e61b))
+* bump kotlinx-serialization to 1.6.0 ([#101](https://github.com/spotify/confidence-openfeature-provider-kotlin/issues/101)) ([432af3e](https://github.com/spotify/confidence-openfeature-provider-kotlin/commit/432af3eb431db6272886764d55dd8d3acff4c20f))
+* update to consume open-feature sdk from maven-central ([#99](https://github.com/spotify/confidence-openfeature-provider-kotlin/issues/99)) ([8a1ece8](https://github.com/spotify/confidence-openfeature-provider-kotlin/commit/8a1ece8ba4aff7a189f4d10cc38fd279d1d67b27))
+
+
+### 📚 Documentation
+
+* update the readme with correct maven central group id ([#94](https://github.com/spotify/confidence-openfeature-provider-kotlin/issues/94)) ([2db5abf](https://github.com/spotify/confidence-openfeature-provider-kotlin/commit/2db5abf7d60559c8a5b8da07ea970ba08784e90d))
+
 ## [0.1.2](https://github.com/spotify/confidence-openfeature-provider-kotlin/compare/v0.1.2...0.1.2) (2023-10-12)
 
 
