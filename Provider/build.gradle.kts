@@ -9,10 +9,10 @@ plugins {
 }
 
 object Versions {
-    const val openFeatureSDK = "v0.0.2"
+    const val openFeatureSDK = "0.0.4"
     const val okHttp = "4.10.0"
-    const val kotlinxSerialization = "1.5.1"
-    const val coroutines = "1.7.1"
+    const val kotlinxSerialization = "1.6.0"
+    const val coroutines = "1.7.3"
     const val junit = "4.13.2"
     const val kotlinMockito = "4.1.0"
     const val mockWebServer = "4.9.1"
@@ -28,6 +28,8 @@ android {
         version = providerVersion
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "SDK_VERSION", "\"" + providerVersion + "\"")
     }
 
     compileOptions {
@@ -47,7 +49,7 @@ android {
 }
 
 dependencies {
-    api("com.github.open-feature:kotlin-sdk:${Versions.openFeatureSDK}")
+    api("dev.openfeature:kotlin-sdk:${Versions.openFeatureSDK}")
     implementation("com.squareup.okhttp3:okhttp:${Versions.okHttp}")
     implementation(
         "org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}"

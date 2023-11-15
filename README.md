@@ -10,13 +10,11 @@ Kotlin implementation of the Confidence feature provider, to be used in conjunct
 ### Adding the package dependency
 
 The latest release of the Provider is available on Maven central.
-Currently the project must include `maven("https://jitpack.io")` in `settings.gradle` in the repositories 
-block even if the artifact is consumed from maven central.
 
 <!---x-release-please-start-version-->
 Add the following dependency to your gradle file:
 ```
-implementation("com.spotify.confidence:openfeature-provider-android:0.1.2")
+implementation("com.spotify.confidence:openfeature-provider-android:0.1.3")
 ```
 It can also be consumed from jitpack for using any branch or build:
 ```
@@ -27,7 +25,7 @@ for using specific commit:
 implementation("com.github.spotify:confidence-openfeature-provider-kotlin:[COMMIT SHA]")
 ```
 
-Where `0.1.2` is the most recent version of this SDK. Released versions can be found under "Releases" within this repository.
+Where `0.1.3` is the most recent version of this SDK. Released versions can be found under "Releases" within this repository.
 <!---x-release-please-end-->
 
 ### Enabling the provider, setting the evaluation context and resolving flags

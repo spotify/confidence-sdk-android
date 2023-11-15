@@ -126,7 +126,7 @@ class FlagApplierWithRetries(
         sendChannel: SendChannel<FlagApplierBatchProcessedInput>,
         coroutineExceptionHandler: CoroutineExceptionHandler
     ) {
-        data.entries.forEach { (token, flagsForToken) ->
+        for ((token, flagsForToken) in data.entries) {
             val appliedFlagsKeyed: List<AppliedFlag> = flagsForToken.entries
                 .filter { e ->
                     e.value.eventStatus == EventStatus.CREATED
@@ -155,7 +155,7 @@ class FlagApplierWithRetries(
         data: FlagsAppliedMap,
         eventStatus: EventStatus
     ) {
-        appliedFlag.forEach { applied ->
+        for (applied in appliedFlag) {
             data[token]?.let { map ->
                 computeIfPresent(map, applied.flag) { _, v ->
                     v.copy(eventStatus = eventStatus)
@@ -191,7 +191,7 @@ class FlagApplierWithRetries(
         data: FlagsAppliedMap
     ) = coroutineScope {
         val readData: MutableMap<String, MutableMap<String, ApplyInstance>> = diskStorage.readApplyData()
-        readData.entries.forEach { (resolveToken, eventsByFlagName) ->
+        for ((resolveToken, eventsByFlagName) in readData.entries) {
             eventsByFlagName.entries.forEach { (flagName, applyInstance) ->
                 putIfAbsent(data, resolveToken, hashMapOf())
                 data[resolveToken]?.let { map ->
