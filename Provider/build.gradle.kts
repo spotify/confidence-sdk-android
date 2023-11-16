@@ -16,11 +16,8 @@ object Versions {
     const val junit = "4.13.2"
     const val kotlinMockito = "4.1.0"
     const val mockWebServer = "4.9.1"
-
-    // x-release-please-start-version
-    const val providerVersion = "0.1.3"
-    // x-release-please-end
 }
+val providerVersion = project.extra["version"].toString()
 
 android {
     namespace = "com.spotify.confidence"
@@ -28,11 +25,11 @@ android {
 
     defaultConfig {
         minSdk = 21
-        version = Versions.providerVersion
+        version = providerVersion
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "SDK_VERSION", "\"" + Versions.providerVersion + "\"")
+        buildConfigField("String", "SDK_VERSION", "\"" + providerVersion + "\"")
     }
 
     compileOptions {
@@ -67,20 +64,10 @@ dependencies {
 publishing {
     publications {
         register<MavenPublication>("release") {
-            groupId = "com.spotify.confidence"
+            groupId = project.extra["groupId"].toString()
             artifactId = "openfeature-provider-android"
-            version = Versions.providerVersion
+            version = providerVersion
 
-            repositories {
-                maven {
-                    name = "Sonatype"
-                    url = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
-                    credentials {
-                        username = System.getenv("OSSRH_USERNAME")
-                        password = System.getenv("OSSRH_PASSWORD")
-                    }
-                }
-            }
             pom {
                 name.set("Confidence Openfeature Provider Android")
                 description.set("An Openfeature Provider for Confidence, made for the Android SDK")
