@@ -3,7 +3,7 @@
 <img alt="Maven Central" src="https://maven-badges.herokuapp.com/maven-central/com.spotify.confidence/openfeature-provider-android/badge.svg" />
 </a>
 # OpenFeature Kotlin Confidence Provider
-Kotlin implementation of the [Confidence](https://confidence.spotify.com/) feature provider, to be used in conjunction with the OpenFeature SDK.
+Kotlin implementation of the [Confidence](https://confidence.spotify.com/) feature provider, to be used in conjunction with the [OpenFeature SDK](https://github.com/open-feature/kotlin-sdk).
 
 ## Usage
 
