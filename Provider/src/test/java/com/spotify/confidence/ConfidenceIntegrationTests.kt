@@ -28,7 +28,7 @@ import java.io.File
 import java.nio.file.Files
 import java.util.UUID
 
-private const val clientSecret = "ldZWlt6ywPIiPNf16WINSTh0yoHzSQEc"
+private const val clientSecret = "21wxcxXpU6tKBRFtEFTXYiH7nDqL86Mm"
 private val mockContext: Context = mock()
 
 class ConfidenceIntegrationTests {
@@ -62,8 +62,8 @@ class ConfidenceIntegrationTests {
         val storage = StorageFileCache.create(mockContext).apply {
             val flags = listOf(
                 ResolvedFlag(
-                    "test-flag-1",
-                    variant = "flags/test-flag-1/off",
+                    "kotlin-test-flag",
+                    variant = "flags/kotlin-test-flag/off",
                     reason = ResolveReason.RESOLVE_REASON_MATCH,
                     value = ImmutableStructure(
                         mapOf("my-integer" to Value.Integer(storedValue))
@@ -97,7 +97,7 @@ class ConfidenceIntegrationTests {
 
         val intDetails = OpenFeatureAPI.getClient()
             .getIntegerDetails(
-                "test-flag-1.my-integer",
+                "kotlin-test-flag.my-integer",
                 0
             )
         assertNull(intDetails.errorCode)
@@ -137,7 +137,7 @@ class ConfidenceIntegrationTests {
 
         val intDetails = OpenFeatureAPI.getClient()
             .getIntegerDetails(
-                "test-flag-1.my-integer",
+                "kotlin-test-flag.my-integer",
                 0
             )
         assertNull(intDetails.errorCode)
@@ -174,7 +174,7 @@ class ConfidenceIntegrationTests {
         }
 
         assertNotEquals(0L, cacheFile.length())
-        val intDetails = OpenFeatureAPI.getClient().getIntegerDetails("test-flag-1.my-integer", 0)
+        val intDetails = OpenFeatureAPI.getClient().getIntegerDetails("kotlin-test-flag.my-integer", 0)
         assertNull(intDetails.errorCode)
         assertNull(intDetails.errorMessage)
         assertNotNull(intDetails.value)
