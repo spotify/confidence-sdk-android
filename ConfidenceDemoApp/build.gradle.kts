@@ -83,6 +83,7 @@ android {
 
 dependencies {
     implementation(project(":Provider"))
+    implementation("dev.openfeature:kotlin-sdk:0.0.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
     implementation( "androidx.compose.runtime:runtime-livedata:${Versions.liveData}")
     implementation( "androidx.core:core-ktx:${Versions.core}")

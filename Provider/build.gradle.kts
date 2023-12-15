@@ -49,7 +49,7 @@ android {
 }
 
 dependencies {
-    api("dev.openfeature:kotlin-sdk:${Versions.openFeatureSDK}")
+    implementation("dev.openfeature:kotlin-sdk:${Versions.openFeatureSDK}")
     implementation("com.squareup.okhttp3:okhttp:${Versions.okHttp}")
     implementation(
         "org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}"
