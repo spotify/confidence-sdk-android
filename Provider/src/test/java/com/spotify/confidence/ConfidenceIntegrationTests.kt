@@ -87,7 +87,7 @@ class ConfidenceIntegrationTests {
                 clientSecret,
                 storage = storage,
                 initialisationStrategy = InitialisationStrategy.ActivateAndFetchAsync,
-                eventsPublisher = eventsHandler
+                eventHandler = eventsHandler
             ),
             context
         )
@@ -118,7 +118,7 @@ class ConfidenceIntegrationTests {
                 mockContext,
                 clientSecret,
                 initialisationStrategy = InitialisationStrategy.FetchAndActivate,
-                eventsPublisher = eventsHandler
+                eventHandler = eventsHandler
             ),
             ImmutableContext(
                 targetingKey = UUID.randomUUID().toString(),
@@ -156,7 +156,7 @@ class ConfidenceIntegrationTests {
         val cacheFile = File(mockContext.filesDir, FLAGS_FILE_NAME)
         assertEquals(0L, cacheFile.length())
         OpenFeatureAPI.setProvider(
-            ConfidenceFeatureProvider.create(mockContext, clientSecret, eventsPublisher = eventsHandler),
+            ConfidenceFeatureProvider.create(mockContext, clientSecret, eventHandler = eventsHandler),
             ImmutableContext(
                 targetingKey = UUID.randomUUID().toString(),
                 attributes = mutableMapOf(

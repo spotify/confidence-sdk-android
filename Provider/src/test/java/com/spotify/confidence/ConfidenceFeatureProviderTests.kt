@@ -120,12 +120,13 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testMatching() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = eventHandler,
             dispatcher = testDispatcher
         )
         whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
@@ -233,11 +234,12 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testDelayedApply() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = eventHandler,
             client = mockClient,
             dispatcher = testDispatcher
         )
@@ -369,12 +371,13 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testNewContextFetchValuesAgain() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = eventHandler,
             dispatcher = testDispatcher
         )
 
@@ -417,12 +420,13 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testApplyOnMultipleEvaluations() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = eventHandler,
             dispatcher = testDispatcher
         )
         val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
@@ -506,12 +510,13 @@ internal class ConfidenceFeatureProviderTests {
         )
 
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = eventHandler,
             dispatcher = testDispatcher
         )
 
@@ -545,12 +550,13 @@ internal class ConfidenceFeatureProviderTests {
         )
         whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = eventHandler,
             dispatcher = testDispatcher
         )
 
@@ -583,12 +589,13 @@ internal class ConfidenceFeatureProviderTests {
         )
         whenever(mockClient.apply(any(), any())).then { }
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = eventHandler,
             dispatcher = testDispatcher
         )
 
@@ -628,12 +635,13 @@ internal class ConfidenceFeatureProviderTests {
 
         whenever(mockClient.apply(any(), any())).thenReturn(Result.Failure)
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = eventHandler,
             dispatcher = testDispatcher
         )
 
@@ -670,12 +678,13 @@ internal class ConfidenceFeatureProviderTests {
         cacheFile.writeText(cacheFileData)
         whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = eventHandler,
             dispatcher = testDispatcher
         )
 
@@ -708,12 +717,13 @@ internal class ConfidenceFeatureProviderTests {
         cacheFile.writeText(cacheFileData)
         whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventHandler = EventHandler(testDispatcher)
         ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = eventHandler,
             dispatcher = testDispatcher
         )
 
@@ -727,11 +737,12 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testMatchingRootObject() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = eventHandler,
             dispatcher = testDispatcher,
             client = mockClient
         )
@@ -761,11 +772,12 @@ internal class ConfidenceFeatureProviderTests {
     fun testStale() = runTest {
         val cache = InMemoryCache()
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = cache,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = eventHandler,
             dispatcher = testDispatcher,
             client = mockClient
         )
@@ -870,11 +882,12 @@ internal class ConfidenceFeatureProviderTests {
     fun testInvalidTargetingKey() = runTest {
         val cache = InMemoryCache()
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = cache,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = eventHandler,
             dispatcher = testDispatcher,
             client = mockClient
         )
@@ -917,11 +930,12 @@ internal class ConfidenceFeatureProviderTests {
     fun testNonMatching() = runTest {
         val cache = InMemoryCache()
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = cache,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = eventHandler,
             dispatcher = testDispatcher,
             client = mockClient
         )
@@ -963,12 +977,13 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testFlagNotFound() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventHandler = EventHandler(testDispatcher)
         val cache = InMemoryCache()
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = cache,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = eventHandler,
             dispatcher = testDispatcher,
             client = mockClient
         )
@@ -1000,11 +1015,12 @@ internal class ConfidenceFeatureProviderTests {
     fun testErrorInNetwork() = runTest {
         val cache = InMemoryCache()
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = cache,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = eventHandler,
             dispatcher = testDispatcher,
             client = mockClient
         )
@@ -1025,12 +1041,13 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun whenResolveIsNotModifiedDoNotUpdateCache() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventHandler = EventHandler(testDispatcher)
         val cache = mock<InMemoryCache>()
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = cache,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = eventHandler,
             dispatcher = testDispatcher,
             client = mockClient
         )
@@ -1044,11 +1061,12 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testValueNotFound() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = eventHandler,
             dispatcher = testDispatcher,
             client = mockClient
         )
@@ -1073,11 +1091,12 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testValueNotFoundLongPath() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = eventHandler,
             dispatcher = testDispatcher,
             client = mockClient
         )
