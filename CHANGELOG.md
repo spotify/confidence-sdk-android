@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.4](https://github.com/spotify/confidence-openfeature-provider-kotlin/compare/0.1.3...0.1.4) (2023-12-19)
+
+
+### 🧹 Chore
+
+* Latest OF SDK ([#109](https://github.com/spotify/confidence-openfeature-provider-kotlin/issues/109)) ([4ea71ab](https://github.com/spotify/confidence-openfeature-provider-kotlin/commit/4ea71ab5020da055923e3c36773c48ec1c47d04d))
+
+
+### 📚 Documentation
+
+* Add links to the README ([#103](https://github.com/spotify/confidence-openfeature-provider-kotlin/issues/103)) ([12c5b6d](https://github.com/spotify/confidence-openfeature-provider-kotlin/commit/12c5b6d3158f9d3a19b7f9ce9e98167e61b15836))
+
 ## [0.1.3](https://github.com/spotify/confidence-openfeature-provider-kotlin/compare/0.1.2...0.1.3) (2023-11-14)
 
 
