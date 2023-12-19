@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/spotify/confidence-openfeature-provider-kotlin/compare/0.1.4...0.1.5) (2023-12-19)
+
+
+### 🧹 Chore
+
+* sonatype - publish and close on release ([#108](https://github.com/spotify/confidence-openfeature-provider-kotlin/issues/108)) ([a4c0d41](https://github.com/spotify/confidence-openfeature-provider-kotlin/commit/a4c0d4181187ade5722f08e69a23563a68af647c))
+
 ## [0.1.4](https://github.com/spotify/confidence-openfeature-provider-kotlin/compare/0.1.3...0.1.4) (2023-12-19)
 
 
