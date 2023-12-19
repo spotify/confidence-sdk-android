@@ -15,12 +15,11 @@ import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
-import dev.openfeature.sdk.async.awaitProviderReady
+import dev.openfeature.sdk.async.awaitReady
 import dev.openfeature.sdk.events.EventHandler
 import dev.openfeature.sdk.events.OpenFeatureEvents
 import junit.framework.TestCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -70,7 +69,7 @@ class StorageFileCacheTests {
         val mockClient: ConfidenceClient = mock()
         whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val eventPublisher = EventHandler.eventsPublisher(testDispatcher)
+        val eventPublisher = EventHandler(testDispatcher)
         eventPublisher.publish(OpenFeatureEvents.ProviderStale)
         val cache1 = InMemoryCache()
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
@@ -82,13 +81,12 @@ class StorageFileCacheTests {
             context = mockContext,
             clientSecret = "",
             client = mockClient,
-            eventsPublisher = eventPublisher,
+            eventHandler = eventPublisher,
             cache = cache1
         )
-        runBlocking {
-            provider1.initialize(ImmutableContext(targetingKey = "user1"))
-            awaitProviderReady()
-        }
+        provider1.initialize(ImmutableContext(targetingKey = "user1"))
+        provider1.awaitReady(testDispatcher)
+
         // Simulate offline scenario
         whenever(mockClient.resolve(eq(listOf()), any())).thenThrow(Error())
         val provider2 = ConfidenceFeatureProvider.create(

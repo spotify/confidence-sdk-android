@@ -21,7 +21,6 @@ import dev.openfeature.sdk.ProviderMetadata
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.events.EventHandler
-import dev.openfeature.sdk.events.EventsPublisher
 import dev.openfeature.sdk.events.OpenFeatureEvents
 import dev.openfeature.sdk.exceptions.ErrorCode
 import dev.openfeature.sdk.exceptions.OpenFeatureError.FlagNotFoundError
@@ -33,6 +32,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 const val SDK_ID = "SDK_ID_KOTLIN_PROVIDER"
@@ -49,7 +49,7 @@ class ConfidenceFeatureProvider private constructor(
     private val initialisationStrategy: InitialisationStrategy,
     private val client: ConfidenceClient,
     private val flagApplier: FlagApplier,
-    private val eventsPublisher: EventsPublisher,
+    private val eventHandler: EventHandler,
     dispatcher: CoroutineDispatcher
 ) : FeatureProvider {
     private val job = SupervisorJob()
@@ -57,7 +57,7 @@ class ConfidenceFeatureProvider private constructor(
     private val networkExceptionHandler by lazy {
         CoroutineExceptionHandler { _, _ ->
             // network failed, provider is ready but with default/cache values
-            eventsPublisher.publish(OpenFeatureEvents.ProviderReady)
+            eventHandler.publish(OpenFeatureEvents.ProviderReady)
         }
     }
 
@@ -78,7 +78,7 @@ class ConfidenceFeatureProvider private constructor(
         storage.read()?.let(cache::refresh)
 
         if (strategy == InitialisationStrategy.ActivateAndFetchAsync) {
-            eventsPublisher.publish(OpenFeatureEvents.ProviderReady)
+            eventHandler.publish(OpenFeatureEvents.ProviderReady)
         }
 
         coroutineScope.launch(networkExceptionHandler) {
@@ -100,7 +100,7 @@ class ConfidenceFeatureProvider private constructor(
                     InitialisationStrategy.FetchAndActivate -> {
                         // refresh the cache from the stored data
                         cache.refresh(cacheData = storedData)
-                        eventsPublisher.publish(OpenFeatureEvents.ProviderReady)
+                        eventHandler.publish(OpenFeatureEvents.ProviderReady)
                     }
 
                     InitialisationStrategy.ActivateAndFetchAsync -> {
@@ -120,7 +120,7 @@ class ConfidenceFeatureProvider private constructor(
         newContext: EvaluationContext
     ) {
         if (newContext != oldContext) {
-            eventsPublisher.publish(OpenFeatureEvents.ProviderStale)
+            eventHandler.publish(OpenFeatureEvents.ProviderStale)
 
             // on the new context we want to fetch new values and update
             // the storage & cache right away which is why we pass `InitialisationStrategy.FetchAndActivate`
@@ -130,6 +130,10 @@ class ConfidenceFeatureProvider private constructor(
             )
         }
     }
+
+    override fun observe(): Flow<OpenFeatureEvents> = eventHandler.observe()
+
+    override fun isProviderReady(): Boolean = eventHandler.isProviderReady()
 
     override fun getBooleanEvaluation(
         key: String,
@@ -256,7 +260,7 @@ class ConfidenceFeatureProvider private constructor(
             cache: ProviderCache? = null,
             storage: DiskStorage? = null,
             flagApplier: FlagApplier? = null,
-            eventsPublisher: EventsPublisher = EventHandler.eventsPublisher(Dispatchers.IO),
+            eventHandler: EventHandler = EventHandler(Dispatchers.IO),
             dispatcher: CoroutineDispatcher = Dispatchers.IO
         ): ConfidenceFeatureProvider {
             val configuredClient = client ?: ConfidenceRemoteClient(
@@ -280,7 +284,7 @@ class ConfidenceFeatureProvider private constructor(
                 initialisationStrategy = initialisationStrategy,
                 client = configuredClient,
                 flagApplier = flagApplierWithRetries,
-                eventsPublisher,
+                eventHandler,
                 dispatcher
             )
         }

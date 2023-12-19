@@ -15,10 +15,9 @@ import dev.openfeature.sdk.FlagEvaluationDetails
 import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.Value
-import dev.openfeature.sdk.async.awaitProviderReady
+import dev.openfeature.sdk.async.setProviderAndWait
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.UUID
 
 class MainVm(app: Application) : AndroidViewModel(app) {
@@ -38,25 +37,23 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         val start = System.currentTimeMillis()
         val clientSecret = ClientSecretProvider.clientSecret()
 
-        val strategy = if(ConfidenceFeatureProvider.isStorageEmpty(app.applicationContext)) {
+        val strategy = if (ConfidenceFeatureProvider.isStorageEmpty(app.applicationContext)) {
             InitialisationStrategy.FetchAndActivate
         } else {
             InitialisationStrategy.ActivateAndFetchAsync
         }
 
-        OpenFeatureAPI.setProvider(
-            ConfidenceFeatureProvider.create(
-                app.applicationContext,
-                clientSecret,
-                initialisationStrategy = strategy
-            ),
-            initialContext = ctx
-        )
         client = OpenFeatureAPI.getClient()
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                awaitProviderReady()
-            }
+            OpenFeatureAPI.setEvaluationContext(ctx)
+            OpenFeatureAPI.setProviderAndWait(
+                ConfidenceFeatureProvider.create(
+                    app.applicationContext,
+                    clientSecret,
+                    initialisationStrategy = strategy
+                ),
+                dispatcher = Dispatchers.IO
+            )
             Log.d(TAG, "client secret is $clientSecret")
             Log.d(TAG, "init took ${System.currentTimeMillis() - start} ms")
             refreshUi()
