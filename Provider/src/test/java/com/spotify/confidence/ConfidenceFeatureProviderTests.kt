@@ -125,7 +125,7 @@ internal class ConfidenceFeatureProviderTests {
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher
         )
         whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
@@ -237,7 +237,7 @@ internal class ConfidenceFeatureProviderTests {
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = EventHandler.eventsPublisher(testDispatcher),
             client = mockClient,
             dispatcher = testDispatcher
         )
@@ -374,7 +374,7 @@ internal class ConfidenceFeatureProviderTests {
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher
         )
 
@@ -422,7 +422,7 @@ internal class ConfidenceFeatureProviderTests {
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher
         )
         val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
@@ -511,7 +511,7 @@ internal class ConfidenceFeatureProviderTests {
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher
         )
 
@@ -550,7 +550,7 @@ internal class ConfidenceFeatureProviderTests {
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher
         )
 
@@ -588,7 +588,7 @@ internal class ConfidenceFeatureProviderTests {
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher
         )
 
@@ -633,7 +633,7 @@ internal class ConfidenceFeatureProviderTests {
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher
         )
 
@@ -675,7 +675,7 @@ internal class ConfidenceFeatureProviderTests {
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher
         )
 
@@ -713,7 +713,7 @@ internal class ConfidenceFeatureProviderTests {
             clientSecret = "",
             cache = InMemoryCache(),
             client = mockClient,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher
         )
 
@@ -731,7 +731,7 @@ internal class ConfidenceFeatureProviderTests {
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher,
             client = mockClient
         )
@@ -765,7 +765,7 @@ internal class ConfidenceFeatureProviderTests {
             context = mockContext,
             clientSecret = "",
             cache = cache,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher,
             client = mockClient
         )
@@ -874,7 +874,7 @@ internal class ConfidenceFeatureProviderTests {
             context = mockContext,
             clientSecret = "",
             cache = cache,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher,
             client = mockClient
         )
@@ -921,7 +921,7 @@ internal class ConfidenceFeatureProviderTests {
             context = mockContext,
             clientSecret = "",
             cache = cache,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher,
             client = mockClient
         )
@@ -968,7 +968,7 @@ internal class ConfidenceFeatureProviderTests {
             context = mockContext,
             clientSecret = "",
             cache = cache,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher,
             client = mockClient
         )
@@ -1004,7 +1004,7 @@ internal class ConfidenceFeatureProviderTests {
             context = mockContext,
             clientSecret = "",
             cache = cache,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher,
             client = mockClient
         )
@@ -1030,7 +1030,7 @@ internal class ConfidenceFeatureProviderTests {
             context = mockContext,
             clientSecret = "",
             cache = cache,
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher,
             client = mockClient
         )
@@ -1048,7 +1048,7 @@ internal class ConfidenceFeatureProviderTests {
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher,
             client = mockClient
         )
@@ -1077,7 +1077,7 @@ internal class ConfidenceFeatureProviderTests {
             context = mockContext,
             clientSecret = "",
             cache = InMemoryCache(),
-            eventsPublisher = EventHandler.eventsPublisher(testDispatcher),
+            eventHandler = EventHandler.eventsPublisher(testDispatcher),
             dispatcher = testDispatcher,
             client = mockClient
         )

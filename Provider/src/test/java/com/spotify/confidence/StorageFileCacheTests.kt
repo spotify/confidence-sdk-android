@@ -15,7 +15,6 @@ import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
-import dev.openfeature.sdk.async.awaitProviderReady
 import dev.openfeature.sdk.events.EventHandler
 import dev.openfeature.sdk.events.OpenFeatureEvents
 import junit.framework.TestCase
@@ -82,7 +81,7 @@ class StorageFileCacheTests {
             context = mockContext,
             clientSecret = "",
             client = mockClient,
-            eventsPublisher = eventPublisher,
+            eventHandler = eventPublisher,
             cache = cache1
         )
         runBlocking {

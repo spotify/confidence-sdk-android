@@ -9,7 +9,7 @@ plugins {
 }
 
 object Versions {
-    const val openFeatureSDK = "0.0.4"
+    const val openFeatureSDK = "0.2.0"
     const val okHttp = "4.10.0"
     const val kotlinxSerialization = "1.6.0"
     const val coroutines = "1.7.3"
@@ -49,7 +49,7 @@ android {
 }
 
 dependencies {
-    api("dev.openfeature:kotlin-sdk:${Versions.openFeatureSDK}")
+    api("dev.openfeature:android-sdk:${Versions.openFeatureSDK}")
     implementation("com.squareup.okhttp3:okhttp:${Versions.okHttp}")
     implementation(
         "org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}"
