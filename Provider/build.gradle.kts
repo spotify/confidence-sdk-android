@@ -9,7 +9,7 @@ plugins {
 }
 
 object Versions {
-    const val openFeatureSDK = "0.2.0"
+    const val openFeatureSDK = "0.2.1"
     const val okHttp = "4.10.0"
     const val kotlinxSerialization = "1.6.0"
     const val coroutines = "1.7.3"
@@ -17,6 +17,7 @@ object Versions {
     const val kotlinMockito = "4.1.0"
     const val mockWebServer = "4.9.1"
 }
+
 val providerVersion = project.extra["version"].toString()
 
 android {

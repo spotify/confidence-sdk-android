@@ -37,7 +37,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         val start = System.currentTimeMillis()
         val clientSecret = ClientSecretProvider.clientSecret()
 
-        val strategy = if(ConfidenceFeatureProvider.isStorageEmpty(app.applicationContext)) {
+        val strategy = if (ConfidenceFeatureProvider.isStorageEmpty(app.applicationContext)) {
             InitialisationStrategy.FetchAndActivate
         } else {
             InitialisationStrategy.ActivateAndFetchAsync
