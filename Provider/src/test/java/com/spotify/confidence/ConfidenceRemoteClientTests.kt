@@ -10,6 +10,7 @@ import com.spotify.confidence.client.ResolveFlags
 import com.spotify.confidence.client.ResolveReason
 import com.spotify.confidence.client.ResolveResponse
 import com.spotify.confidence.client.ResolvedFlag
+import com.spotify.confidence.client.Result
 import com.spotify.confidence.client.SdkMetadata
 import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.ImmutableStructure
@@ -515,5 +516,55 @@ internal class ConfidenceRemoteClientTests {
             dispatcher = testDispatcher
         )
             .apply(listOf(AppliedFlag("flag1", applyDate)), "token1")
+    }
+
+    @Test
+    fun testApplyReturnsSuccessfulAfter200() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val applyDate = Date.from(Instant.parse("2023-03-01T14:01:46.123Z"))
+        val sendDate = Date.from(Instant.parse("2023-03-01T14:03:46.124Z"))
+        val mockClock: Clock = mock()
+
+        whenever(mockClock.currentTime()).thenReturn(sendDate)
+        mockWebServer.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                return MockResponse().setResponseCode(200)
+            }
+        }
+        val result = ConfidenceRemoteClient(
+            "secret1",
+            sdkMetadata,
+            mockWebServer.url("/v1/flags:apply"),
+            mockClock,
+            dispatcher = testDispatcher
+        )
+            .apply(listOf(AppliedFlag("flag1", applyDate)), "token1")
+
+        assertEquals(Result.Success, result)
+    }
+
+    @Test
+    fun testApplyReturnsFailureAfter500() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val applyDate = Date.from(Instant.parse("2023-03-01T14:01:46.123Z"))
+        val sendDate = Date.from(Instant.parse("2023-03-01T14:03:46.124Z"))
+        val mockClock: Clock = mock()
+
+        whenever(mockClock.currentTime()).thenReturn(sendDate)
+        mockWebServer.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                return MockResponse().setResponseCode(500)
+            }
+        }
+        val result = ConfidenceRemoteClient(
+            "secret1",
+            sdkMetadata,
+            mockWebServer.url("/v1/flags:apply"),
+            mockClock,
+            dispatcher = testDispatcher
+        )
+            .apply(listOf(AppliedFlag("flag1", applyDate)), "token1")
+
+        assertEquals(Result.Failure, result)
     }
 }

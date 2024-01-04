@@ -130,11 +130,17 @@ class ConfidenceRemoteClient : ConfidenceClient {
             sdkMetadata.sdkId,
             sdkMetadata.sdkVersion
         )
-        applyInteractor(request).runCatching {
-            return Result.Failure
+        val result = applyInteractor(request).runCatching {
+            if (isSuccessful) {
+                Result.Success
+            } else {
+                Result.Failure
+            }
+        }.getOrElse {
+            Result.Failure
         }
 
-        return Result.Success
+        return result
     }
 }
 
