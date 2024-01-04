@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/spotify/confidence-openfeature-provider-kotlin/compare/0.1.5...0.1.6) (2024-01-04)
+
+
+### 🐛 Bug Fixes
+
+* correctly handle apply response in event processor ([#111](https://github.com/spotify/confidence-openfeature-provider-kotlin/issues/111)) ([84ac3d5](https://github.com/spotify/confidence-openfeature-provider-kotlin/commit/84ac3d50ea3a68f8d64491ecadfb7e49f46c0694))
+
 ## [0.1.5](https://github.com/spotify/confidence-openfeature-provider-kotlin/compare/0.1.4...0.1.5) (2023-12-19)
 
 
