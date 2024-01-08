@@ -1,6 +1,7 @@
 package com.spotify.confidence.client
 
 enum class ConfidenceRegion {
+    GLOBAL,
     EUROPE,
     USA
 }

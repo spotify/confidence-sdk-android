@@ -252,7 +252,7 @@ class ConfidenceFeatureProvider private constructor(
         fun create(
             context: Context,
             clientSecret: String,
-            region: ConfidenceRegion = ConfidenceRegion.EUROPE,
+            region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
             initialisationStrategy: InitialisationStrategy = InitialisationStrategy.FetchAndActivate,
             hooks: List<Hook<*>> = listOf(),
             client: ConfidenceClient? = null,
