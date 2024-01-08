@@ -45,6 +45,7 @@ class ConfidenceRemoteClient : ConfidenceClient {
             "application/json"
         )
         baseUrl = when (region) {
+            ConfidenceRegion.GLOBAL -> "https://resolver.confidence.dev"
             ConfidenceRegion.EUROPE -> "https://resolver.eu.confidence.dev"
             ConfidenceRegion.USA -> "https://resolver.us.confidence.dev"
         }
