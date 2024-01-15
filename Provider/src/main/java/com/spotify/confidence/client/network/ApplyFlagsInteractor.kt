@@ -1,6 +1,7 @@
 package com.spotify.confidence.client.network
 
 import com.spotify.confidence.client.AppliedFlag
+import com.spotify.confidence.client.Sdk
 import com.spotify.confidence.client.await
 import com.spotify.confidence.client.serializers.StructureSerializer
 import com.spotify.confidence.client.serializers.UUIDSerializer
@@ -55,8 +56,7 @@ internal data class ApplyFlagsRequest(
     val sendTime: Date,
     val clientSecret: String,
     val resolveToken: String,
-    val sdkId: String,
-    val sdkVersion: String
+    val sdk: Sdk
 )
 
 private val json = Json {

@@ -107,8 +107,7 @@ class ConfidenceRemoteClient : ConfidenceClient {
             ctx.toEvaluationContextStruct(),
             clientSecret,
             false,
-            sdkMetadata.sdkId,
-            sdkMetadata.sdkVersion
+            Sdk(sdkMetadata.sdkId, sdkMetadata.sdkVersion)
         )
 
         val networkResponse = resolveInteractor(request)
@@ -128,8 +127,7 @@ class ConfidenceRemoteClient : ConfidenceClient {
             clock.currentTime(),
             clientSecret,
             resolveToken,
-            sdkMetadata.sdkId,
-            sdkMetadata.sdkVersion
+            Sdk(sdkMetadata.sdkId, sdkMetadata.sdkVersion)
         )
         val result = applyInteractor(request).runCatching {
             if (isSuccessful) {

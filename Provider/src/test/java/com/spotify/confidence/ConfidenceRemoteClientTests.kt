@@ -430,8 +430,10 @@ internal class ConfidenceRemoteClientTests {
                     "  },\n" +
                     "  \"clientSecret\": \"secret1\",\n" +
                     "  \"apply\": false,\n" +
-                    "  \"sdkId\": \"SDK_ID_KOTLIN_PROVIDER_TEST\",\n" +
-                    "  \"sdkVersion\": \"\"\n" +
+                    "  \"sdk\": {\n" +
+                    "    \"id\": \"SDK_ID_KOTLIN_PROVIDER_TEST\",\n" +
+                    "    \"version\": \"\"\n" +
+                    "  }\n" +
                     "}"
                 assertEquals(
                     expectedSerializedRequest.replace("\\s".toRegex(), ""),
@@ -497,8 +499,10 @@ internal class ConfidenceRemoteClientTests {
                     "  \"sendTime\": \"2023-03-01T14:03:46.124Z\",\n" +
                     "  \"clientSecret\": \"secret1\",\n" +
                     "  \"resolveToken\": \"token1\",\n" +
-                    "  \"sdkId\": \"SDK_ID_KOTLIN_PROVIDER_TEST\",\n" +
-                    "  \"sdkVersion\": \"\"\n" +
+                    "  \"sdk\": {\n" +
+                    "    \"id\": \"SDK_ID_KOTLIN_PROVIDER_TEST\",\n" +
+                    "    \"version\": \"\"\n" +
+                    "  }\n" +
                     "}"
                 assertEquals(
                     expectedSerializedRequest.replace("\\s".toRegex(), ""),
