@@ -133,7 +133,9 @@ class ConfidenceFeatureProvider private constructor(
 
     override fun observe(): Flow<OpenFeatureEvents> = eventHandler.observe()
 
-    override fun isProviderReady(): Boolean = eventHandler.isProviderReady()
+    override fun getProviderStatus(): OpenFeatureEvents {
+        return eventHandler.getProviderStatus()
+    }
 
     override fun getBooleanEvaluation(
         key: String,

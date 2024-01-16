@@ -15,7 +15,7 @@ import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
-import dev.openfeature.sdk.async.awaitReady
+import dev.openfeature.sdk.async.awaitReadyOrError
 import dev.openfeature.sdk.events.EventHandler
 import dev.openfeature.sdk.events.OpenFeatureEvents
 import junit.framework.TestCase
@@ -85,7 +85,7 @@ class StorageFileCacheTests {
             cache = cache1
         )
         provider1.initialize(ImmutableContext(targetingKey = "user1"))
-        provider1.awaitReady(testDispatcher)
+        provider1.awaitReadyOrError(testDispatcher)
 
         // Simulate offline scenario
         whenever(mockClient.resolve(eq(listOf()), any())).thenThrow(Error())

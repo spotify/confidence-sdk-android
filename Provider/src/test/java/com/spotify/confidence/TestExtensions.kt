@@ -22,7 +22,7 @@ suspend fun awaitProviderReady(
     fun observeProviderReady() = eventsHandler
         .observe<OpenFeatureEvents.ProviderReady>()
         .onStart {
-            if (eventsHandler.isProviderReady()) {
+            if (eventsHandler.getProviderStatus() == OpenFeatureEvents.ProviderReady) {
                 this.emit(OpenFeatureEvents.ProviderReady)
             }
         }
