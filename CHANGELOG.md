@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.1.7](https://github.com/spotify/confidence-openfeature-provider-kotlin/compare/0.1.6...0.1.7) (2024-01-16)
+
+
+### 🐛 Bug Fixes
+
+* Fix sdk metadata format ([#117](https://github.com/spotify/confidence-openfeature-provider-kotlin/issues/117)) ([e9ad5d8](https://github.com/spotify/confidence-openfeature-provider-kotlin/commit/e9ad5d826874005d0211dbc3d1f6ea1b6c115005))
+
+
+### 🧹 Chore
+
+* add a default endpoint to the provider ([#115](https://github.com/spotify/confidence-openfeature-provider-kotlin/issues/115)) ([dc53f9f](https://github.com/spotify/confidence-openfeature-provider-kotlin/commit/dc53f9f5e5c31051e7187ede1bb11099258faa62))
+
+
+### 📚 Documentation
+
+* Add docs on initialization strategy config ([#116](https://github.com/spotify/confidence-openfeature-provider-kotlin/issues/116)) ([ed96ca2](https://github.com/spotify/confidence-openfeature-provider-kotlin/commit/ed96ca27157d4bd34dc80e13bc1aff49f7d8f92c))
+* Update README ([#113](https://github.com/spotify/confidence-openfeature-provider-kotlin/issues/113)) ([605c509](https://github.com/spotify/confidence-openfeature-provider-kotlin/commit/605c5095f5d5ddc9981075a80257240974a589ad))
+
 ## [0.1.6](https://github.com/spotify/confidence-openfeature-provider-kotlin/compare/0.1.5...0.1.6) (2024-01-04)
 
 
