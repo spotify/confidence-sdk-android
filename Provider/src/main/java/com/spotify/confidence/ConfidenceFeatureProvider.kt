@@ -133,8 +133,6 @@ class ConfidenceFeatureProvider private constructor(
 
     override fun observe(): Flow<OpenFeatureEvents> = eventHandler.observe()
 
-    override fun isProviderReady(): Boolean = eventHandler.isProviderReady()
-
     override fun getBooleanEvaluation(
         key: String,
         defaultValue: Boolean,
@@ -167,6 +165,8 @@ class ConfidenceFeatureProvider private constructor(
         return generateEvaluation(key, defaultValue, context)
     }
 
+    override fun getProviderStatus(): OpenFeatureEvents = eventHandler.getProviderStatus()
+
     override fun getStringEvaluation(
         key: String,
         defaultValue: String,
@@ -189,10 +189,12 @@ class ConfidenceFeatureProvider private constructor(
                     defaultValue
                 )
             }
+
             CacheResolveResult.Stale -> ProviderEvaluation(
                 value = defaultValue,
                 reason = Reason.STALE.toString()
             )
+
             CacheResolveResult.NotFound -> throw FlagNotFoundError(parsedKey.flagName)
         }
     }
@@ -218,6 +220,7 @@ class ConfidenceFeatureProvider private constructor(
             currValue is Value.Structure -> {
                 findValueFromValuePath(currValue, valuePath.subList(1, valuePath.count()))
             }
+
             valuePath.count() == 1 -> currValue
             else -> null
         }
@@ -237,6 +240,7 @@ class ConfidenceFeatureProvider private constructor(
             }
         }
     }
+
     companion object {
         private class ConfidenceMetadata(override var name: String? = "confidence") : ProviderMetadata
 
@@ -307,6 +311,7 @@ class ConfidenceFeatureProvider private constructor(
                 reason = Reason.TARGETING_MATCH.toString()
             )
         }
+
         com.spotify.confidence.client.ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR -> {
             ProviderEvaluation(
                 value = defaultValue,
@@ -315,6 +320,7 @@ class ConfidenceFeatureProvider private constructor(
                 errorMessage = "Invalid targeting key"
             )
         }
+
         else -> {
             flagApplier.apply(parsedKey.flagName, resolveToken)
             ProviderEvaluation(
