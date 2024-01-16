@@ -20,8 +20,13 @@ data class ResolveFlagsRequest(
     val evaluationContext: Structure,
     val clientSecret: String,
     val apply: Boolean,
-    val sdkId: String,
-    val sdkVersion: String
+    val sdk: Sdk
+)
+
+@Serializable
+data class Sdk(
+    val id: String,
+    val version: String
 )
 
 @Serializable
