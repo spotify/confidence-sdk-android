@@ -29,12 +29,17 @@ Where `0.1.6` is the most recent version of this SDK. Released versions can be f
 <!---x-release-please-end-->
 
 ### Enabling the provider, setting the evaluation context and resolving flags
+
+Please refer to the OpenFeature Kotlin SDK [documentation](https://github.com/open-feature/kotlin-sdk) for more information on OpenFeature specific APIs mentioned throughout this README (e.g. `setProvider`, `setProviderAndWait`, OpenFeature Events).
+
+Basic usage:
 ```kotlin
 coroutineScope.launch {
     OpenFeatureAPI.setProviderAndWait(
         ConfidenceFeatureProvider.create(
             applicationContext,
-            "<MY_SECRET>"
+            "<MY_SECRET>",
+            initialisationStrategy = InitialisationStrategy.ActivateAndFetchAsync
         ),
         dispatcher = Dispatchers.IO,
         initialContext = ImmutableContext(targetingKey = "myTargetingKey")
@@ -43,9 +48,12 @@ coroutineScope.launch {
 }
 ```
 
-`MY_SECRET` is an API key that can be generated in the [Confidence UI](https://confidence.spotify.com/console).
+Where:
+- `MY_SECRET` is an API key that can be generated in the [Confidence UI](https://confidence.spotify.com/console).
 
-The OpenFeature Event `ProviderReady` is also emitted when the provider is done initializing the cache. For more information on the OpenFeature APIs, follow the related [README](https://github.com/open-feature/kotlin-sdk?tab=readme-ov-file#usage).
+- `initializationStrategy` is set to one of these two options:
+  - **FetchAndActivate** (_default_): when calling `setProvider`/`setProviderAndWait`, the Provider attemtps to refresh the cache from remote and emits the OpenFeature Event `ProviderReady` after such an attempt (regardless of its success)
+  - **ActivateAndFetchAsync**: when calling `setProvider`/`setProviderAndWait`, the Provider emits the OpenFeature Event `ProviderReady` immediately, utilizing whatever cache was saved on disk from the previous session. After that, the Provider will try to refresh the cache on disk for the future session, without impacting the current session.
 
 ### Changing context after the provider initialization 
 The evaluation context can be changed during the app session using `setEvaluationContext(...)`.
