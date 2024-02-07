@@ -15,9 +15,9 @@ import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
-import dev.openfeature.sdk.async.awaitReadyOrError
 import dev.openfeature.sdk.events.EventHandler
 import dev.openfeature.sdk.events.OpenFeatureEvents
+import dev.openfeature.sdk.events.awaitReadyOrError
 import junit.framework.TestCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
