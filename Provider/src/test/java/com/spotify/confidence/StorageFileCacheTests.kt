@@ -15,8 +15,6 @@ import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
-import dev.openfeature.sdk.events.EventHandler
-import dev.openfeature.sdk.events.OpenFeatureEvents
 import dev.openfeature.sdk.events.awaitReadyOrError
 import junit.framework.TestCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -64,13 +62,12 @@ class StorageFileCacheTests {
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun testOfflineScenarioLoadsStoredCache() = runTest {
         val mockClient: ConfidenceClient = mock()
         whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val eventPublisher = EventHandler(testDispatcher)
-        eventPublisher.publish(OpenFeatureEvents.ProviderStale)
         val cache1 = InMemoryCache()
         whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
             ResolveResponse.Resolved(
@@ -81,7 +78,6 @@ class StorageFileCacheTests {
             context = mockContext,
             clientSecret = "",
             client = mockClient,
-            eventHandler = eventPublisher,
             cache = cache1
         )
         provider1.initialize(ImmutableContext(targetingKey = "user1"))
