@@ -769,7 +769,7 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
-    fun testStale() = runTest {
+    fun testError() = runTest {
         val cache = InMemoryCache()
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val eventHandler = EventHandler(testDispatcher)
@@ -841,14 +841,14 @@ internal class ConfidenceFeatureProviderTests {
         assertEquals("default2", evalNested.value)
         assertEquals("default3", evalNull.value)
 
-        assertEquals(Reason.STALE.toString(), evalString.reason)
-        assertEquals(Reason.STALE.toString(), evalBool.reason)
-        assertEquals(Reason.STALE.toString(), evalInteger.reason)
-        assertEquals(Reason.STALE.toString(), evalDouble.reason)
-        assertEquals(Reason.STALE.toString(), evalDate.reason)
-        assertEquals(Reason.STALE.toString(), evalObject.reason)
-        assertEquals(Reason.STALE.toString(), evalNested.reason)
-        assertEquals(Reason.STALE.toString(), evalNull.reason)
+        assertEquals(Reason.ERROR.toString(), evalString.reason)
+        assertEquals(Reason.ERROR.toString(), evalBool.reason)
+        assertEquals(Reason.ERROR.toString(), evalInteger.reason)
+        assertEquals(Reason.ERROR.toString(), evalDouble.reason)
+        assertEquals(Reason.ERROR.toString(), evalDate.reason)
+        assertEquals(Reason.ERROR.toString(), evalObject.reason)
+        assertEquals(Reason.ERROR.toString(), evalNested.reason)
+        assertEquals(Reason.ERROR.toString(), evalNull.reason)
 
         assertNull(evalString.variant)
         assertNull(evalBool.variant)
@@ -868,14 +868,14 @@ internal class ConfidenceFeatureProviderTests {
         assertNull(evalNested.errorMessage)
         assertNull(evalNull.errorMessage)
 
-        assertNull(evalString.errorCode)
-        assertNull(evalBool.errorCode)
-        assertNull(evalInteger.errorCode)
-        assertNull(evalDouble.errorCode)
-        assertNull(evalDate.errorCode)
-        assertNull(evalObject.errorCode)
-        assertNull(evalNested.errorCode)
-        assertNull(evalNull.errorCode)
+        assertEquals(ErrorCode.PROVIDER_NOT_READY, evalString.errorCode)
+        assertEquals(ErrorCode.PROVIDER_NOT_READY, evalBool.errorCode)
+        assertEquals(ErrorCode.PROVIDER_NOT_READY, evalInteger.errorCode)
+        assertEquals(ErrorCode.PROVIDER_NOT_READY, evalDouble.errorCode)
+        assertEquals(ErrorCode.PROVIDER_NOT_READY, evalDate.errorCode)
+        assertEquals(ErrorCode.PROVIDER_NOT_READY, evalObject.errorCode)
+        assertEquals(ErrorCode.PROVIDER_NOT_READY, evalNested.errorCode)
+        assertEquals(ErrorCode.PROVIDER_NOT_READY, evalNull.errorCode)
     }
 
     @Test

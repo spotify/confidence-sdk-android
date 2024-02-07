@@ -191,7 +191,8 @@ class ConfidenceFeatureProvider private constructor(
             }
             CacheResolveResult.Stale -> ProviderEvaluation(
                 value = defaultValue,
-                reason = Reason.STALE.toString()
+                reason = Reason.ERROR.toString(),
+                errorCode = ErrorCode.PROVIDER_NOT_READY
             )
             CacheResolveResult.NotFound -> throw FlagNotFoundError(parsedKey.flagName)
         }
