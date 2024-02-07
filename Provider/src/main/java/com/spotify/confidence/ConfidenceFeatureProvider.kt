@@ -120,8 +120,6 @@ class ConfidenceFeatureProvider private constructor(
         newContext: EvaluationContext
     ) {
         if (newContext != oldContext) {
-            eventHandler.publish(OpenFeatureEvents.ProviderStale)
-
             // on the new context we want to fetch new values and update
             // the storage & cache right away which is why we pass `InitialisationStrategy.FetchAndActivate`
             internalInitialize(

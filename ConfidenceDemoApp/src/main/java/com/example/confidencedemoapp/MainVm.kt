@@ -15,7 +15,6 @@ import dev.openfeature.sdk.FlagEvaluationDetails
 import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.Value
-import dev.openfeature.sdk.async.setProviderAndWait
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.UUID

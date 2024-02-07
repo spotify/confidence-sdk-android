@@ -57,12 +57,11 @@ Where:
 
 ### Changing context after the provider initialization 
 The evaluation context can be changed during the app session using `setEvaluationContext(...)`.
-After calling this method the new context is set for the provider and the flags will be fetched again and the cache and storage will be updated accordingly.
-The OpenFeature Events `ProviderStale` and `ProviderReady` events will be emitted accordingly.
+After calling this method the new context is set for the provider, the flags will be fetched again and the cache and storage will be updated accordingly. The event `ProviderReady` will be emitted once the new flags are ready to be consumed by the application (note that the selected initialization strategy property doesn't play a role in this case).
 
 Notes:
 - If a flag can't be resolved from cache, the provider does NOT automatically resort to calling remote: refreshing the cache from remote only happens when setting a new provider and/or evaluation context in the global OpenFeatureAPI
-- It's advised not to perform resolves while `setProvider` and `setEvaluationContext` are running: resolves might return the default value with reason `STALE` during such operations.
+- It's advised not to perform resolves while `setProvider` and `setEvaluationContext` are running: resolves might return the default value with reason `STALE` during such operations. The event `ProviderReady` can be used to guarantee correctness.
 
 ## Apply events
 This Provider automatically emits `apply` events to the Confidence backend once a flag's property is read by the application. This allows Confidence to track who was exposed to what variant and when.
