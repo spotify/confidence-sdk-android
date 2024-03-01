@@ -8,7 +8,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.spotify.confidence.ConfidenceFeatureProvider
+import com.spotify.confidence.EventSender
+import com.spotify.confidence.EventsScope
 import com.spotify.confidence.InitialisationStrategy
+import com.spotify.confidence.eventSender
 import dev.openfeature.sdk.Client
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FlagEvaluationDetails
@@ -31,6 +34,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
     private val _color: MutableLiveData<Color> = MutableLiveData(Color.Gray)
     val message: LiveData<String> = _message
     val color: LiveData<Color> = _color
+    private lateinit var eventSender: EventSender
 
     init {
         val start = System.currentTimeMillis()
@@ -45,14 +49,17 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         client = OpenFeatureAPI.getClient()
         viewModelScope.launch {
             OpenFeatureAPI.setEvaluationContext(ctx)
-            OpenFeatureAPI.setProviderAndWait(
-                ConfidenceFeatureProvider.create(
-                    app.applicationContext,
-                    clientSecret,
-                    initialisationStrategy = strategy
-                ),
-                dispatcher = Dispatchers.IO
+            val provider = ConfidenceFeatureProvider.create(
+                app.applicationContext,
+                clientSecret,
+                initialisationStrategy = strategy
             )
+            OpenFeatureAPI.setProviderAndWait(provider, Dispatchers.IO)
+
+            eventSender = provider.eventSender(app.applicationContext)
+
+            eventSender.emit("eventDefinitions/navigate")
+
             Log.d(TAG, "client secret is $clientSecret")
             Log.d(TAG, "init took ${System.currentTimeMillis() - start} ms")
             refreshUi()
@@ -72,6 +79,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         }.toComposeColor()
         _message.postValue(messageValue)
         _color.postValue(colorFlag)
+        eventSender.emit("eventDefinitions/navigate", mapOf("button" to "refresh_ui"))
     }
 
     fun updateContext() {

@@ -9,6 +9,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 
 internal class EventSenderEngine(
     private val eventStorage: EventStorage,
@@ -27,7 +28,8 @@ internal class EventSenderEngine(
             // do nothing
         }
     }
-    private lateinit var uploader: EventSenderUploader
+    private val uploader: EventSenderUploader =
+        EventSenderUploaderImpl(OkHttpClient(), dispatcher)
 
     init {
         coroutineScope.launch {

@@ -75,13 +75,14 @@ internal class EventSenderUploaderImpl(
             .post(eventsJson.encodeToString(events).toRequestBody())
             .build()
 
-        val statusCode = httpClient.newCall(httpRequest).await().code
+        val response = httpClient.newCall(httpRequest).await()
+        val statusCode = response.code
         /**
          * if server can't handle the batch, we should throw it away
          * except for rate limiting
          * here backend can be more specific
          */
-        (statusCode / 100) == 4 && statusCode != 429
+        !((statusCode / 100) == 4 && statusCode != 429)
     }
 
     companion object {

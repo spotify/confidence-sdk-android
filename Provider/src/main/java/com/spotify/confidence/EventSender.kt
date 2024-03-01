@@ -5,7 +5,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
 interface EventSender {
-    fun emit(definition: String, payload: Map<String, String>)
+    fun emit(definition: String, payload: Map<String, String> = mapOf())
     fun withScope(scope: EventsScope): EventSender
 }
 
@@ -24,7 +24,8 @@ class EventSenderImpl private constructor(
     private val scope: EventsScope = EventsScope()
 ) : EventSender {
     override fun emit(definition: String, payload: Map<String, String>) {
-        eventSenderEngine.emit(definition, payload + scope.fields())
+        val scope = scope.fields()
+        eventSenderEngine.emit(definition, payload + scope)
     }
 
     override fun withScope(scope: EventsScope): EventSender {

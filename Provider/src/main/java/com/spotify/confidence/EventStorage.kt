@@ -2,9 +2,9 @@ package com.spotify.confidence
 
 import android.content.Context
 import kotlinx.coroutines.sync.Semaphore
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
+import java.io.OutputStream
 
 internal interface EventStorage {
     suspend fun rollover()
@@ -17,20 +17,22 @@ internal class EventStorageImpl(
     private val context: Context
 ) : EventStorage {
     private lateinit var currentFile: File
+    private var outputStream: OutputStream? = null
     private val semaphore: Semaphore = Semaphore(1)
 
     init {
-        resetCurrentFile(false)
+        resetCurrentFile()
     }
 
     override suspend fun rollover() = withLock {
         currentFile.renameTo(getFileWithName(currentFile.name + READY_TO_SENT_EXTENSION))
-        resetCurrentFile(true)
+        resetCurrentFile()
     }
 
     override suspend fun writeEvent(event: Event) = withLock {
         val delimiter = EVENT_WRITE_DELIMITER
-        currentFile.writeText(eventsJson.encodeToString(event) + delimiter)
+        val byteArray = (eventsJson.encodeToString(event) + delimiter).toByteArray()
+        outputStream?.write(byteArray)
     }
 
     override suspend fun batchReadyFiles(): List<File> {
@@ -46,27 +48,24 @@ internal class EventStorageImpl(
         return list
     }
 
-    override suspend fun eventsFor(file: File): List<Event> = file.readText()
-        .split(EVENT_WRITE_DELIMITER)
-        .map { eventsJson.decodeFromString(it) }
+    override suspend fun eventsFor(file: File): List<Event> {
+        val text = file.readText()
+        return text
+            .split(EVENT_WRITE_DELIMITER)
+            .filter { it.isNotEmpty() }
+            .map { eventsJson.decodeFromString(it) }
+    }
 
-    private fun maxIndex(): Int {
+    private fun latestWriteFile(): File? {
         val directory = context.getDir(DIRECTORY, Context.MODE_PRIVATE)
-        var maxIndex = 0
         for (file in directory.walk().iterator()) {
-            if (!file.name.endsWith(READY_TO_SENT_EXTENSION)) {
-                val index = indexForFile(file)
-                if (maxIndex < index) {
-                    maxIndex = index
+            if (!file.isDirectory) {
+                if (!file.name.endsWith(READY_TO_SENT_EXTENSION) && !file.isDirectory) {
+                    return file
                 }
             }
         }
-
-        return maxIndex
-    }
-
-    private fun indexForFile(file: File): Int {
-        return file.name.split("-")[1].toInt()
+        return null
     }
 
     private suspend fun withLock(body: () -> Unit) {
@@ -75,23 +74,20 @@ internal class EventStorageImpl(
         semaphore.release()
     }
 
-    private fun resetCurrentFile(newFile: Boolean) {
-        val maxIndex = maxIndex()
-        val index = if (newFile) {
-            maxIndex + 1
-        } else {
-            maxIndex
-        }
-        currentFile = getFileWithName(index.toString())
+    private fun resetCurrentFile() {
+        outputStream?.close()
+        currentFile = latestWriteFile()
+            ?: getFileWithName("events-${System.currentTimeMillis()}")
+        outputStream = currentFile.outputStream()
     }
     private fun getFileWithName(name: String): File {
         val directory = context.getDir(DIRECTORY, Context.MODE_PRIVATE)
-        return File(directory, "events-$name")
+        return File(directory, name)
     }
 
     companion object {
         const val DIRECTORY = "events"
-        const val READY_TO_SENT_EXTENSION = "ready"
+        const val READY_TO_SENT_EXTENSION = ".ready"
         const val EVENT_WRITE_DELIMITER = ",\n"
     }
 }
