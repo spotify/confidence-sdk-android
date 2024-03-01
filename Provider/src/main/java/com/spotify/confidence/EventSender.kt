@@ -5,7 +5,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
 interface EventSender {
-    fun emit(definition: String, payload: Map<String, String> = mapOf())
+    fun emit(definition: String, payload: EventPayloadType = mapOf())
     fun withScope(scope: EventsScope): EventSender
 }
 
@@ -15,15 +15,25 @@ interface FlushPolicy {
     fun shouldFlush(): Boolean
 }
 
+sealed class EventValue {
+    data class String(val value: kotlin.String) : EventValue()
+    data class Double(val value: kotlin.Double) : EventValue()
+    data class Boolean(val value: kotlin.Boolean) : EventValue()
+    data class Int(val value: kotlin.Int) : EventValue()
+    data class Struct(val value: Map<kotlin.String, EventValue>) : EventValue()
+}
+
+typealias EventPayloadType = Map<String, EventValue>
+
 data class EventsScope(
-    val fields: () -> Map<String, String> = { mapOf() }
+    val fields: () -> EventPayloadType = { mapOf() }
 )
 
 class EventSenderImpl private constructor(
     private val eventSenderEngine: EventSenderEngine,
     private val scope: EventsScope = EventsScope()
 ) : EventSender {
-    override fun emit(definition: String, payload: Map<String, String>) {
+    override fun emit(definition: String, payload: EventPayloadType) {
         val scope = scope.fields()
         eventSenderEngine.emit(definition, payload + scope)
     }

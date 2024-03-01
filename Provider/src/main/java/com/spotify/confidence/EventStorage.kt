@@ -25,6 +25,8 @@ internal class EventStorageImpl(
     }
 
     override suspend fun rollover() = withLock {
+        outputStream?.flush()
+        outputStream?.close()
         currentFile.renameTo(getFileWithName(currentFile.name + READY_TO_SENT_EXTENSION))
         resetCurrentFile()
     }
@@ -33,6 +35,7 @@ internal class EventStorageImpl(
         val delimiter = EVENT_WRITE_DELIMITER
         val byteArray = (eventsJson.encodeToString(event) + delimiter).toByteArray()
         outputStream?.write(byteArray)
+        outputStream?.flush()
     }
 
     override suspend fun batchReadyFiles(): List<File> {

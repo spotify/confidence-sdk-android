@@ -32,10 +32,10 @@ fun ConfidenceFeatureProvider.eventSender(
     scope = EventsScope(
         fields = {
             OpenFeatureAPI.getEvaluationContext()?.let { evalContext ->
-                val map = mutableMapOf<String, String>()
-                map["targeting_key"] = evalContext.getTargetingKey()
+                val map = mutableMapOf<String, EventValue>()
+                map["targeting_key"] = EventValue.String(evalContext.getTargetingKey())
                 evalContext.asMap().forEach {
-                    map[it.key] = Json.encodeToString(it.value)
+                    map[it.key] = EventValue.String(Json.encodeToString(it.value))
                 }
                 map
             } ?: mapOf()

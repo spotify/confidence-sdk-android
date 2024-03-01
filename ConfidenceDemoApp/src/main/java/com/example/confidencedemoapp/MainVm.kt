@@ -9,6 +9,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.spotify.confidence.ConfidenceFeatureProvider
 import com.spotify.confidence.EventSender
+import com.spotify.confidence.EventValue
 import com.spotify.confidence.EventsScope
 import com.spotify.confidence.InitialisationStrategy
 import com.spotify.confidence.eventSender
@@ -56,8 +57,21 @@ class MainVm(app: Application) : AndroidViewModel(app) {
             )
             OpenFeatureAPI.setProviderAndWait(provider, Dispatchers.IO)
 
+            val fields = {
+                val mutableMap = mutableMapOf<String, EventValue>()
+                mutableMap["screen"] = EventValue.String("value")
+                mutableMap["hello"] = EventValue.Boolean(false)
+                mutableMap["NN"] = EventValue.Double(20.0)
+                mutableMap["my_struct"] = EventValue.Struct(mapOf("x" to EventValue.Double(2.0)))
+                mutableMap
+            }
+
+            val scope = EventsScope(
+                fields = fields
+            )
+
             eventSender = provider.eventSender(app.applicationContext)
-                .withScope(EventsScope(fields = { mapOf("screen" to "Main VM") }))
+                .withScope(scope)
 
             eventSender.emit("eventDefinitions/navigate")
 
@@ -80,7 +94,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         }.toComposeColor()
         _message.postValue(messageValue)
         _color.postValue(colorFlag)
-        eventSender.emit("eventDefinitions/navigate", mapOf("button" to "refresh_ui"))
+        eventSender.emit("eventDefinitions/navigate", mapOf("screen" to EventValue.String("Hello")))
     }
 
     fun updateContext() {

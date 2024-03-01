@@ -24,8 +24,8 @@ internal class EventSenderEngine(
         CoroutineScope(SupervisorJob() + dispatcher)
     }
     private val exceptionHandler by lazy {
-        CoroutineExceptionHandler { _, _ ->
-            // do nothing
+        CoroutineExceptionHandler { _, e ->
+            print(e.message)
         }
     }
     private val uploader: EventSenderUploader =
@@ -55,15 +55,17 @@ internal class EventSenderEngine(
                         events = eventStorage.eventsFor(readyFile),
                         sendTime = clock.currentTime()
                     )
-                    val shouldCleanup = uploader.upload(batch)
-                    if (shouldCleanup) {
-                        readyFile.delete()
+                    runCatching {
+                        val shouldCleanup = uploader.upload(batch)
+                        if (shouldCleanup) {
+                            readyFile.delete()
+                        }
                     }
                 }
             }
         }
     }
-    fun emit(definition: String, payload: Map<String, String>) {
+    fun emit(definition: String, payload: EventPayloadType) {
         coroutineScope.launch {
             val event = Event(
                 eventDefinition = definition,
