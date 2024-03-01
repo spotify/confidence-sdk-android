@@ -57,6 +57,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
             OpenFeatureAPI.setProviderAndWait(provider, Dispatchers.IO)
 
             eventSender = provider.eventSender(app.applicationContext)
+                .withScope(EventsScope(fields = { mapOf("screen" to "Main VM") }))
 
             eventSender.emit("eventDefinitions/navigate")
 
