@@ -70,6 +70,10 @@ class ConfidenceFeatureProvider private constructor(
         }
     }
 
+    fun clientSecret(): String {
+        return client.clientSecret()
+    }
+
     private fun internalInitialize(
         initialContext: EvaluationContext,
         strategy: InitialisationStrategy

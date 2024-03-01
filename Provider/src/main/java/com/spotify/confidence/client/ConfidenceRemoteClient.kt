@@ -18,7 +18,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Response
 import java.net.HttpURLConnection
 
-class ConfidenceRemoteClient : ConfidenceClient {
+internal class ConfidenceRemoteClient : ConfidenceClient {
     private val clientSecret: String
     private val sdkMetadata: SdkMetadata
     private val okHttpClient: OkHttpClient
@@ -140,6 +140,10 @@ class ConfidenceRemoteClient : ConfidenceClient {
         }
 
         return result
+    }
+
+    override fun clientSecret(): String {
+        return clientSecret
     }
 }
 
