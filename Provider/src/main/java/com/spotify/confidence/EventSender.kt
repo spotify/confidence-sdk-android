@@ -1,14 +1,8 @@
 package com.spotify.confidence
 
 import android.content.Context
-import com.spotify.confidence.client.Clock
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
 
 interface EventSender {
     fun emit(definition: String, payload: Map<String, String>)
@@ -26,69 +20,11 @@ data class EventsScope(
 )
 
 class EventSenderImpl private constructor(
-    private val context: Context,
-    private val clientSecret: String,
-    private val scope: EventsScope = EventsScope(),
-    private val clock: Clock = Clock.CalendarBacked.systemUTC(),
-    private val flushPolicies: List<FlushPolicy> = listOf(),
-    private val eventStorage: EventStorage = EventStorageImpl(context),
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val eventSenderEngine: EventSenderEngine,
+    private val scope: EventsScope = EventsScope()
 ) : EventSender {
-
-    private lateinit var uploader: EventSenderUploader
-
-    private val writeReqChannel: Channel<Event> = Channel()
-    private val sendChannel: Channel<String> = Channel()
-    private val coroutineScope by lazy {
-        CoroutineScope(SupervisorJob() + dispatcher)
-    }
-    private val exceptionHandler by lazy {
-        CoroutineExceptionHandler { _, _ ->
-            // do nothing
-        }
-    }
-
-    init {
-        coroutineScope.launch {
-            for (event in writeReqChannel) {
-                eventStorage.writeEvent(event)
-                flushPolicies.forEach { it.hit(event) }
-                val shouldFlush = flushPolicies.any { it.shouldFlush() }
-                if (shouldFlush) {
-                    flushPolicies.forEach { it.reset() }
-                    sendChannel.send(SEND_SIG)
-                }
-            }
-        }
-
-        // upload might throw exceptions
-        coroutineScope.launch(exceptionHandler) {
-            for (flush in sendChannel) {
-                eventStorage.rollover()
-                val readyFiles = eventStorage.batchReadyFiles()
-                for (readyFile in readyFiles) {
-                    val batch = EventBatch(
-                        clientSecret = clientSecret,
-                        events = eventStorage.eventsFor(readyFile),
-                        sendTime = clock.currentTime()
-                    )
-                    val shouldCleanup = uploader.upload(batch)
-                    if (shouldCleanup) {
-                        readyFile.delete()
-                    }
-                }
-            }
-        }
-    }
     override fun emit(definition: String, payload: Map<String, String>) {
-        coroutineScope.launch {
-            val event = Event(
-                eventDefinition = definition,
-                eventTime = clock.currentTime(),
-                payload = payload
-            )
-            writeReqChannel.send(event)
-        }
+        eventSenderEngine.emit(definition, payload + scope.fields())
     }
 
     override fun withScope(scope: EventsScope): EventSender {
@@ -96,13 +32,8 @@ class EventSenderImpl private constructor(
             scope.fields() + this.scope.fields()
         }
         return EventSenderImpl(
-            context,
-            clientSecret,
-            EventsScope(fields = combinedFields),
-            clock,
-            flushPolicies,
-            eventStorage,
-            dispatcher
+            eventSenderEngine,
+            EventsScope(fields = combinedFields)
         )
     }
 
@@ -112,12 +43,18 @@ class EventSenderImpl private constructor(
             context: Context,
             clientSecret: String,
             scope: EventsScope,
+            flushPolicies: List<FlushPolicy> = listOf(),
             dispatcher: CoroutineDispatcher = Dispatchers.IO
         ): EventSender = instance ?: run {
-            EventSenderImpl(context, clientSecret, scope, dispatcher = dispatcher).also {
+            val engine = EventSenderEngine(
+                EventStorageImpl(context),
+                clientSecret,
+                flushPolicies,
+                dispatcher = dispatcher
+            )
+            EventSenderImpl(engine, scope).also {
                 instance = it
             }
         }
-        private const val SEND_SIG = "FLUSH"
     }
 }
