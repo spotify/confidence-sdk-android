@@ -3,10 +3,13 @@ package com.spotify.confidence
 import android.content.Context
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import okhttp3.OkHttpClient
 
 interface EventSender {
     fun emit(definition: String, payload: EventPayloadType = mapOf())
     fun withScope(scope: EventsScope): EventSender
+
+    fun stop()
 }
 
 interface FlushPolicy {
@@ -29,7 +32,7 @@ data class EventsScope(
     val fields: () -> EventPayloadType = { mapOf() }
 )
 
-class EventSenderImpl private constructor(
+class EventSenderImpl internal constructor(
     private val eventSenderEngine: EventSenderEngine,
     private val scope: EventsScope = EventsScope()
 ) : EventSender {
@@ -48,6 +51,11 @@ class EventSenderImpl private constructor(
         )
     }
 
+    override fun stop() {
+        eventSenderEngine.stop()
+        instance = null
+    }
+
     companion object {
         private var instance: EventSender? = null
         fun create(
@@ -60,7 +68,8 @@ class EventSenderImpl private constructor(
             val engine = EventSenderEngine(
                 EventStorageImpl(context),
                 clientSecret,
-                flushPolicies,
+                uploader = EventSenderUploaderImpl(OkHttpClient(), dispatcher),
+                flushPolicies = flushPolicies,
                 dispatcher = dispatcher
             )
             EventSenderImpl(engine, scope).also {

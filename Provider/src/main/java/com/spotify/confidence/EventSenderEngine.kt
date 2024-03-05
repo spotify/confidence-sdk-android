@@ -9,11 +9,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import okhttp3.OkHttpClient
 
 internal class EventSenderEngine(
     private val eventStorage: EventStorage,
     private val clientSecret: String,
+    private val uploader: EventSenderUploader,
     private val flushPolicies: List<FlushPolicy> = listOf(),
     private val clock: Clock = Clock.CalendarBacked.systemUTC(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
@@ -28,17 +28,19 @@ internal class EventSenderEngine(
             print(e.message)
         }
     }
-    private val uploader: EventSenderUploader =
-        EventSenderUploaderImpl(OkHttpClient(), dispatcher)
 
     init {
         coroutineScope.launch {
             for (event in writeReqChannel) {
                 eventStorage.writeEvent(event)
-                flushPolicies.forEach { it.hit(event) }
+                for (policy in flushPolicies) {
+                    policy.hit(event)
+                }
                 val shouldFlush = flushPolicies.any { it.shouldFlush() }
                 if (shouldFlush) {
-                    flushPolicies.forEach { it.reset() }
+                    for (policy in flushPolicies) {
+                        policy.reset()
+                    }
                     sendChannel.send(SEND_SIG)
                 }
             }

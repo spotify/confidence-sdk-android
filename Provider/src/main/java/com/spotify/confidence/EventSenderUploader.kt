@@ -93,13 +93,16 @@ internal class EventSenderUploaderImpl(
             .build()
 
         val response = httpClient.newCall(httpRequest).await()
-        val statusCode = response.code
-        /**
-         * if server can't handle the batch, we should throw it away
-         * except for rate limiting
-         * here backend can be more specific
-         */
-        !((statusCode / 100) == 4 && statusCode != 429)
+        when (response.code) {
+            // clean up in case of success
+            200 -> true
+            // we shouldn't cleanup for rate limiting
+            // TODO("return retry-after")
+            429 -> false
+            // if batch couldn't be processed, we should clean it up
+            in 401..499 -> true
+            else -> false
+        }
     }
 
     companion object {

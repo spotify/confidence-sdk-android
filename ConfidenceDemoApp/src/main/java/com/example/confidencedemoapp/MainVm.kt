@@ -94,7 +94,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         }.toComposeColor()
         _message.postValue(messageValue)
         _color.postValue(colorFlag)
-        eventSender.emit("eventDefinitions/navigate", mapOf("screen" to EventValue.String("Hello")))
+         eventSender.emit("eventDefinitions/navigate", mapOf("screen" to EventValue.String("Hello")))
     }
 
     fun updateContext() {
