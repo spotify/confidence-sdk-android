@@ -42,4 +42,7 @@ fun ConfidenceFeatureProvider.eventSender(
         }
     ),
     context = context
-)
+).onLowMemory { files ->
+    val sortedFiles = files.sortedBy { it.lastModified() }
+    sortedFiles.take(10).forEach { it.delete() }
+}

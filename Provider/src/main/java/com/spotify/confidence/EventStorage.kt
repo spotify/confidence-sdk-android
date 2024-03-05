@@ -1,6 +1,12 @@
 package com.spotify.confidence
 
 import android.content.Context
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.serialization.encodeToString
 import java.io.File
@@ -11,14 +17,20 @@ internal interface EventStorage {
     suspend fun writeEvent(event: Event)
     suspend fun batchReadyFiles(): List<File>
     suspend fun eventsFor(file: File): List<Event>
+    fun onLowMemoryChannel(): Channel<List<File>>
+    fun stop()
 }
 
 internal class EventStorageImpl(
-    private val context: Context
+    private val context: Context,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val maxStorage: Long = MAX_STORAGE
 ) : EventStorage {
     private lateinit var currentFile: File
     private var outputStream: OutputStream? = null
     private val semaphore: Semaphore = Semaphore(1)
+    private val onLowMemoryChannel = Channel<List<File>>()
+    private val coroutineScope = CoroutineScope(dispatcher)
 
     init {
         resetCurrentFile()
@@ -36,6 +48,13 @@ internal class EventStorageImpl(
         val byteArray = (eventsJson.encodeToString(event) + delimiter).toByteArray()
         outputStream?.write(byteArray)
         outputStream?.flush()
+        coroutineScope.launch {
+            val directory = context.getDir(DIRECTORY, Context.MODE_PRIVATE)
+            val size = directory.walk().filter { it.isDirectory }.first().length()
+            if (size > STORAGE_THRESHOLD * maxStorage) {
+                onLowMemoryChannel.send(directory.walkFiles().toList())
+            }
+        }
     }
 
     override suspend fun batchReadyFiles(): List<File> {
@@ -57,6 +76,11 @@ internal class EventStorageImpl(
             .split(EVENT_WRITE_DELIMITER)
             .filter { it.isNotEmpty() }
             .map { eventsJson.decodeFromString(it) }
+    }
+
+    override fun onLowMemoryChannel(): Channel<List<File>> = onLowMemoryChannel
+    override fun stop() {
+        coroutineScope.cancel()
     }
 
     private fun latestWriteFile(): File? {
@@ -92,5 +116,9 @@ internal class EventStorageImpl(
         const val DIRECTORY = "events"
         const val READY_TO_SENT_EXTENSION = ".ready"
         const val EVENT_WRITE_DELIMITER = ",\n"
+        const val MAX_STORAGE: Long = 4L * 1024 * 1024 // 4MB
+        const val STORAGE_THRESHOLD = 0.9
     }
 }
+
+internal fun File.walkFiles() = walk().filter { !it.isDirectory }

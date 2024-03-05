@@ -9,6 +9,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import java.io.File
 
 internal class EventSenderEngine(
     private val eventStorage: EventStorage,
@@ -67,6 +68,10 @@ internal class EventSenderEngine(
             }
         }
     }
+
+    fun onLowMemoryChannel(): Channel<List<File>> {
+        return eventStorage.onLowMemoryChannel()
+    }
     fun emit(definition: String, payload: EventPayloadType) {
         coroutineScope.launch {
             val event = Event(
@@ -80,6 +85,7 @@ internal class EventSenderEngine(
 
     fun stop() {
         coroutineScope.cancel()
+        eventStorage.stop()
     }
 
     companion object {

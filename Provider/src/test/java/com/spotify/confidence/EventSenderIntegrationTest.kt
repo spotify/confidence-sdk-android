@@ -92,7 +92,7 @@ class EventSenderIntegrationTest {
             dispatcher = testDispatcher,
             uploader = uploader
         )
-        eventSender = EventSenderImpl(engine)
+        eventSender = EventSenderImpl(engine, testDispatcher)
         val eventSender = this@EventSenderIntegrationTest.eventSender
         val eventCount = 4 * batchSize + 2
         requireNotNull(eventSender)
@@ -150,7 +150,7 @@ class EventSenderIntegrationTest {
             dispatcher = testDispatcher,
             uploader = uploader
         )
-        eventSender = EventSenderImpl(engine)
+        eventSender = EventSenderImpl(engine, testDispatcher)
         val eventSender = this@EventSenderIntegrationTest.eventSender
         val eventCount = 4 * batchSize + 2
         requireNotNull(eventSender)
@@ -175,5 +175,3 @@ class EventSenderIntegrationTest {
         }
     }
 }
-
-fun File.walkFiles() = walk().filter { !it.isDirectory }

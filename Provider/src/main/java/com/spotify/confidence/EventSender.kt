@@ -2,13 +2,17 @@ package com.spotify.confidence
 
 import android.content.Context
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
+import java.io.File
 
 interface EventSender {
     fun emit(definition: String, payload: EventPayloadType = mapOf())
     fun withScope(scope: EventsScope): EventSender
-
+    fun onLowMemory(body: (List<File>) -> Unit): EventSender
     fun stop()
 }
 
@@ -34,8 +38,10 @@ data class EventsScope(
 
 class EventSenderImpl internal constructor(
     private val eventSenderEngine: EventSenderEngine,
+    private val dispatcher: CoroutineDispatcher,
     private val scope: EventsScope = EventsScope()
 ) : EventSender {
+    private val coroutineScope = CoroutineScope(dispatcher)
     override fun emit(definition: String, payload: EventPayloadType) {
         val scope = scope.fields()
         eventSenderEngine.emit(definition, payload + scope)
@@ -47,8 +53,20 @@ class EventSenderImpl internal constructor(
         }
         return EventSenderImpl(
             eventSenderEngine,
+            dispatcher,
             EventsScope(fields = combinedFields)
         )
+    }
+
+    override fun onLowMemory(body: (List<File>) -> Unit): EventSender {
+        coroutineScope.launch {
+            eventSenderEngine
+                .onLowMemoryChannel()
+                .consumeEach {
+                    body(it)
+                }
+        }
+        return this
     }
 
     override fun stop() {
@@ -72,7 +90,7 @@ class EventSenderImpl internal constructor(
                 flushPolicies = flushPolicies,
                 dispatcher = dispatcher
             )
-            EventSenderImpl(engine, scope).also {
+            EventSenderImpl(engine, dispatcher, scope).also {
                 instance = it
             }
         }
