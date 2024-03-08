@@ -47,9 +47,9 @@ class ConfidenceFeatureProvider private constructor(
     private val cache: ProviderCache,
     private val storage: DiskStorage,
     private val initialisationStrategy: InitialisationStrategy,
-    private val client: ConfidenceClient,
     private val flagApplier: FlagApplier,
     private val eventHandler: EventHandler,
+    private val confidenceAPI: Confidence,
     dispatcher: CoroutineDispatcher
 ) : FeatureProvider {
     private val job = SupervisorJob()
@@ -70,10 +70,6 @@ class ConfidenceFeatureProvider private constructor(
         }
     }
 
-    fun clientSecret(): String {
-        return client.clientSecret()
-    }
-
     private fun internalInitialize(
         initialContext: EvaluationContext,
         strategy: InitialisationStrategy
@@ -86,7 +82,8 @@ class ConfidenceFeatureProvider private constructor(
         }
 
         coroutineScope.launch(networkExceptionHandler) {
-            val resolveResponse = client.resolve(listOf(), initialContext)
+            confidenceAPI.putContext(initialContext.toConfidenceContext())
+            val resolveResponse = confidenceAPI.resolve(listOf())
             if (resolveResponse is ResolveResponse.Resolved) {
                 val (flags, resolveToken) = resolveResponse.flags
 
@@ -266,8 +263,10 @@ class ConfidenceFeatureProvider private constructor(
             storage: DiskStorage? = null,
             flagApplier: FlagApplier? = null,
             eventHandler: EventHandler = EventHandler(Dispatchers.IO),
-            dispatcher: CoroutineDispatcher = Dispatchers.IO
+            dispatcher: CoroutineDispatcher = Dispatchers.IO,
+            confidenceAPI: Confidence? = null
         ): ConfidenceFeatureProvider {
+            val confidence = confidenceAPI ?: Confidence(clientSecret)
             val configuredClient = client ?: ConfidenceRemoteClient(
                 clientSecret = clientSecret,
                 sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
@@ -287,9 +286,9 @@ class ConfidenceFeatureProvider private constructor(
                 cache = cache ?: InMemoryCache(),
                 storage = diskStorage,
                 initialisationStrategy = initialisationStrategy,
-                client = configuredClient,
                 flagApplier = flagApplierWithRetries,
                 eventHandler,
+                confidence,
                 dispatcher
             )
         }
@@ -333,4 +332,8 @@ class ConfidenceFeatureProvider private constructor(
 sealed interface InitialisationStrategy {
     object FetchAndActivate : InitialisationStrategy
     object ActivateAndFetchAsync : InitialisationStrategy
+}
+
+private fun ConfidenceContext.toEvaluationContext(): EvaluationContext {
+    TODO("Not yet implemented")
 }

@@ -141,10 +141,6 @@ internal class ConfidenceRemoteClient : ConfidenceClient {
 
         return result
     }
-
-    override fun clientSecret(): String {
-        return clientSecret
-    }
 }
 
 private fun Response.toResolveFlags(): ResolveResponse {

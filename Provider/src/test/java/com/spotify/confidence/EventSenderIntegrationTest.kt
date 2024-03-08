@@ -40,8 +40,8 @@ class EventSenderIntegrationTest {
         eventSender = EventSenderImpl.create(
             mockContext,
             clientSecret,
-            EventsScope(),
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
+            confidenceContext = CommonContext()
         )
         val eventSender = this@EventSenderIntegrationTest.eventSender
         val eventCount = 4
@@ -92,7 +92,11 @@ class EventSenderIntegrationTest {
             dispatcher = testDispatcher,
             uploader = uploader
         )
-        eventSender = EventSenderImpl(engine, testDispatcher)
+        eventSender = EventSenderImpl(
+            engine,
+            dispatcher = testDispatcher,
+            confidenceContext = CommonContext()
+        )
         val eventSender = this@EventSenderIntegrationTest.eventSender
         val eventCount = 4 * batchSize + 2
         requireNotNull(eventSender)
@@ -103,7 +107,7 @@ class EventSenderIntegrationTest {
         runBlocking {
             val batchReadyFiles = eventStorage.batchReadyFiles()
             val totalFiles = directory.walkFiles()
-            Assert.assertEquals(batchReadyFiles.size, 4)
+            Assert.assertEquals(4, batchReadyFiles.size)
             Assert.assertEquals(totalFiles.iterator().asSequence().toList().size, 5)
             for (file in batchReadyFiles) {
                 Assert.assertEquals(eventStorage.eventsFor(file).size, batchSize)
@@ -150,7 +154,11 @@ class EventSenderIntegrationTest {
             dispatcher = testDispatcher,
             uploader = uploader
         )
-        eventSender = EventSenderImpl(engine, testDispatcher)
+        eventSender = EventSenderImpl(
+            engine,
+            dispatcher = testDispatcher,
+            confidenceContext = CommonContext()
+        )
         val eventSender = this@EventSenderIntegrationTest.eventSender
         val eventCount = 4 * batchSize + 2
         requireNotNull(eventSender)

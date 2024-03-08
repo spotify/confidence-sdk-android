@@ -7,12 +7,13 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.spotify.confidence.Confidence
 import com.spotify.confidence.ConfidenceFeatureProvider
+import com.spotify.confidence.ConfidenceValue
 import com.spotify.confidence.EventSender
-import com.spotify.confidence.EventValue
-import com.spotify.confidence.EventsScope
 import com.spotify.confidence.InitialisationStrategy
 import com.spotify.confidence.eventSender
+import com.spotify.confidence.openFeatureProvider
 import dev.openfeature.sdk.Client
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FlagEvaluationDetails
@@ -20,6 +21,7 @@ import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.Value
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -48,30 +50,30 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         }
 
         client = OpenFeatureAPI.getClient()
+
+        val mutableMap = mutableMapOf<String, ConfidenceValue>()
+        mutableMap["screen"] = ConfidenceValue.String("value")
+        mutableMap["hello"] = ConfidenceValue.Boolean(false)
+        mutableMap["NN"] = ConfidenceValue.Double(20.0)
+        mutableMap["my_struct"] = ConfidenceValue.Struct(mapOf("x" to ConfidenceValue.Double(2.0)))
+
+        val confidence = Confidence(clientSecret)
+
         viewModelScope.launch {
             OpenFeatureAPI.setEvaluationContext(ctx)
-            val provider = ConfidenceFeatureProvider.create(
+            val provider = confidence.openFeatureProvider(
                 app.applicationContext,
-                clientSecret,
                 initialisationStrategy = strategy
             )
             OpenFeatureAPI.setProviderAndWait(provider, Dispatchers.IO)
 
-            val fields = {
-                val mutableMap = mutableMapOf<String, EventValue>()
-                mutableMap["screen"] = EventValue.String("value")
-                mutableMap["hello"] = EventValue.Boolean(false)
-                mutableMap["NN"] = EventValue.Double(20.0)
-                mutableMap["my_struct"] = EventValue.Struct(mapOf("x" to EventValue.Double(2.0)))
-                mutableMap
+            eventSender = confidence.eventSender(app.applicationContext)
+
+            launch {
+                delay(5000)
+                val ctx: EvaluationContext = ImmutableContext(targetingKey = "X")
+                OpenFeatureAPI.setEvaluationContext(ctx)
             }
-
-            val scope = EventsScope(
-                fields = fields
-            )
-
-            eventSender = provider.eventSender(app.applicationContext)
-                .withScope(scope)
 
             eventSender.emit("eventDefinitions/navigate")
 
@@ -94,7 +96,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         }.toComposeColor()
         _message.postValue(messageValue)
         _color.postValue(colorFlag)
-         eventSender.emit("eventDefinitions/navigate", mapOf("screen" to EventValue.String("Hello")))
+         eventSender.emit("eventDefinitions/navigate", mapOf("screen" to ConfidenceValue.String("Hello")))
     }
 
     fun updateContext() {

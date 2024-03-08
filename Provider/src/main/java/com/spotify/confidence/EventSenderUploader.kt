@@ -69,7 +69,9 @@ data class Event(
     val eventDefinition: String,
     @Contextual
     val eventTime: Date,
-    val payload: Map<String, @Contextual EventValue>
+    val payload: Map<String, @Contextual ConfidenceValue>,
+    @Contextual
+    val context: ConfidenceValue
 )
 
 internal class EventSenderUploaderImpl(
@@ -118,20 +120,20 @@ internal val eventsJson = Json {
     }
 }
 
-object EventValueSerializer : KSerializer<EventValue> {
+object EventValueSerializer : KSerializer<ConfidenceValue> {
     override val descriptor = PrimitiveSerialDescriptor("EventValue", PrimitiveKind.STRING)
 
-    override fun deserialize(decoder: Decoder): EventValue {
+    override fun deserialize(decoder: Decoder): ConfidenceValue {
         require(decoder is JsonDecoder)
         when (val element = decoder.decodeJsonElement()) {
             is JsonPrimitive -> {
                 val jsonPrimitive = element.jsonPrimitive
                 return when {
-                    jsonPrimitive.isString -> EventValue.String(jsonPrimitive.content)
-                    jsonPrimitive.booleanOrNull != null -> EventValue.Boolean(jsonPrimitive.boolean)
-                    jsonPrimitive.intOrNull != null -> EventValue.Int(jsonPrimitive.int)
-                    jsonPrimitive.doubleOrNull != null -> EventValue.Double(jsonPrimitive.double)
-                    else -> TODO()
+                    jsonPrimitive.isString -> ConfidenceValue.String(jsonPrimitive.content)
+                    jsonPrimitive.booleanOrNull != null -> ConfidenceValue.Boolean(jsonPrimitive.boolean)
+                    jsonPrimitive.intOrNull != null -> ConfidenceValue.Int(jsonPrimitive.int)
+                    jsonPrimitive.doubleOrNull != null -> ConfidenceValue.Double(jsonPrimitive.double)
+                    else -> error("unknown type")
                 }
             }
             else -> {
@@ -144,18 +146,18 @@ object EventValueSerializer : KSerializer<EventValue> {
                             jsonObject.getValue(it)
                         )
                     }
-                return EventValue.Struct(map)
+                return ConfidenceValue.Struct(map)
             }
         }
     }
 
-    override fun serialize(encoder: Encoder, value: EventValue) {
+    override fun serialize(encoder: Encoder, value: ConfidenceValue) {
         when (value) {
-            is EventValue.Int -> encoder.encodeInt(value.value)
-            is EventValue.Boolean -> encoder.encodeBoolean(value.value)
-            is EventValue.Double -> encoder.encodeDouble(value.value)
-            is EventValue.String -> encoder.encodeString(value.value)
-            is EventValue.Struct -> encoder.encodeStructure(StructureSerializer.descriptor) {
+            is ConfidenceValue.Int -> encoder.encodeInt(value.value)
+            is ConfidenceValue.Boolean -> encoder.encodeBoolean(value.value)
+            is ConfidenceValue.Double -> encoder.encodeDouble(value.value)
+            is ConfidenceValue.String -> encoder.encodeString(value.value)
+            is ConfidenceValue.Struct -> encoder.encodeStructure(StructureSerializer.descriptor) {
                 for ((key, mapValue) in value.value) {
                     encodeStringElement(StructureSerializer.descriptor, 0, key)
                     encodeSerializableElement(

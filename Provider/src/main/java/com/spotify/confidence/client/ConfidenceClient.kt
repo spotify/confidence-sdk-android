@@ -5,8 +5,6 @@ import dev.openfeature.sdk.EvaluationContext
 interface ConfidenceClient {
     suspend fun resolve(flags: List<String>, ctx: EvaluationContext): ResolveResponse
     suspend fun apply(flags: List<AppliedFlag>, resolveToken: String): Result
-
-    fun clientSecret(): String
 }
 
 sealed class Result {
