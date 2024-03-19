@@ -70,8 +70,7 @@ data class Event(
     @Contextual
     val eventTime: Date,
     val payload: Map<String, @Contextual ConfidenceValue>,
-    @Contextual
-    val context: ConfidenceValue
+    val context: Map<String, @Contextual ConfidenceValue>
 )
 
 internal class EventSenderUploaderImpl(

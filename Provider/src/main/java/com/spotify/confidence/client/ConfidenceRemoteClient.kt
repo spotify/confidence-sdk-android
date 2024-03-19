@@ -155,10 +155,3 @@ private fun Response.toResolveFlags(): ResolveResponse {
     }
     return ResolveResponse.Resolved(networkJson.decodeFromString(bodyString))
 }
-
-sealed class ResolveResponse {
-    object NotModified : ResolveResponse()
-    data class Resolved(val flags: ResolveFlags) : ResolveResponse()
-}
-
-data class SdkMetadata(val sdkId: String, val sdkVersion: String)

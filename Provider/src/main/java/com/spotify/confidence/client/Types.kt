@@ -56,3 +56,10 @@ sealed interface SchemaType {
     object StringSchema : SchemaType
     object BoolSchema : SchemaType
 }
+
+sealed class ResolveResponse {
+    object NotModified : ResolveResponse()
+    data class Resolved(val flags: ResolveFlags) : ResolveResponse()
+}
+
+data class SdkMetadata(val sdkId: String, val sdkVersion: String)

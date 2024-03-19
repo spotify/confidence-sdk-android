@@ -9,10 +9,7 @@ import com.spotify.confidence.cache.ProviderCache
 import com.spotify.confidence.cache.ProviderCache.CacheResolveResult
 import com.spotify.confidence.cache.StorageFileCache
 import com.spotify.confidence.client.ConfidenceClient
-import com.spotify.confidence.client.ConfidenceRegion
-import com.spotify.confidence.client.ConfidenceRemoteClient
 import com.spotify.confidence.client.ResolveResponse
-import com.spotify.confidence.client.SdkMetadata
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FeatureProvider
 import dev.openfeature.sdk.Hook
@@ -83,7 +80,7 @@ class ConfidenceFeatureProvider private constructor(
 
         coroutineScope.launch(networkExceptionHandler) {
             confidenceAPI.putContext(initialContext.toConfidenceContext())
-            val resolveResponse = confidenceAPI.resolve(listOf())
+            val resolveResponse = confidenceAPI.resolveFlags(listOf())
             if (resolveResponse is ResolveResponse.Resolved) {
                 val (flags, resolveToken) = resolveResponse.flags
 
@@ -252,9 +249,8 @@ class ConfidenceFeatureProvider private constructor(
 
         @Suppress("LongParameterList")
         fun create(
+            confidence: Confidence,
             context: Context,
-            clientSecret: String,
-            region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
             initialisationStrategy: InitialisationStrategy = InitialisationStrategy.FetchAndActivate,
             hooks: List<Hook<*>> = listOf(),
             client: ConfidenceClient? = null,
@@ -263,19 +259,11 @@ class ConfidenceFeatureProvider private constructor(
             storage: DiskStorage? = null,
             flagApplier: FlagApplier? = null,
             eventHandler: EventHandler = EventHandler(Dispatchers.IO),
-            dispatcher: CoroutineDispatcher = Dispatchers.IO,
-            confidenceAPI: Confidence? = null
+            dispatcher: CoroutineDispatcher = Dispatchers.IO
         ): ConfidenceFeatureProvider {
-            val confidence = confidenceAPI ?: Confidence(clientSecret)
-            val configuredClient = client ?: ConfidenceRemoteClient(
-                clientSecret = clientSecret,
-                sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
-                region = region,
-                dispatcher = dispatcher
-            )
             val diskStorage = storage ?: StorageFileCache.create(context)
             val flagApplierWithRetries = flagApplier ?: FlagApplierWithRetries(
-                client = configuredClient,
+                client = TODO(),
                 dispatcher = dispatcher,
                 diskStorage = diskStorage
             )

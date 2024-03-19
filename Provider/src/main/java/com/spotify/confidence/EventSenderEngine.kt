@@ -74,7 +74,7 @@ internal class EventSenderEngine(
     fun onLowMemoryChannel(): Channel<List<File>> {
         return eventStorage.onLowMemoryChannel()
     }
-    fun emit(definition: String, payload: ConfidenceFieldsType, context: ConfidenceValue.Struct) {
+    fun emit(definition: String, payload: ConfidenceFieldsType, context: Map<String, ConfidenceValue>) {
         coroutineScope.launch {
             val event = Event(
                 eventDefinition = definition,

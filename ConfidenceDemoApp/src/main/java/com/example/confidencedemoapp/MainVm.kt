@@ -75,7 +75,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
                 OpenFeatureAPI.setEvaluationContext(ctx)
             }
 
-            eventSender.emit("eventDefinitions/navigate")
+            eventSender.send("eventDefinitions/navigate")
 
             Log.d(TAG, "client secret is $clientSecret")
             Log.d(TAG, "init took ${System.currentTimeMillis() - start} ms")
@@ -96,7 +96,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         }.toComposeColor()
         _message.postValue(messageValue)
         _color.postValue(colorFlag)
-         eventSender.emit("eventDefinitions/navigate", mapOf("screen" to ConfidenceValue.String("Hello")))
+         eventSender.send("eventDefinitions/navigate", mapOf("screen" to ConfidenceValue.String("Hello")))
     }
 
     fun updateContext() {
