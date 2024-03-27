@@ -13,10 +13,10 @@ import java.io.File
 
 class Confidence private constructor(
     private val clientSecret: String,
-    private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
     private val dispatcher: CoroutineDispatcher,
     private val eventSenderEngine: EventSenderEngine,
-    private val root: ConfidenceContextProvider
+    private val root: ConfidenceContextProvider,
+    private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL
 ) : ContextApi, EventSender {
     private val removedKeys = mutableListOf<String>()
     private val coroutineScope = CoroutineScope(dispatcher)
@@ -57,10 +57,10 @@ class Confidence private constructor(
 
     override fun withContext(context: Map<String, ConfidenceValue>) = Confidence(
         clientSecret,
-        region,
         dispatcher,
         eventSenderEngine,
-        this
+        this,
+        region
     ).also {
         it.putContext(context)
     }
@@ -104,7 +104,7 @@ class Confidence private constructor(
                     return emptyMap()
                 }
             }
-            return Confidence(clientSecret, region, dispatcher, engine, confidenceContext)
+            return Confidence(clientSecret, dispatcher, engine, confidenceContext, region)
         }
     }
 }
