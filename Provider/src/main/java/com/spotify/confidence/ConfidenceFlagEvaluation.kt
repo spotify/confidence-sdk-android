@@ -93,8 +93,16 @@ private data class FlagKey(
     }
 }
 
+internal fun <T> FlagResolution.getValue(
+    flag: String,
+    defaultValue: T,
+    context: Map<String, ConfidenceValue>
+): T {
+    return getEvaluation(flag, defaultValue, context).value
+}
+
 enum class ErrorCode {
-    CACHE_EMPTY,
+    // The value was resolved before the provider was ready.
     RESOLVE_STALE,
 
     // The flag could not be found.

@@ -2,7 +2,6 @@ package com.spotify.confidence
 
 import android.content.Context
 import com.spotify.confidence.client.ConfidenceRegion
-import com.spotify.confidence.client.ResolveReason
 import com.spotify.confidence.client.SdkMetadata
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -22,7 +21,6 @@ class Confidence private constructor(
     private val removedKeys = mutableListOf<String>()
     private val coroutineScope = CoroutineScope(dispatcher)
     private var contextMap: MutableMap<String, ConfidenceValue> = mutableMapOf()
-    private lateinit var appliedFlagResolution: FlagResolution
     internal val flagResolver by lazy {
         RemoteFlagResolver(
             clientSecret,
@@ -31,10 +29,6 @@ class Confidence private constructor(
             dispatcher,
             SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION)
         )
-    }
-
-    internal fun refreshFlagResolution(flagResolution: FlagResolution) {
-        this.appliedFlagResolution = flagResolution
     }
 
     internal suspend fun resolveFlags(flags: List<String>): Result<FlagResolution> {
@@ -60,25 +54,6 @@ class Confidence private constructor(
 
     override fun getContext(): Map<String, ConfidenceValue> =
         this.root.getContext().filterKeys { removedKeys.contains(it) } + contextMap
-
-    internal fun <T> getValue(flag: String, defaultValue: T): T {
-        return this.getEvaluation(flag, defaultValue).value
-    }
-
-    internal fun <T> getEvaluation(
-        key: String,
-        defaultValue: T
-    ): Evaluation<T> {
-        if (!this::appliedFlagResolution.isInitialized) {
-            return Evaluation(
-                value = defaultValue,
-                reason = ResolveReason.RESOLVE_REASON_UNSPECIFIED,
-                errorCode = ErrorCode.CACHE_EMPTY
-            )
-        }
-        // TODO APPLY FlAG
-        return appliedFlagResolution.getEvaluation(key, defaultValue, getContext())
-    }
 
     override fun withContext(context: Map<String, ConfidenceValue>) = Confidence(
         clientSecret,
@@ -117,7 +92,7 @@ class Confidence private constructor(
             clientSecret: String,
             region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
             dispatcher: CoroutineDispatcher = Dispatchers.IO
-        ): EventSender {
+        ): Confidence {
             val engine = EventSenderEngine.instance(
                 context,
                 clientSecret,

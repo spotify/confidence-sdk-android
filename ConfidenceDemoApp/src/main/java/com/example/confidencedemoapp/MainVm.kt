@@ -12,8 +12,7 @@ import com.spotify.confidence.ConfidenceFeatureProvider
 import com.spotify.confidence.ConfidenceValue
 import com.spotify.confidence.EventSender
 import com.spotify.confidence.InitialisationStrategy
-import com.spotify.confidence.eventSender
-import com.spotify.confidence.openFeatureProvider
+import com.spotify.confidence.client.ConfidenceRegion
 import dev.openfeature.sdk.Client
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FlagEvaluationDetails
@@ -37,7 +36,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
     private val _color: MutableLiveData<Color> = MutableLiveData(Color.Gray)
     val message: LiveData<String> = _message
     val color: LiveData<Color> = _color
-    private lateinit var eventSender: EventSender
+    private var eventSender: EventSender
 
     init {
         val start = System.currentTimeMillis()
@@ -57,17 +56,21 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         mutableMap["NN"] = ConfidenceValue.Double(20.0)
         mutableMap["my_struct"] = ConfidenceValue.Struct(mapOf("x" to ConfidenceValue.Double(2.0)))
 
-        val confidence = Confidence(clientSecret)
+        val confidence = Confidence.create(
+            app.applicationContext,
+            clientSecret,
+            ConfidenceRegion.EUROPE
+        )
+        eventSender = confidence.withContext(mapOf())
 
         viewModelScope.launch {
             OpenFeatureAPI.setEvaluationContext(ctx)
-            val provider = confidence.openFeatureProvider(
-                app.applicationContext,
+            val provider = ConfidenceFeatureProvider.create(
+                confidence,
+                context = app.applicationContext,
                 initialisationStrategy = strategy
             )
             OpenFeatureAPI.setProviderAndWait(provider, Dispatchers.IO)
-
-            eventSender = confidence.eventSender(app.applicationContext)
 
             launch {
                 delay(5000)

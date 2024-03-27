@@ -37,6 +37,7 @@ class ConfidenceFeatureProvider private constructor(
     dispatcher: CoroutineDispatcher
 ) : FeatureProvider {
     private val job = SupervisorJob()
+    private lateinit var appliedFlagResolution: FlagResolution
 
     private val coroutineScope = CoroutineScope(job + dispatcher)
     private val networkExceptionHandler by lazy {
@@ -60,7 +61,7 @@ class ConfidenceFeatureProvider private constructor(
         strategy: InitialisationStrategy
     ) {
         // refresh cache with the last stored data
-        storage.read()?.let(confidenceAPI::refreshFlagResolution)
+        storage.read()?.let { appliedFlagResolution = it }
 
         if (strategy == InitialisationStrategy.ActivateAndFetchAsync) {
             eventHandler.publish(OpenFeatureEvents.ProviderReady)
@@ -76,7 +77,7 @@ class ConfidenceFeatureProvider private constructor(
                 when (strategy) {
                     InitialisationStrategy.FetchAndActivate -> {
                         // refresh the cache from the stored data
-                        confidenceAPI.refreshFlagResolution(resolveResponse.data)
+                        appliedFlagResolution = resolveResponse.data
                         eventHandler.publish(OpenFeatureEvents.ProviderReady)
                     }
 
@@ -158,9 +159,10 @@ class ConfidenceFeatureProvider private constructor(
         context: EvaluationContext?
     ): ProviderEvaluation<T> {
         context ?: throw InvalidContextError()
-        return confidenceAPI.getEvaluation(
+        return appliedFlagResolution.getEvaluation(
             key,
-            defaultValue
+            defaultValue,
+            context.toConfidenceContext().value
         ).toProviderEvaluation()
     }
     companion object {

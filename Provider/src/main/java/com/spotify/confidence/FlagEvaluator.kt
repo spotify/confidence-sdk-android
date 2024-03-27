@@ -4,7 +4,6 @@ import com.spotify.confidence.client.ResolveReason
 import com.spotify.confidence.client.ResolvedFlag
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
-
 data class Evaluation<T>(
     val value: T,
     val variant: String? = null,
