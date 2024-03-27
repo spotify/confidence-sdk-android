@@ -32,7 +32,13 @@ class Confidence private constructor(
     }
 
     internal suspend fun resolveFlags(flags: List<String>): Result<FlagResolution> {
-        return flagResolver.resolve(flags, getContext())
+        val context = getContext().toMutableMap()
+        val openFeatureContext = context["open_feature"]?.let { it as ConfidenceValue.Struct }
+        openFeatureContext?.let {
+            context += it.value
+        }
+        context.remove("open_feature")
+        return flagResolver.resolve(flags, context)
     }
 
     override fun putContext(key: String, value: ConfidenceValue) {

@@ -26,7 +26,7 @@ internal fun <T> FlagResolution.getEvaluation(
 
     // handle flag found
     val flagValue = resolvedFlag.value
-    val resolvedValue: ConfidenceValue = findValueFromValuePath(flagValue, parsedKey.valuePath)
+    val resolvedValue: ConfidenceValue = findValueFromValuePath(ConfidenceValue.Struct(flagValue), parsedKey.valuePath)
         ?: throw ParseError(
             "Unable to parse flag value: ${parsedKey.valuePath.joinToString(separator = "/")}"
         )
@@ -63,6 +63,7 @@ private fun <T> getTyped(v: ConfidenceValue): T? {
         is ConfidenceValue.Int -> v.value as T
         is ConfidenceValue.String -> v.value as T
         is ConfidenceValue.Struct -> v as T
+        is ConfidenceValue.Null -> v as T
     }
 }
 

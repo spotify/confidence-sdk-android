@@ -17,15 +17,10 @@ interface ContextApi : ConfidenceContextProvider {
     fun removeContext(key: String)
 }
 
-interface ConfidenceContext {
-    val name: String
-    val value: ConfidenceValue
-}
-
 class CommonContext : ConfidenceContextProvider {
     override fun getContext(): Map<String, ConfidenceValue> = mapOf()
 }
 
 fun EvaluationContext.toConfidenceContext(): ConfidenceValue.Struct {
-    TODO()
+    return ConfidenceValue.Struct(mapOf("targeting_key" to ConfidenceValue.String(this.getTargetingKey())))
 }

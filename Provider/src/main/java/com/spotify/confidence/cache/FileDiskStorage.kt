@@ -3,6 +3,7 @@ package com.spotify.confidence.cache
 import android.content.Context
 import com.spotify.confidence.FlagResolution
 import com.spotify.confidence.apply.ApplyInstance
+import com.spotify.confidence.client.serializers.ConfidenceValueSerializer
 import com.spotify.confidence.client.serializers.UUIDSerializer
 import dev.openfeature.sdk.DateSerializer
 import kotlinx.serialization.encodeToString
@@ -20,7 +21,7 @@ internal class FileDiskStorage private constructor(
 ) : DiskStorage {
 
     override fun store(flagResolution: FlagResolution) {
-        write(Json.encodeToString(flagResolution))
+        write(json.encodeToString(flagResolution))
     }
 
     override fun clear() {
@@ -51,7 +52,7 @@ internal class FileDiskStorage private constructor(
         return if (fileText.isEmpty()) {
             null
         } else {
-            Json.decodeFromString(fileText)
+            json.decodeFromString(fileText)
         }
     }
 
@@ -76,5 +77,6 @@ internal val json = Json {
     serializersModule = SerializersModule {
         contextual(UUIDSerializer)
         contextual(DateSerializer)
+        contextual(ConfidenceValueSerializer)
     }
 }

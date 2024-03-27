@@ -15,7 +15,7 @@ data class Evaluation<T>(
 @Serializable
 data class FlagResolution(
     val context: Map<String, @Contextual ConfidenceValue>,
-    val flags: List<@Contextual ResolvedFlag>,
+    val flags: List<ResolvedFlag>,
     val resolveToken: String
 )
 

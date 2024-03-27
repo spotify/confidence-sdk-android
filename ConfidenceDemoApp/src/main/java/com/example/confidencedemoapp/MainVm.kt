@@ -31,7 +31,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
     }
 
     private var client: Client
-    private var ctx: EvaluationContext = ImmutableContext(targetingKey = UUID.randomUUID().toString())
+    private var ctx: EvaluationContext = ImmutableContext(targetingKey = "a98a4291-53b0-49d9-bae8-73d3f5da2070")
     private val _message: MutableLiveData<String> = MutableLiveData("initial")
     private val _color: MutableLiveData<Color> = MutableLiveData(Color.Gray)
     val message: LiveData<String> = _message
@@ -71,12 +71,6 @@ class MainVm(app: Application) : AndroidViewModel(app) {
                 initialisationStrategy = strategy
             )
             OpenFeatureAPI.setProviderAndWait(provider, Dispatchers.IO)
-
-            launch {
-                delay(5000)
-                val ctx: EvaluationContext = ImmutableContext(targetingKey = "X")
-                OpenFeatureAPI.setEvaluationContext(ctx)
-            }
 
             eventSender.send("eventDefinitions/navigate")
 

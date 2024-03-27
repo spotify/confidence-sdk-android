@@ -2,7 +2,7 @@ package com.spotify.confidence.client.network
 
 import com.spotify.confidence.client.ResolveFlagsRequest
 import com.spotify.confidence.client.await
-import com.spotify.confidence.client.serializers.StructureSerializer
+import com.spotify.confidence.client.serializers.ConfidenceValueSerializer
 import com.spotify.confidence.client.serializers.UUIDSerializer
 import dev.openfeature.sdk.DateSerializer
 import kotlinx.coroutines.CoroutineDispatcher
@@ -50,6 +50,6 @@ private val json = Json {
     serializersModule = SerializersModule {
         contextual(UUIDSerializer)
         contextual(DateSerializer)
-        contextual(StructureSerializer)
+        contextual(ConfidenceValueSerializer)
     }
 }

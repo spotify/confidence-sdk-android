@@ -6,4 +6,6 @@ sealed class ConfidenceValue {
     data class Boolean(val value: kotlin.Boolean) : ConfidenceValue()
     data class Int(val value: kotlin.Int) : ConfidenceValue()
     data class Struct(val value: Map<kotlin.String, ConfidenceValue>) : ConfidenceValue()
+
+    object Null : ConfidenceValue()
 }

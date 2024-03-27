@@ -40,10 +40,11 @@ data class Flags(
     val list: List<ResolvedFlag>
 )
 
+@Serializable
 data class ResolvedFlag(
     val flag: String,
     val variant: String,
-    val value: ConfidenceValue.Struct = ConfidenceValue.Struct(mapOf()),
+    val value: Map<String, @Contextual ConfidenceValue> = mapOf(),
     val reason: ResolveReason
 )
 
