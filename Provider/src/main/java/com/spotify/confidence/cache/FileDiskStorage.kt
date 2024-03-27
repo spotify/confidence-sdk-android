@@ -1,13 +1,10 @@
 package com.spotify.confidence.cache
 
 import android.content.Context
+import com.spotify.confidence.FlagResolution
 import com.spotify.confidence.apply.ApplyInstance
-import com.spotify.confidence.client.ResolvedFlag
 import com.spotify.confidence.client.serializers.UUIDSerializer
 import dev.openfeature.sdk.DateSerializer
-import dev.openfeature.sdk.EvaluationContext
-import dev.openfeature.sdk.Value
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
@@ -17,24 +14,13 @@ import java.io.File
 internal const val FLAGS_FILE_NAME = "confidence_flags_cache.json"
 internal const val APPLY_FILE_NAME = "confidence_apply_cache.json"
 
-internal class StorageFileCache private constructor(
+internal class FileDiskStorage private constructor(
     private val flagsFile: File,
     private val applyFile: File
 ) : DiskStorage {
 
-    override fun store(
-        resolvedFlags: List<ResolvedFlag>,
-        resolveToken: String,
-        evaluationContext: EvaluationContext
-    ): CacheData {
-        val data = toCacheData(
-            resolvedFlags,
-            resolveToken,
-            evaluationContext
-        )
-
-        write(Json.encodeToString(data))
-        return data
+    override fun store(flagResolution: FlagResolution) {
+        write(Json.encodeToString(flagResolution))
     }
 
     override fun clear() {
@@ -59,7 +45,7 @@ internal class StorageFileCache private constructor(
         flagsFile.writeText(data)
     }
 
-    override fun read(): CacheData? {
+    override fun read(): FlagResolution? {
         if (!flagsFile.exists()) return null
         val fileText: String = flagsFile.bufferedReader().use { it.readText() }
         return if (fileText.isEmpty()) {
@@ -71,7 +57,7 @@ internal class StorageFileCache private constructor(
 
     companion object {
         fun create(context: Context): DiskStorage {
-            return StorageFileCache(
+            return FileDiskStorage(
                 flagsFile = File(context.filesDir, FLAGS_FILE_NAME),
                 applyFile = File(context.filesDir, APPLY_FILE_NAME)
             )
@@ -81,33 +67,10 @@ internal class StorageFileCache private constructor(
          * Testing purposes only!
          */
         fun forFiles(flagsFile: File, applyFile: File): DiskStorage {
-            return StorageFileCache(flagsFile, applyFile)
+            return FileDiskStorage(flagsFile, applyFile)
         }
     }
 }
-
-internal fun toCacheData(
-    resolvedFlags: List<ResolvedFlag>,
-    resolveToken: String,
-    evaluationContext: EvaluationContext
-) = CacheData(
-    values = resolvedFlags.associate {
-        it.flag to ProviderCache.CacheEntry(
-            it.variant,
-            Value.Structure(it.value.asMap()),
-            it.reason
-        )
-    },
-    evaluationContextHash = evaluationContext.hashCode(),
-    resolveToken = resolveToken
-)
-
-@Serializable
-data class CacheData(
-    val resolveToken: String,
-    val evaluationContextHash: Int,
-    val values: Map<String, ProviderCache.CacheEntry>
-)
 
 internal val json = Json {
     serializersModule = SerializersModule {

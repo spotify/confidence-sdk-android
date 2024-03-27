@@ -3,7 +3,6 @@
 package com.spotify.confidence
 
 import android.content.Context
-import com.spotify.confidence.cache.InMemoryCache
 import com.spotify.confidence.client.ConfidenceClient
 import com.spotify.confidence.client.Flags
 import com.spotify.confidence.client.ResolveFlags

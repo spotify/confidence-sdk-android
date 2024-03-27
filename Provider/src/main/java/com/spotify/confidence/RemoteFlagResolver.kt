@@ -25,7 +25,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 
 internal interface FlagResolver {
-    suspend fun resolve(flags: List<String>, context: Map<String, ConfidenceValue>): FlagResolution
+    suspend fun resolve(flags: List<String>, context: Map<String, ConfidenceValue>): Result<FlagResolution>
 }
 
 internal class RemoteFlagResolver(
@@ -33,15 +33,15 @@ internal class RemoteFlagResolver(
     private val region: ConfidenceRegion,
     private val httpClient: OkHttpClient,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
-    private val sdkMetadata: SdkMetadata,
-): FlagResolver {
+    private val sdkMetadata: SdkMetadata
+) : FlagResolver {
     private val headers = Headers.headersOf(
-    "Content-Type",
-    "application/json",
-    "Accept",
-    "application/json"
+        "Content-Type",
+        "application/json",
+        "Accept",
+        "application/json"
     )
-    override suspend fun resolve(flags: List<String>, context: Map<String, ConfidenceValue>): FlagResolution {
+    override suspend fun resolve(flags: List<String>, context: Map<String, ConfidenceValue>): Result<FlagResolution> {
         val sdk = Sdk(sdkMetadata.sdkId, sdkMetadata.sdkVersion)
         val request = ResolveFlagsRequest(flags, context, clientSecret, false, sdk)
 
@@ -56,13 +56,14 @@ internal class RemoteFlagResolver(
             httpClient.newCall(httpRequest).await().toResolveFlags()
         }
 
-        when(response) {
+        return when (response) {
             is ResolveResponse.Resolved -> {
                 val (flagList, resolveToken) = response.flags
-                return FlagResolution(context, flagList.list, resolveToken)
+                Result.Success(FlagResolution(context, flagList.list, resolveToken))
             }
+
             else -> {
-                TODO()
+                Result.Failure(Error("could not return flag resolution"))
             }
         }
     }
@@ -72,7 +73,6 @@ internal class RemoteFlagResolver(
         ConfidenceRegion.EUROPE -> "https://resolver.eu.confidence.dev"
         ConfidenceRegion.USA -> "https://resolver.us.confidence.dev"
     }
-
 }
 
 private val json = Json {

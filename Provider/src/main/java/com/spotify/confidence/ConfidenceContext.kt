@@ -8,10 +8,10 @@ interface ConfidenceContextProvider {
 
 typealias ConfidenceFieldsType = Map<String, ConfidenceValue>
 
-interface Contextual : ConfidenceContextProvider {
-    fun withContext(context: ConfidenceContext): Contextual
+interface ContextApi : ConfidenceContextProvider {
+    fun withContext(context: Map<String, ConfidenceValue>): ContextApi
 
-    fun putContext(context: ConfidenceContext)
+    fun putContext(context: Map<String, ConfidenceValue>)
     fun setContext(context: Map<String, ConfidenceValue>)
     fun putContext(key: String, value: ConfidenceValue)
     fun removeContext(key: String)
@@ -22,23 +22,10 @@ interface ConfidenceContext {
     val value: ConfidenceValue
 }
 
-class PageContext(private val page: String) : ConfidenceContext {
-    override val value: ConfidenceValue
-        get() = ConfidenceValue.String(page)
-    override val name: String
-        get() = "page"
-}
-
 class CommonContext : ConfidenceContextProvider {
     override fun getContext(): Map<String, ConfidenceValue> = mapOf()
 }
 
-fun EvaluationContext.toConfidenceContext() = object : ConfidenceContext {
-    override val name: String = "open_feature"
-    override val value: ConfidenceValue
-        get() = ConfidenceValue.Struct(
-            asMap()
-                .map { it.key to ConfidenceValue.String(it.value.toString()) }
-                .toMap() + ("targeting_key" to ConfidenceValue.String(getTargetingKey()))
-        )
+fun EvaluationContext.toConfidenceContext(): ConfidenceValue.Struct {
+    TODO()
 }

@@ -13,6 +13,8 @@ enum class ResolveReason {
     // The flag was successfully resolved because one rule matched.
     RESOLVE_REASON_MATCH,
 
+    RESOLVE_REASON_STALE,
+
     // The flag could not be resolved because no rule matched.
     RESOLVE_REASON_NO_SEGMENT_MATCH,
 

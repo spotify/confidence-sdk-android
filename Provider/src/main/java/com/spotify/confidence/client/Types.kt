@@ -1,6 +1,6 @@
 package com.spotify.confidence.client
 
-import dev.openfeature.sdk.ImmutableStructure
+import com.spotify.confidence.ConfidenceValue
 import dev.openfeature.sdk.Structure
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -43,7 +43,7 @@ data class Flags(
 data class ResolvedFlag(
     val flag: String,
     val variant: String,
-    val value: Structure = ImmutableStructure(mutableMapOf()),
+    val value: ConfidenceValue.Struct = ConfidenceValue.Struct(mapOf()),
     val reason: ResolveReason
 )
 

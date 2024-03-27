@@ -2,6 +2,7 @@ package com.spotify.confidence
 
 import android.content.Context
 import com.spotify.confidence.client.ConfidenceRegion
+import com.spotify.confidence.client.ResolveReason
 import com.spotify.confidence.client.SdkMetadata
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -17,10 +18,11 @@ class Confidence private constructor(
     private val dispatcher: CoroutineDispatcher,
     private val eventSenderEngine: EventSenderEngine,
     private val root: ConfidenceContextProvider
-) : Contextual, EventSender, FlagEvaluator {
+) : ContextApi, EventSender {
     private val removedKeys = mutableListOf<String>()
     private val coroutineScope = CoroutineScope(dispatcher)
     private var contextMap: MutableMap<String, ConfidenceValue> = mutableMapOf()
+    private lateinit var appliedFlagResolution: FlagResolution
     internal val flagResolver by lazy {
         RemoteFlagResolver(
             clientSecret,
@@ -31,7 +33,11 @@ class Confidence private constructor(
         )
     }
 
-    internal suspend fun resolveFlags(flags: List<String>): FlagResolution {
+    internal fun refreshFlagResolution(flagResolution: FlagResolution) {
+        this.appliedFlagResolution = flagResolution
+    }
+
+    internal suspend fun resolveFlags(flags: List<String>): Result<FlagResolution> {
         return flagResolver.resolve(flags, getContext())
     }
 
@@ -39,8 +45,8 @@ class Confidence private constructor(
         contextMap[key] = value
     }
 
-    override fun putContext(context: ConfidenceContext) {
-        putContext(context.name, context.value)
+    override fun putContext(context: Map<String, ConfidenceValue>) {
+        contextMap += context
     }
 
     override fun setContext(context: Map<String, ConfidenceValue>) {
@@ -55,12 +61,26 @@ class Confidence private constructor(
     override fun getContext(): Map<String, ConfidenceValue> =
         this.root.getContext().filterKeys { removedKeys.contains(it) } + contextMap
 
-    override suspend fun <T> getValue(flag: String, defaultValue: T): T {
-        val response = resolveFlags(listOf(flag))
-        return response.getValue(flag, defaultValue)
+    internal fun <T> getValue(flag: String, defaultValue: T): T {
+        return this.getEvaluation(flag, defaultValue).value
     }
 
-    override fun withContext(context: ConfidenceContext) = Confidence(
+    internal fun <T> getEvaluation(
+        key: String,
+        defaultValue: T
+    ): Evaluation<T> {
+        if (!this::appliedFlagResolution.isInitialized) {
+            return Evaluation(
+                value = defaultValue,
+                reason = ResolveReason.RESOLVE_REASON_UNSPECIFIED,
+                errorCode = ErrorCode.CACHE_EMPTY
+            )
+        }
+        // TODO APPLY FlAG
+        return appliedFlagResolution.getEvaluation(key, defaultValue, getContext())
+    }
+
+    override fun withContext(context: Map<String, ConfidenceValue>) = Confidence(
         clientSecret,
         region,
         dispatcher,
@@ -101,7 +121,7 @@ class Confidence private constructor(
             val engine = EventSenderEngine.instance(
                 context,
                 clientSecret,
-                flushPolicies = listOf(confidenceFlushPolicy),
+                flushPolicies = listOf(confidenceSizeFlushPolicy),
                 dispatcher = dispatcher
             )
             val confidenceContext = object : ConfidenceContextProvider {
@@ -111,20 +131,5 @@ class Confidence private constructor(
             }
             return Confidence(clientSecret, region, dispatcher, engine, confidenceContext)
         }
-    }
-}
-
-private val confidenceFlushPolicy = object : FlushPolicy {
-    private var size = 0
-    override fun reset() {
-        size = 0
-    }
-
-    override fun hit(event: Event) {
-        size++
-    }
-
-    override fun shouldFlush(): Boolean {
-        return size > 4
     }
 }

@@ -2,7 +2,7 @@ package com.spotify.confidence
 
 import android.content.Context
 import com.spotify.confidence.cache.FLAGS_FILE_NAME
-import com.spotify.confidence.cache.StorageFileCache
+import com.spotify.confidence.cache.FileDiskStorage
 import com.spotify.confidence.client.ResolveReason
 import com.spotify.confidence.client.ResolvedFlag
 import dev.openfeature.sdk.ImmutableContext
@@ -59,7 +59,7 @@ class ConfidenceIntegrationTests {
             )
         )
 
-        val storage = StorageFileCache.create(mockContext).apply {
+        val storage = FileDiskStorage.create(mockContext).apply {
             val flags = listOf(
                 ResolvedFlag(
                     "kotlin-test-flag",

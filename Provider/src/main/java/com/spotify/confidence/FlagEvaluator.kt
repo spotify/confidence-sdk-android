@@ -1,27 +1,26 @@
 package com.spotify.confidence
 
+import com.spotify.confidence.client.ResolveReason
 import com.spotify.confidence.client.ResolvedFlag
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 
-interface FlagEvaluator: Contextual {
-    suspend fun <T> getValue(flag: String, defaultValue: T): T
-}
-
 data class Evaluation<T>(
-    val reason: String,
     val value: T,
+    val variant: String? = null,
+    val reason: ResolveReason,
+    val errorCode: ErrorCode? = null,
+    val errorMessage: String? = null
 )
 
 @Serializable
 data class FlagResolution(
-    val context: Map<String,@kotlinx.serialization.Contextual  ConfidenceValue>,
-    val flags: List<@kotlinx.serialization.Contextual ResolvedFlag>,
+    val context: Map<String, @Contextual ConfidenceValue>,
+    val flags: List<@Contextual ResolvedFlag>,
     val resolveToken: String
 )
 
-fun <T> FlagResolution.getEvaluation(flag: String, defaultValue: T): Evaluation<T> {
-    TODO()
-}
-fun <T> FlagResolution.getValue(flag: String, defaultValue: T): T {
-    return getEvaluation(flag, defaultValue).value
+sealed class Result<out T> {
+    data class Success<T>(val data: T) : Result<T>()
+    data class Failure(val error: Throwable) : Result<Nothing>()
 }
