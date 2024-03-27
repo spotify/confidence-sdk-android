@@ -203,11 +203,18 @@ class ConfidenceFeatureProvider private constructor(
 
 private fun <T> Evaluation<T>.toProviderEvaluation() = ProviderEvaluation(
     reason = this.reason.name,
-    errorCode = null, // TODO convert
+    errorCode = this.errorCode.toOFErrorCode(),
     errorMessage = this.errorMessage,
     value = this.value,
     variant = this.variant
 )
+
+private fun ErrorCode?.toOFErrorCode() = when (this) {
+    ErrorCode.FLAG_NOT_FOUND -> dev.openfeature.sdk.exceptions.ErrorCode.FLAG_NOT_FOUND
+    ErrorCode.RESOLVE_STALE -> dev.openfeature.sdk.exceptions.ErrorCode.PROVIDER_NOT_READY
+    ErrorCode.INVALID_CONTEXT -> dev.openfeature.sdk.exceptions.ErrorCode.INVALID_CONTEXT
+    null -> null
+}
 
 sealed interface InitialisationStrategy {
     object FetchAndActivate : InitialisationStrategy
