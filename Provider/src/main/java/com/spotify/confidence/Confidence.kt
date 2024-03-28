@@ -18,7 +18,7 @@ class Confidence private constructor(
     private val clientSecret: String,
     private val dispatcher: CoroutineDispatcher,
     private val eventSenderEngine: EventSenderEngine,
-    private val root: ConfidenceContextProvider,
+    private val root: ConfidenceContextProvider? = null,
     private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
     private val flagApplier: FlagApplierWithRetries
 ) : Contextual, EventSender {
@@ -68,7 +68,9 @@ class Confidence private constructor(
     }
 
     override fun getContext(): Map<String, ConfidenceValue> =
-        this.root.getContext().filterKeys { removedKeys.contains(it) } + contextMap
+        this.root?.let {
+            getContext().filterKeys { removedKeys.contains(it) } + contextMap
+        } ?: contextMap
 
     override fun withContext(context: Map<String, ConfidenceValue>) = Confidence(
         clientSecret,
@@ -115,11 +117,6 @@ class Confidence private constructor(
                 flushPolicies = listOf(confidenceSizeFlushPolicy),
                 dispatcher = dispatcher
             )
-            val confidenceContext = object : ConfidenceContextProvider {
-                override fun getContext(): Map<String, ConfidenceValue> {
-                    return emptyMap()
-                }
-            }
             val flagApplierClient = FlagApplierClientImpl(
                 clientSecret,
                 SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
@@ -135,10 +132,9 @@ class Confidence private constructor(
                 clientSecret,
                 dispatcher,
                 engine,
-                confidenceContext,
-                region,
-                flagApplier
-            )
+                region = region,
+                flagApplier = flagApplier
+            ).addCommonContext(context)
         }
     }
 }
