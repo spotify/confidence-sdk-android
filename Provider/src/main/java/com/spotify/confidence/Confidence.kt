@@ -1,7 +1,10 @@
 package com.spotify.confidence
 
 import android.content.Context
+import com.spotify.confidence.apply.FlagApplierWithRetries
+import com.spotify.confidence.cache.FileDiskStorage
 import com.spotify.confidence.client.ConfidenceRegion
+import com.spotify.confidence.client.FlagApplierClientImpl
 import com.spotify.confidence.client.SdkMetadata
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -16,11 +19,13 @@ class Confidence private constructor(
     private val dispatcher: CoroutineDispatcher,
     private val eventSenderEngine: EventSenderEngine,
     private val root: ConfidenceContextProvider,
-    private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL
+    private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
+    private val flagApplier: FlagApplierWithRetries
 ) : Contextual, EventSender {
     private val removedKeys = mutableListOf<String>()
     private val coroutineScope = CoroutineScope(dispatcher)
     private var contextMap: MutableMap<String, ConfidenceValue> = mutableMapOf()
+
     private val flagResolver by lazy {
         RemoteFlagResolver(
             clientSecret,
@@ -39,6 +44,10 @@ class Confidence private constructor(
         }
         context.remove("open_feature")
         return flagResolver.resolve(flags, context)
+    }
+
+    fun applyFlag(flagName: String, resolveToken: String) {
+        flagApplier.apply(flagName, resolveToken)
     }
 
     override fun putContext(key: String, value: ConfidenceValue) {
@@ -66,7 +75,8 @@ class Confidence private constructor(
         dispatcher,
         eventSenderEngine,
         this,
-        region
+        region,
+        flagApplier
     ).also {
         it.putContext(context)
     }
@@ -110,7 +120,25 @@ class Confidence private constructor(
                     return emptyMap()
                 }
             }
-            return Confidence(clientSecret, dispatcher, engine, confidenceContext, region)
+            val flagApplierClient = FlagApplierClientImpl(
+                clientSecret,
+                SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
+                region,
+                dispatcher
+            )
+            val flagApplier = FlagApplierWithRetries(
+                client = flagApplierClient,
+                dispatcher = dispatcher,
+                diskStorage = FileDiskStorage.create(context)
+            )
+            return Confidence(
+                clientSecret,
+                dispatcher,
+                engine,
+                confidenceContext,
+                region,
+                flagApplier
+            )
         }
     }
 }

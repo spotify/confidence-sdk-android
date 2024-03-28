@@ -163,7 +163,9 @@ class ConfidenceFeatureProvider private constructor(
             key,
             defaultValue,
             context.toConfidenceContext().map
-        ).toProviderEvaluation()
+        ) { flagName, resolveToken ->
+            confidenceAPI.applyFlag(flagName, resolveToken)
+        }.toProviderEvaluation()
     }
     companion object {
         private class ConfidenceMetadata(override var name: String? = "confidence") : ProviderMetadata

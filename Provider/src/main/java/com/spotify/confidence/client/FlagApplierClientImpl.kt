@@ -5,14 +5,11 @@ import com.spotify.confidence.client.network.ApplyFlagsInteractorImpl
 import com.spotify.confidence.client.network.ApplyFlagsRequest
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.modules.SerializersModule
 import okhttp3.Headers
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
-import okhttp3.Response
 
-internal class ConfidenceRemoteClient : ConfidenceClient {
+internal class FlagApplierClientImpl : FlagApplierClient {
     private val clientSecret: String
     private val sdkMetadata: SdkMetadata
     private val okHttpClient: OkHttpClient
@@ -99,16 +96,4 @@ internal class ConfidenceRemoteClient : ConfidenceClient {
 
         return result
     }
-}
-
-private fun Response.toResolveFlags(): ResolveResponse {
-    val bodyString = body!!.string()
-
-    // building the json class responsible for serializing the object
-    val networkJson = Json {
-        serializersModule = SerializersModule {
-            ignoreUnknownKeys = true
-        }
-    }
-    return ResolveResponse.Resolved(networkJson.decodeFromString(bodyString))
 }

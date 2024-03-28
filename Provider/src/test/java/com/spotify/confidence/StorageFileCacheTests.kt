@@ -3,7 +3,7 @@
 package com.spotify.confidence
 
 import android.content.Context
-import com.spotify.confidence.client.ConfidenceClient
+import com.spotify.confidence.client.FlagApplierClient
 import com.spotify.confidence.client.Flags
 import com.spotify.confidence.client.ResolveFlags
 import com.spotify.confidence.client.ResolveReason
@@ -64,7 +64,7 @@ class StorageFileCacheTests {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun testOfflineScenarioLoadsStoredCache() = runTest {
-        val mockClient: ConfidenceClient = mock()
+        val mockClient: FlagApplierClient = mock()
         whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val cache1 = InMemoryCache()

@@ -16,7 +16,7 @@ import com.spotify.confidence.cache.APPLY_FILE_NAME
 import com.spotify.confidence.cache.json
 import com.spotify.confidence.cache.toCacheData
 import com.spotify.confidence.client.AppliedFlag
-import com.spotify.confidence.client.ConfidenceClient
+import com.spotify.confidence.client.FlagApplierClient
 import com.spotify.confidence.client.Flags
 import com.spotify.confidence.client.ResolveFlags
 import com.spotify.confidence.client.ResolveReason
@@ -81,7 +81,7 @@ private const val cacheFileData = "{\n" +
 
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class ConfidenceFeatureProviderTests {
-    private val mockClient: ConfidenceClient = mock()
+    private val mockClient: FlagApplierClient = mock()
     private val mockContext: Context = mock()
     private val instant = Instant.parse("2023-03-01T14:01:46.645Z")
     private val blueStringValues = mutableMapOf(

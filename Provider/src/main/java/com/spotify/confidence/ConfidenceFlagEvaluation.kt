@@ -5,7 +5,8 @@ import com.spotify.confidence.client.ResolveReason
 internal fun <T> FlagResolution.getEvaluation(
     flag: String,
     defaultValue: T,
-    context: Map<String, ConfidenceValue>
+    context: Map<String, ConfidenceValue>,
+    applyFlag: (String, String) -> Unit = { _, _ -> }
 ): Evaluation<T> {
     val parsedKey = FlagKey(flag)
     val resolvedFlag = this.flags.firstOrNull { it.flag == parsedKey.flagName }
@@ -14,6 +15,10 @@ internal fun <T> FlagResolution.getEvaluation(
             reason = ResolveReason.RESOLVE_REASON_UNSPECIFIED,
             errorCode = ErrorCode.FLAG_NOT_FOUND
         )
+
+    if (resolvedFlag.reason != ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR) {
+        applyFlag(parsedKey.flagName, resolveToken)
+    }
 
     // handle stale case
     if (this.context != context) {
@@ -94,14 +99,6 @@ private data class FlagKey(
             )
         }
     }
-}
-
-internal fun <T> FlagResolution.getValue(
-    flag: String,
-    defaultValue: T,
-    context: Map<String, ConfidenceValue>
-): T {
-    return getEvaluation(flag, defaultValue, context).value
 }
 
 enum class ErrorCode {

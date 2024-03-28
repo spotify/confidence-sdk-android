@@ -4,7 +4,7 @@ package com.spotify.confidence
 
 import com.spotify.confidence.client.AppliedFlag
 import com.spotify.confidence.client.Clock
-import com.spotify.confidence.client.ConfidenceRemoteClient
+import com.spotify.confidence.client.FlagApplierClientImpl
 import com.spotify.confidence.client.Flags
 import com.spotify.confidence.client.ResolveFlags
 import com.spotify.confidence.client.ResolveReason
@@ -109,7 +109,7 @@ internal class ConfidenceRemoteClientTests {
                 .setResponseCode(200)
                 .setBody(jsonPayload)
         )
-        val parsedResponse = ConfidenceRemoteClient(
+        val parsedResponse = FlagApplierClientImpl(
             baseUrl = mockWebServer.url("/v1/flags:resolve"),
             dispatcher = testDispatcher
         )
@@ -167,7 +167,7 @@ internal class ConfidenceRemoteClientTests {
                 .setBody(jsonPayload)
         )
         val parsedResponse =
-            ConfidenceRemoteClient(
+            FlagApplierClientImpl(
                 baseUrl = mockWebServer.url("/v1/flags:resolve"),
                 dispatcher = testDispatcher
             )
@@ -217,7 +217,7 @@ internal class ConfidenceRemoteClientTests {
                 .setBody(jsonPayload)
         )
         val parsedResponse =
-            ConfidenceRemoteClient(
+            FlagApplierClientImpl(
                 baseUrl = mockWebServer.url("/v1/flags:resolve"),
                 dispatcher = testDispatcher
             )
@@ -273,7 +273,7 @@ internal class ConfidenceRemoteClientTests {
         val ex = assertThrows(ParseError::class.java) {
             runTest {
                 val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-                ConfidenceRemoteClient(
+                FlagApplierClientImpl(
                     baseUrl = mockWebServer.url("/v1/flags:resolve"),
                     dispatcher = testDispatcher
                 )
@@ -314,7 +314,7 @@ internal class ConfidenceRemoteClientTests {
         val ex = assertThrows(ParseError::class.java) {
             runTest {
                 val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-                ConfidenceRemoteClient(
+                FlagApplierClientImpl(
                     baseUrl = mockWebServer.url("/v1/flags:resolve"),
                     dispatcher = testDispatcher
                 )
@@ -352,7 +352,7 @@ internal class ConfidenceRemoteClientTests {
         val ex = assertThrows(ParseError::class.java) {
             runTest {
                 val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-                ConfidenceRemoteClient(
+                FlagApplierClientImpl(
                     baseUrl = mockWebServer.url("/v1/flags:resolve"),
                     dispatcher = testDispatcher
                 )
@@ -391,7 +391,7 @@ internal class ConfidenceRemoteClientTests {
         val ex = assertThrows(ParseError::class.java) {
             runTest {
                 val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-                ConfidenceRemoteClient(
+                FlagApplierClientImpl(
                     baseUrl = mockWebServer.url("/v1/flags:resolve"),
                     dispatcher = testDispatcher
                 )
@@ -450,7 +450,7 @@ internal class ConfidenceRemoteClientTests {
             }
         }
 
-        ConfidenceRemoteClient(
+        FlagApplierClientImpl(
             "secret1",
             sdkMetadata,
             mockWebServer.url("/v1/flags:resolve"),
@@ -512,7 +512,7 @@ internal class ConfidenceRemoteClientTests {
                 return MockResponse().setResponseCode(200)
             }
         }
-        ConfidenceRemoteClient(
+        FlagApplierClientImpl(
             "secret1",
             sdkMetadata,
             mockWebServer.url("/v1/flags:apply"),
@@ -535,7 +535,7 @@ internal class ConfidenceRemoteClientTests {
                 return MockResponse().setResponseCode(200)
             }
         }
-        val result = ConfidenceRemoteClient(
+        val result = FlagApplierClientImpl(
             "secret1",
             sdkMetadata,
             mockWebServer.url("/v1/flags:apply"),
@@ -560,7 +560,7 @@ internal class ConfidenceRemoteClientTests {
                 return MockResponse().setResponseCode(500)
             }
         }
-        val result = ConfidenceRemoteClient(
+        val result = FlagApplierClientImpl(
             "secret1",
             sdkMetadata,
             mockWebServer.url("/v1/flags:apply"),

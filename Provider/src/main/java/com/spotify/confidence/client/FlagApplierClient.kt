@@ -1,6 +1,6 @@
 package com.spotify.confidence.client
 
-interface ConfidenceClient {
+interface FlagApplierClient {
     suspend fun apply(flags: List<AppliedFlag>, resolveToken: String): Result
 }
 

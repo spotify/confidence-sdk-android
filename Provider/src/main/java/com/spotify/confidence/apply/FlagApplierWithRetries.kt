@@ -3,7 +3,7 @@ package com.spotify.confidence.apply
 import com.spotify.confidence.EventProcessor
 import com.spotify.confidence.cache.DiskStorage
 import com.spotify.confidence.client.AppliedFlag
-import com.spotify.confidence.client.ConfidenceClient
+import com.spotify.confidence.client.FlagApplierClient
 import com.spotify.confidence.client.Result
 import com.spotify.confidence.client.serializers.DateSerializer
 import kotlinx.coroutines.CoroutineDispatcher
@@ -43,7 +43,7 @@ internal typealias FlagsAppliedMap =
     MutableMap<String, MutableMap<String, ApplyInstance>>
 
 class FlagApplierWithRetries(
-    private val client: ConfidenceClient,
+    private val client: FlagApplierClient,
     private val dispatcher: CoroutineDispatcher,
     private val diskStorage: DiskStorage
 ) : FlagApplier {
