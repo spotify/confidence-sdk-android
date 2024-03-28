@@ -79,8 +79,8 @@ internal class EventSenderEngine(
             val event = Event(
                 eventDefinition = definition,
                 eventTime = clock.currentTime(),
-                payload = payload,
-                context = context
+                payload = payload + context,
+                context = mapOf()
             )
             writeReqChannel.send(event)
         }

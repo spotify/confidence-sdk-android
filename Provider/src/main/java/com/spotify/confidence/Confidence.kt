@@ -69,7 +69,7 @@ class Confidence private constructor(
 
     override fun getContext(): Map<String, ConfidenceValue> =
         this.root?.let {
-            getContext().filterKeys { removedKeys.contains(it) } + contextMap
+            it.getContext().filterKeys { key -> !removedKeys.contains(key) } + contextMap
         } ?: contextMap
 
     override fun withContext(context: Map<String, ConfidenceValue>) = Confidence(
