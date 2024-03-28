@@ -9,6 +9,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.OutputStream
 
@@ -23,7 +24,7 @@ internal interface EventStorage {
 
 internal class EventStorageImpl(
     private val context: Context,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val maxStorage: Long = MAX_STORAGE
 ) : EventStorage {
     private lateinit var currentFile: File
@@ -45,7 +46,7 @@ internal class EventStorageImpl(
 
     override suspend fun writeEvent(event: Event) = withLock {
         val delimiter = EVENT_WRITE_DELIMITER
-        val byteArray = (eventsJson.encodeToString(event) + delimiter).toByteArray()
+        val byteArray = (Json.encodeToString(event) + delimiter).toByteArray()
         outputStream?.write(byteArray)
         outputStream?.flush()
         coroutineScope.launch {
@@ -75,7 +76,7 @@ internal class EventStorageImpl(
         return text
             .split(EVENT_WRITE_DELIMITER)
             .filter { it.isNotEmpty() }
-            .map { eventsJson.decodeFromString(it) }
+            .map { Json.decodeFromString(it) }
     }
 
     override fun onLowMemoryChannel(): Channel<List<File>> = onLowMemoryChannel

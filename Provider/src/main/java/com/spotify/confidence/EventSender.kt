@@ -2,7 +2,7 @@ package com.spotify.confidence
 
 import java.io.File
 
-interface EventSender : ContextApi {
+interface EventSender : Contextual {
     fun send(
         definition: String,
         payload: ConfidenceFieldsType = mapOf()

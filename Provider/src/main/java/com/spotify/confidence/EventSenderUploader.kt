@@ -1,17 +1,13 @@
 package com.spotify.confidence
 
+import com.spotify.confidence.client.ConfidenceValueMap
 import com.spotify.confidence.client.await
-import com.spotify.confidence.client.serializers.ConfidenceValueSerializer
-import com.spotify.confidence.client.serializers.UUIDSerializer
-import dev.openfeature.sdk.DateSerializer
+import com.spotify.confidence.client.serializers.DateSerializer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.contextual
 import okhttp3.Headers
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -26,17 +22,17 @@ internal interface EventSenderUploader {
 internal data class EventBatch(
     val clientSecret: String,
     val events: List<Event>,
-    @Contextual
+    @Serializable(DateSerializer::class)
     val sendTime: Date
 )
 
 @Serializable
 data class Event(
     val eventDefinition: String,
-    @Contextual
+    @Serializable(DateSerializer::class)
     val eventTime: Date,
-    val payload: Map<String, @Contextual ConfidenceValue>,
-    val context: Map<String, @Contextual ConfidenceValue>
+    val payload: ConfidenceValueMap,
+    val context: ConfidenceValueMap
 )
 
 internal class EventSenderUploaderImpl(
@@ -56,7 +52,7 @@ internal class EventSenderUploaderImpl(
         val httpRequest = Request.Builder()
             .url(BASE_URL)
             .headers(headers)
-            .post(eventsJson.encodeToString(events).toRequestBody())
+            .post(Json.encodeToString(events).toRequestBody())
             .build()
 
         val response = httpClient.newCall(httpRequest).await()
@@ -74,13 +70,5 @@ internal class EventSenderUploaderImpl(
 
     companion object {
         const val BASE_URL = "https://events.eu.confidence.dev/v1/events:publish"
-    }
-}
-
-internal val eventsJson = Json {
-    serializersModule = SerializersModule {
-        contextual(UUIDSerializer)
-        contextual(DateSerializer)
-        contextual(ConfidenceValueSerializer)
     }
 }

@@ -8,8 +8,8 @@ interface ConfidenceContextProvider {
 
 typealias ConfidenceFieldsType = Map<String, ConfidenceValue>
 
-interface ContextApi : ConfidenceContextProvider {
-    fun withContext(context: Map<String, ConfidenceValue>): ContextApi
+interface Contextual : ConfidenceContextProvider {
+    fun withContext(context: Map<String, ConfidenceValue>): Contextual
 
     fun putContext(context: Map<String, ConfidenceValue>)
     fun setContext(context: Map<String, ConfidenceValue>)

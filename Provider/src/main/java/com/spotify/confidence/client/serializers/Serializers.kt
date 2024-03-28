@@ -1,7 +1,7 @@
 package com.spotify.confidence.client.serializers
 
+import android.annotation.SuppressLint
 import com.spotify.confidence.ConfidenceValue
-import com.spotify.confidence.cache.json
 import com.spotify.confidence.client.Flags
 import com.spotify.confidence.client.ResolveReason
 import com.spotify.confidence.client.ResolvedFlag
@@ -33,7 +33,9 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import java.util.UUID
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.TimeZone
 
 /***
  * the struct serializer needed for sending the resolve request
@@ -49,7 +51,7 @@ internal object StructSerializer : KSerializer<ConfidenceValue.Struct> {
 
     override fun serialize(encoder: Encoder, value: ConfidenceValue.Struct) {
         encoder.encodeStructure(descriptor) {
-            for ((key, mapValue) in value.value) {
+            for ((key, mapValue) in value.map) {
                 encodeStringElement(descriptor, 0, key)
                 encodeSerializableElement(descriptor, 1, ConfidenceValueSerializer, mapValue)
             }
@@ -69,7 +71,7 @@ internal object ConfidenceValueSerializer : KSerializer<ConfidenceValue> {
                 return when {
                     jsonPrimitive.isString -> ConfidenceValue.String(jsonPrimitive.content)
                     jsonPrimitive.booleanOrNull != null -> ConfidenceValue.Boolean(jsonPrimitive.boolean)
-                    jsonPrimitive.intOrNull != null -> ConfidenceValue.Int(jsonPrimitive.int)
+                    jsonPrimitive.intOrNull != null -> ConfidenceValue.Integer(jsonPrimitive.int)
                     jsonPrimitive.doubleOrNull != null -> ConfidenceValue.Double(jsonPrimitive.double)
                     else -> ConfidenceValue.Null
                 }
@@ -92,30 +94,23 @@ internal object ConfidenceValueSerializer : KSerializer<ConfidenceValue> {
     @OptIn(ExperimentalSerializationApi::class)
     override fun serialize(encoder: Encoder, value: ConfidenceValue) {
         when (value) {
-            is ConfidenceValue.String -> encoder.encodeString(value.value)
-            is ConfidenceValue.Boolean -> encoder.encodeBoolean(value.value)
-            is ConfidenceValue.Double -> encoder.encodeDouble(value.value)
+            is ConfidenceValue.String -> encoder.encodeString(value.string)
+            is ConfidenceValue.Boolean -> encoder.encodeBoolean(value.boolean)
+            is ConfidenceValue.Double -> encoder.encodeDouble(value.double)
 
-            is ConfidenceValue.Int -> encoder.encodeInt(value.value)
+            is ConfidenceValue.Integer -> encoder.encodeInt(value.integer)
 
             ConfidenceValue.Null -> encoder.encodeNull()
             is ConfidenceValue.Struct -> encoder.encodeSerializableValue(
                 StructSerializer,
-                ConfidenceValue.Struct(value.value)
+                ConfidenceValue.Struct(value.map)
+            )
+
+            is ConfidenceValue.Date -> encoder.encodeSerializableValue(
+                DateSerializer,
+                value.date
             )
         }
-    }
-}
-
-object UUIDSerializer : KSerializer<UUID> {
-    override val descriptor = PrimitiveSerialDescriptor("UUID", PrimitiveKind.STRING)
-
-    override fun deserialize(decoder: Decoder): UUID {
-        return UUID.fromString(decoder.decodeString())
-    }
-
-    override fun serialize(encoder: Encoder, value: UUID) {
-        encoder.encodeString(value.toString())
     }
 }
 
@@ -174,7 +169,7 @@ internal object NetworkResolvedFlagSerializer : KSerializer<ResolvedFlag> {
             val values: ConfidenceValue.Struct =
                 Json.decodeFromString(FlagValueSerializer(flagSchema), valueJson)
 
-            if (flagSchema.schema.size != values.value.size) {
+            if (flagSchema.schema.size != values.map.size) {
                 throw OpenFeatureError.ParseError("Unexpected flag name in resolve flag data: $flag")
             }
 
@@ -182,7 +177,7 @@ internal object NetworkResolvedFlagSerializer : KSerializer<ResolvedFlag> {
                 flag = flag,
                 variant = variant,
                 reason = resolvedReason,
-                value = values.value
+                value = values.map
             )
         } else {
             ResolvedFlag(
@@ -252,7 +247,7 @@ private fun JsonElement.convertToValue(key: String, schemaType: SchemaType): Con
         if (toString().contains(".")) {
             throw OpenFeatureError.ParseError("Incompatible value \"$key\" for schema")
         }
-        toString().toIntOrNull()?.let(ConfidenceValue::Int) ?: ConfidenceValue.Null
+        toString().toIntOrNull()?.let { ConfidenceValue.Integer(it) } ?: ConfidenceValue.Null
     }
     is SchemaType.SchemaStruct -> {
         if (jsonObject.isEmpty()) {
@@ -261,7 +256,7 @@ private fun JsonElement.convertToValue(key: String, schemaType: SchemaType): Con
             val serializedMap = Json.decodeFromString(
                 FlagValueSerializer(schemaType),
                 jsonObject.toString()
-            ).value
+            ).map
 
             ConfidenceValue.Struct(serializedMap)
         }
@@ -285,4 +280,23 @@ private fun JsonElement.convertToSchemaTypeValue(): SchemaType = when {
         )
     }
     else -> error("not a valid schema")
+}
+
+@SuppressLint("SimpleDateFormat")
+internal object DateSerializer : KSerializer<Date> {
+    private val dateFormatter =
+        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").apply { timeZone = TimeZone.getTimeZone("UTC") }
+    private val fallbackDateFormatter =
+        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").apply { timeZone = TimeZone.getTimeZone("UTC") }
+    override val descriptor = PrimitiveSerialDescriptor("Instant", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: Date) = encoder.encodeString(dateFormatter.format(value))
+    override fun deserialize(decoder: Decoder): Date = with(decoder.decodeString()) {
+        try {
+            dateFormatter.parse(this)
+                ?: throw IllegalArgumentException("unable to parse $this")
+        } catch (e: Exception) {
+            fallbackDateFormatter.parse(this)
+                ?: throw IllegalArgumentException("unable to parse $this")
+        }
+    }
 }

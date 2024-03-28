@@ -162,7 +162,7 @@ class ConfidenceFeatureProvider private constructor(
         return appliedFlagResolution.getEvaluation(
             key,
             defaultValue,
-            context.toConfidenceContext().value
+            context.toConfidenceContext().map
         ).toProviderEvaluation()
     }
     companion object {

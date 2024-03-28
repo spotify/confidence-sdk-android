@@ -3,17 +3,12 @@ package com.spotify.confidence.client.network
 import com.spotify.confidence.client.AppliedFlag
 import com.spotify.confidence.client.Sdk
 import com.spotify.confidence.client.await
-import com.spotify.confidence.client.serializers.ConfidenceValueSerializer
-import com.spotify.confidence.client.serializers.UUIDSerializer
-import dev.openfeature.sdk.DateSerializer
+import com.spotify.confidence.client.serializers.DateSerializer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.contextual
 import okhttp3.Headers
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -42,7 +37,7 @@ internal class ApplyFlagsInteractorImpl(
             val httpRequest = Request.Builder()
                 .url("$baseUrl/v1/flags:apply")
                 .headers(headers)
-                .post(json.encodeToString(request).toRequestBody())
+                .post(Json.encodeToString(request).toRequestBody())
                 .build()
 
             return@withContext httpClient.newCall(httpRequest).await()
@@ -52,17 +47,9 @@ internal class ApplyFlagsInteractorImpl(
 @Serializable
 internal data class ApplyFlagsRequest(
     val flags: List<AppliedFlag>,
-    @Contextual
+    @Serializable(DateSerializer::class)
     val sendTime: Date,
     val clientSecret: String,
     val resolveToken: String,
     val sdk: Sdk
 )
-
-private val json = Json {
-    serializersModule = SerializersModule {
-        contextual(UUIDSerializer)
-        contextual(DateSerializer)
-        contextual(ConfidenceValueSerializer)
-    }
-}

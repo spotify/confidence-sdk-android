@@ -1,26 +1,17 @@
 package com.spotify.confidence.client
 
 import com.spotify.confidence.ConfidenceValue
-import dev.openfeature.sdk.Structure
-import kotlinx.serialization.Contextual
+import com.spotify.confidence.client.serializers.ConfidenceValueSerializer
+import com.spotify.confidence.client.serializers.DateSerializer
+import com.spotify.confidence.client.serializers.FlagsSerializer
 import kotlinx.serialization.Serializable
 import java.util.Date
 
 @Serializable
 data class AppliedFlag(
     val flag: String,
-    @Contextual
+    @Serializable(DateSerializer::class)
     val applyTime: Date
-)
-
-@Serializable
-data class ResolveFlagsRequest(
-    val flags: List<String>,
-    @Contextual
-    val evaluationContext: Structure,
-    val clientSecret: String,
-    val apply: Boolean,
-    val sdk: Sdk
 )
 
 @Serializable
@@ -31,11 +22,11 @@ data class Sdk(
 
 @Serializable
 data class ResolveFlags(
-    @Contextual
     val resolvedFlags: Flags,
     val resolveToken: String
 )
 
+@Serializable(FlagsSerializer::class)
 data class Flags(
     val list: List<ResolvedFlag>
 )
@@ -44,7 +35,7 @@ data class Flags(
 data class ResolvedFlag(
     val flag: String,
     val variant: String,
-    val value: Map<String, @Contextual ConfidenceValue> = mapOf(),
+    val value: ConfidenceValueMap = mapOf(),
     val reason: ResolveReason
 )
 
@@ -64,3 +55,6 @@ sealed class ResolveResponse {
 }
 
 data class SdkMetadata(val sdkId: String, val sdkVersion: String)
+
+typealias ConfidenceValueMap =
+    Map<String, @Serializable(ConfidenceValueSerializer::class) ConfidenceValue>

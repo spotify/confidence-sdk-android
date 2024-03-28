@@ -6,18 +6,13 @@ import com.spotify.confidence.client.Sdk
 import com.spotify.confidence.client.SdkMetadata
 import com.spotify.confidence.client.await
 import com.spotify.confidence.client.serializers.ConfidenceValueSerializer
-import com.spotify.confidence.client.serializers.FlagsSerializer
-import com.spotify.confidence.client.serializers.UUIDSerializer
-import dev.openfeature.sdk.DateSerializer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.contextual
 import okhttp3.Headers
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -46,7 +41,7 @@ internal class RemoteFlagResolver(
         val request = ResolveFlagsRequest(flags, context, clientSecret, false, sdk)
 
         val response = withContext(dispatcher) {
-            val jsonRequest = json.encodeToString(request)
+            val jsonRequest = Json.encodeToString(request)
             val httpRequest = Request.Builder()
                 .url("${baseUrl()}/v1/flags:resolve")
                 .headers(headers)
@@ -75,18 +70,12 @@ internal class RemoteFlagResolver(
     }
 }
 
-private val json = Json {
-    serializersModule = SerializersModule {
-        contextual(UUIDSerializer)
-        contextual(DateSerializer)
-        contextual(ConfidenceValueSerializer)
-    }
-}
-
 @Serializable
 private data class ResolveFlagsRequest(
     val flags: List<String>,
-    val evaluationContext: Map<String, @Contextual ConfidenceValue>,
+    val evaluationContext: Map<
+        String,
+        @Serializable(ConfidenceValueSerializer::class) ConfidenceValue>,
     val clientSecret: String,
     val apply: Boolean,
     val sdk: Sdk
@@ -98,7 +87,6 @@ private fun Response.toResolveFlags(): ResolveResponse {
     // building the json class responsible for serializing the object
     val networkJson = Json {
         serializersModule = SerializersModule {
-            contextual(FlagsSerializer)
             ignoreUnknownKeys = true
         }
     }

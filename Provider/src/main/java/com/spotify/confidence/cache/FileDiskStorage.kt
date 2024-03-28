@@ -3,13 +3,8 @@ package com.spotify.confidence.cache
 import android.content.Context
 import com.spotify.confidence.FlagResolution
 import com.spotify.confidence.apply.ApplyInstance
-import com.spotify.confidence.client.serializers.ConfidenceValueSerializer
-import com.spotify.confidence.client.serializers.UUIDSerializer
-import dev.openfeature.sdk.DateSerializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.contextual
 import java.io.File
 
 internal const val FLAGS_FILE_NAME = "confidence_flags_cache.json"
@@ -21,7 +16,7 @@ internal class FileDiskStorage private constructor(
 ) : DiskStorage {
 
     override fun store(flagResolution: FlagResolution) {
-        write(json.encodeToString(flagResolution))
+        write(Json.encodeToString(flagResolution))
     }
 
     override fun clear() {
@@ -29,7 +24,7 @@ internal class FileDiskStorage private constructor(
     }
 
     override fun writeApplyData(applyData: Map<String, MutableMap<String, ApplyInstance>>) {
-        applyFile.writeText(json.encodeToString(applyData))
+        applyFile.writeText(Json.encodeToString(applyData))
     }
 
     override fun readApplyData(): MutableMap<String, MutableMap<String, ApplyInstance>> {
@@ -38,7 +33,7 @@ internal class FileDiskStorage private constructor(
         return if (fileText.isEmpty()) {
             mutableMapOf()
         } else {
-            json.decodeFromString(fileText)
+            Json.decodeFromString(fileText)
         }
     }
 
@@ -52,7 +47,7 @@ internal class FileDiskStorage private constructor(
         return if (fileText.isEmpty()) {
             null
         } else {
-            json.decodeFromString(fileText)
+            Json.decodeFromString(fileText)
         }
     }
 
@@ -70,13 +65,5 @@ internal class FileDiskStorage private constructor(
         fun forFiles(flagsFile: File, applyFile: File): DiskStorage {
             return FileDiskStorage(flagsFile, applyFile)
         }
-    }
-}
-
-internal val json = Json {
-    serializersModule = SerializersModule {
-        contextual(UUIDSerializer)
-        contextual(DateSerializer)
-        contextual(ConfidenceValueSerializer)
     }
 }

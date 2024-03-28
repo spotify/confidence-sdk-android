@@ -17,7 +17,7 @@ class Confidence private constructor(
     private val eventSenderEngine: EventSenderEngine,
     private val root: ConfidenceContextProvider,
     private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL
-) : ContextApi, EventSender {
+) : Contextual, EventSender {
     private val removedKeys = mutableListOf<String>()
     private val coroutineScope = CoroutineScope(dispatcher)
     private var contextMap: MutableMap<String, ConfidenceValue> = mutableMapOf()
@@ -35,7 +35,7 @@ class Confidence private constructor(
         val context = getContext().toMutableMap()
         val openFeatureContext = context["open_feature"]?.let { it as ConfidenceValue.Struct }
         openFeatureContext?.let {
-            context += it.value
+            context += it.map
         }
         context.remove("open_feature")
         return flagResolver.resolve(flags, context)

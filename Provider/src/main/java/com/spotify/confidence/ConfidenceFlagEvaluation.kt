@@ -58,18 +58,19 @@ internal fun <T> FlagResolution.getEvaluation(
 @Suppress("UNCHECKED_CAST")
 private fun <T> getTyped(v: ConfidenceValue): T? {
     return when (v) {
-        is ConfidenceValue.Boolean -> v.value as T
-        is ConfidenceValue.Double -> v.value as T
-        is ConfidenceValue.Int -> v.value as T
-        is ConfidenceValue.String -> v.value as T
+        is ConfidenceValue.Boolean -> v.boolean as T
+        is ConfidenceValue.Double -> v.double as T
+        is ConfidenceValue.Integer -> v.integer as T
+        is ConfidenceValue.String -> v.string as T
         is ConfidenceValue.Struct -> v as T
+        is ConfidenceValue.Date -> v as T
         is ConfidenceValue.Null -> v as T
     }
 }
 
 private fun findValueFromValuePath(value: ConfidenceValue.Struct, valuePath: List<String>): ConfidenceValue? {
     if (valuePath.isEmpty()) return value
-    val currValue = value.value[valuePath[0]]
+    val currValue = value.map[valuePath[0]]
     return when {
         currValue is ConfidenceValue.Struct -> {
             findValueFromValuePath(currValue, valuePath.subList(1, valuePath.count()))
