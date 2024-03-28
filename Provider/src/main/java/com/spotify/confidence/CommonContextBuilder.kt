@@ -16,7 +16,7 @@ import com.spotify.confidence.CommonContextKeys.SCREEN_DENSITY_KEY
 import com.spotify.confidence.CommonContextKeys.SCREEN_HEIGHT_KEY
 import com.spotify.confidence.CommonContextKeys.SCREEN_WIDTH_KEY
 
-fun Confidence.addCommonContext(context: Context): Confidence {
+internal fun Confidence.addCommonContext(context: Context): Confidence {
     val newContext = withContext(mapOf())
     with(newContext) {
         // OS and OS Version

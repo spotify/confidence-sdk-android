@@ -37,13 +37,7 @@ class Confidence private constructor(
     }
 
     internal suspend fun resolveFlags(flags: List<String>): Result<FlagResolution> {
-        val context = getContext().toMutableMap()
-        val openFeatureContext = context["open_feature"]?.let { it as ConfidenceValue.Struct }
-        openFeatureContext?.let {
-            context += it.map
-        }
-        context.remove("open_feature")
-        return flagResolver.resolve(flags, context)
+        return flagResolver.resolve(flags, getContext().openFeatureFlatten())
     }
 
     fun applyFlag(flagName: String, resolveToken: String) {
@@ -137,4 +131,14 @@ class Confidence private constructor(
             ).addCommonContext(context)
         }
     }
+}
+
+internal fun Map<String, ConfidenceValue>.openFeatureFlatten(): Map<String, ConfidenceValue> {
+    val context = toMutableMap()
+    val openFeatureContext = context["open_feature"]?.let { it as ConfidenceValue.Struct }
+    openFeatureContext?.let {
+        context += it.map
+    }
+    context.remove("open_feature")
+    return context
 }

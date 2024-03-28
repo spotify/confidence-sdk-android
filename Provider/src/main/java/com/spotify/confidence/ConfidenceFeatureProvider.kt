@@ -162,7 +162,7 @@ class ConfidenceFeatureProvider private constructor(
         return appliedFlagResolution.getEvaluation(
             key,
             defaultValue,
-            context.toConfidenceContext().map
+            confidenceAPI.getContext().openFeatureFlatten()
         ) { flagName, resolveToken ->
             confidenceAPI.applyFlag(flagName, resolveToken)
         }.toProviderEvaluation()
