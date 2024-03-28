@@ -106,6 +106,11 @@ internal object ConfidenceValueSerializer : KSerializer<ConfidenceValue> {
                 ConfidenceValue.Struct(value.map)
             )
 
+            is ConfidenceValue.List -> encoder.encodeSerializableValue(
+                ListSerializer(ConfidenceValueSerializer),
+                value.list
+            )
+
             is ConfidenceValue.Date -> encoder.encodeSerializableValue(
                 DateSerializer,
                 value.date

@@ -21,7 +21,7 @@ class Confidence private constructor(
     private val removedKeys = mutableListOf<String>()
     private val coroutineScope = CoroutineScope(dispatcher)
     private var contextMap: MutableMap<String, ConfidenceValue> = mutableMapOf()
-    internal val flagResolver by lazy {
+    private val flagResolver by lazy {
         RemoteFlagResolver(
             clientSecret,
             region,
