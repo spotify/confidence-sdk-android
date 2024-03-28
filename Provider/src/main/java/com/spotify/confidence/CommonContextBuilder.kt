@@ -2,19 +2,19 @@ package com.spotify.confidence
 
 import android.content.Context
 import android.os.Build
-import com.spotify.confidence.Constants.APP_BUILD_KEY
-import com.spotify.confidence.Constants.APP_NAMESPACE_KEY
-import com.spotify.confidence.Constants.APP_NAME_KEY
-import com.spotify.confidence.Constants.APP_VERSION_KEY
-import com.spotify.confidence.Constants.DEVICE_MANUFACTURER_KEY
-import com.spotify.confidence.Constants.DEVICE_MODEL_KEY
-import com.spotify.confidence.Constants.DEVICE_NAME_KEY
-import com.spotify.confidence.Constants.DEVICE_TYPE_KEY
-import com.spotify.confidence.Constants.OS_NAME_KEY
-import com.spotify.confidence.Constants.OS_VERSION_KEY
-import com.spotify.confidence.Constants.SCREEN_DENSITY_KEY
-import com.spotify.confidence.Constants.SCREEN_HEIGHT_KEY
-import com.spotify.confidence.Constants.SCREEN_WIDTH_KEY
+import com.spotify.confidence.CommonContextKeys.APP_BUILD_KEY
+import com.spotify.confidence.CommonContextKeys.APP_NAMESPACE_KEY
+import com.spotify.confidence.CommonContextKeys.APP_NAME_KEY
+import com.spotify.confidence.CommonContextKeys.APP_VERSION_KEY
+import com.spotify.confidence.CommonContextKeys.DEVICE_MANUFACTURER_KEY
+import com.spotify.confidence.CommonContextKeys.DEVICE_MODEL_KEY
+import com.spotify.confidence.CommonContextKeys.DEVICE_NAME_KEY
+import com.spotify.confidence.CommonContextKeys.DEVICE_TYPE_KEY
+import com.spotify.confidence.CommonContextKeys.OS_NAME_KEY
+import com.spotify.confidence.CommonContextKeys.OS_VERSION_KEY
+import com.spotify.confidence.CommonContextKeys.SCREEN_DENSITY_KEY
+import com.spotify.confidence.CommonContextKeys.SCREEN_HEIGHT_KEY
+import com.spotify.confidence.CommonContextKeys.SCREEN_WIDTH_KEY
 
 fun Confidence.addCommonContext(context: Context): Confidence {
     val newContext = withContext(mapOf())
