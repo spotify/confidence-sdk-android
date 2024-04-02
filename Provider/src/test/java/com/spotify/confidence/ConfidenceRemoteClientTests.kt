@@ -4,22 +4,22 @@ package com.spotify.confidence
 
 import com.spotify.confidence.client.AppliedFlag
 import com.spotify.confidence.client.Clock
+import com.spotify.confidence.client.ConfidenceRegion
 import com.spotify.confidence.client.FlagApplierClientImpl
 import com.spotify.confidence.client.Flags
 import com.spotify.confidence.client.ResolveFlags
 import com.spotify.confidence.client.ResolveReason
 import com.spotify.confidence.client.ResolveResponse
 import com.spotify.confidence.client.ResolvedFlag
-import com.spotify.confidence.client.Result
 import com.spotify.confidence.client.SdkMetadata
 import dev.openfeature.sdk.ImmutableContext
-import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -109,28 +109,30 @@ internal class ConfidenceRemoteClientTests {
                 .setResponseCode(200)
                 .setBody(jsonPayload)
         )
-        val parsedResponse = FlagApplierClientImpl(
+        val parsedResponse = RemoteFlagResolver(
+            clientSecret = "",
+            region = ConfidenceRegion.EUROPE,
             baseUrl = mockWebServer.url("/v1/flags:resolve"),
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
+            httpClient = OkHttpClient(),
+            sdkMetadata = SdkMetadata("", "")
         )
-            .resolve(listOf(), ImmutableContext("user1"))
+            .resolve(listOf(), ImmutableContext("user1").toConfidenceContext().map)
         val expectedFlags = Flags(
             listOf(
                 ResolvedFlag(
                     "test-kotlin-flag-1",
                     "flags/test-kotlin-flag-1/variants/variant-1",
-                    ImmutableStructure(
-                        mutableMapOf(
-                            "mystring" to Value.String("red"),
-                            "myboolean" to Value.Boolean(false),
-                            "myinteger" to Value.Integer(7),
-                            "mydouble" to Value.Double(3.14),
-                            "mynull" to Value.Null,
-                            "mydate" to Value.String(instant.toString()),
-                            "mystruct" to Value.Structure(
-                                mapOf(
-                                    "innerString" to Value.String("innerValue")
-                                )
+                    mutableMapOf(
+                        "mystring" to ConfidenceValue.String("red"),
+                        "myboolean" to ConfidenceValue.Boolean(false),
+                        "myinteger" to ConfidenceValue.Integer(7),
+                        "mydouble" to ConfidenceValue.Double(3.14),
+                        "mynull" to ConfidenceValue.Null,
+                        "mydate" to ConfidenceValue.String(instant.toString()),
+                        "mystruct" to ConfidenceValue.Struct(
+                            mapOf(
+                                "innerString" to ConfidenceValue.String("innerValue")
                             )
                         )
                     ),
@@ -167,11 +169,15 @@ internal class ConfidenceRemoteClientTests {
                 .setBody(jsonPayload)
         )
         val parsedResponse =
-            FlagApplierClientImpl(
+            RemoteFlagResolver(
+                clientSecret = "",
+                region = ConfidenceRegion.EUROPE,
                 baseUrl = mockWebServer.url("/v1/flags:resolve"),
-                dispatcher = testDispatcher
+                dispatcher = testDispatcher,
+                httpClient = OkHttpClient(),
+                sdkMetadata = SdkMetadata("", "")
             )
-                .resolve(listOf(), ImmutableContext("user1"))
+                .resolve(listOf(), ImmutableContext("user1").toConfidenceContext().map)
         val expectedParsed = ResolveFlags(
             Flags(
                 listOf(
@@ -217,21 +223,23 @@ internal class ConfidenceRemoteClientTests {
                 .setBody(jsonPayload)
         )
         val parsedResponse =
-            FlagApplierClientImpl(
+            RemoteFlagResolver(
+                clientSecret = "",
+                region = ConfidenceRegion.EUROPE,
                 baseUrl = mockWebServer.url("/v1/flags:resolve"),
-                dispatcher = testDispatcher
+                dispatcher = testDispatcher,
+                httpClient = OkHttpClient(),
+                sdkMetadata = SdkMetadata("", "")
             )
-                .resolve(listOf(), ImmutableContext("user1"))
+                .resolve(listOf(), ImmutableContext("user1").toConfidenceContext().map)
         val expectedParsed = ResolveFlags(
             Flags(
                 listOf(
                     ResolvedFlag(
                         "test-kotlin-flag-1",
                         "flags/test-kotlin-flag-1/variants/variant-1",
-                        ImmutableStructure(
-                            mutableMapOf(
-                                "mydouble" to Value.Double(3.0)
-                            )
+                        mutableMapOf(
+                            "mydouble" to ConfidenceValue.Double(3.0)
                         ),
                         ResolveReason.RESOLVE_REASON_MATCH
                     )
@@ -273,11 +281,15 @@ internal class ConfidenceRemoteClientTests {
         val ex = assertThrows(ParseError::class.java) {
             runTest {
                 val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-                FlagApplierClientImpl(
+                RemoteFlagResolver(
+                    clientSecret = "",
+                    region = ConfidenceRegion.EUROPE,
                     baseUrl = mockWebServer.url("/v1/flags:resolve"),
-                    dispatcher = testDispatcher
+                    dispatcher = testDispatcher,
+                    httpClient = OkHttpClient(),
+                    sdkMetadata = SdkMetadata("", "")
                 )
-                    .resolve(listOf(), ImmutableContext("user1"))
+                    .resolve(listOf(), ImmutableContext("user1").toConfidenceContext().map)
             }
         }
         assertEquals("Incompatible value \"myinteger\" for schema", ex.message)
@@ -314,11 +326,15 @@ internal class ConfidenceRemoteClientTests {
         val ex = assertThrows(ParseError::class.java) {
             runTest {
                 val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-                FlagApplierClientImpl(
+                RemoteFlagResolver(
+                    clientSecret = "",
+                    region = ConfidenceRegion.EUROPE,
                     baseUrl = mockWebServer.url("/v1/flags:resolve"),
-                    dispatcher = testDispatcher
+                    dispatcher = testDispatcher,
+                    httpClient = OkHttpClient(),
+                    sdkMetadata = SdkMetadata("", "")
                 )
-                    .resolve(listOf(), ImmutableContext("user1"))
+                    .resolve(listOf(), ImmutableContext("user1").toConfidenceContext().map)
             }
         }
         assertEquals("Couldn't find value \"myinteger\" in schema", ex.message)
@@ -352,11 +368,15 @@ internal class ConfidenceRemoteClientTests {
         val ex = assertThrows(ParseError::class.java) {
             runTest {
                 val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-                FlagApplierClientImpl(
+                RemoteFlagResolver(
+                    clientSecret = "",
+                    region = ConfidenceRegion.EUROPE,
                     baseUrl = mockWebServer.url("/v1/flags:resolve"),
-                    dispatcher = testDispatcher
+                    dispatcher = testDispatcher,
+                    httpClient = OkHttpClient(),
+                    sdkMetadata = SdkMetadata("", "")
                 )
-                    .resolve(listOf(), ImmutableContext("user1"))
+                    .resolve(listOf(), ImmutableContext("user1").toConfidenceContext().map)
             }
         }
         assertEquals("Unrecognized flag schema identifier: [WRONG-SCHEMA-IDENTIFIED]", ex.message)
@@ -391,11 +411,15 @@ internal class ConfidenceRemoteClientTests {
         val ex = assertThrows(ParseError::class.java) {
             runTest {
                 val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-                FlagApplierClientImpl(
+                RemoteFlagResolver(
+                    clientSecret = "",
+                    region = ConfidenceRegion.EUROPE,
                     baseUrl = mockWebServer.url("/v1/flags:resolve"),
-                    dispatcher = testDispatcher
+                    dispatcher = testDispatcher,
+                    httpClient = OkHttpClient(),
+                    sdkMetadata = SdkMetadata("", "")
                 )
-                    .resolve(listOf(), ImmutableContext("user1"))
+                    .resolve(listOf(), ImmutableContext("user1").toConfidenceContext().map)
             }
         }
         assertEquals("Unexpected flag name in resolve flag data: test-kotlin-flag-1", ex.message)
@@ -450,11 +474,13 @@ internal class ConfidenceRemoteClientTests {
             }
         }
 
-        FlagApplierClientImpl(
-            "secret1",
-            sdkMetadata,
-            mockWebServer.url("/v1/flags:resolve"),
-            dispatcher = testDispatcher
+        RemoteFlagResolver(
+            clientSecret = "secret1",
+            region = ConfidenceRegion.EUROPE,
+            baseUrl = mockWebServer.url("/v1/flags:resolve"),
+            dispatcher = testDispatcher,
+            httpClient = OkHttpClient(),
+            sdkMetadata = SdkMetadata("", "")
         )
             .resolve(
                 listOf("flag1", "flag2"),
@@ -475,7 +501,7 @@ internal class ConfidenceRemoteClientTests {
                         ),
                         "mystructure" to Value.Structure(mapOf("myinnerString" to Value.String("value")))
                     )
-                )
+                ).toConfidenceContext().map
             )
     }
 
@@ -544,7 +570,7 @@ internal class ConfidenceRemoteClientTests {
         )
             .apply(listOf(AppliedFlag("flag1", applyDate)), "token1")
 
-        assertEquals(Result.Success, result)
+        assertEquals(Result.Success(Unit), result)
     }
 
     @Test
@@ -569,6 +595,6 @@ internal class ConfidenceRemoteClientTests {
         )
             .apply(listOf(AppliedFlag("flag1", applyDate)), "token1")
 
-        assertEquals(Result.Failure, result)
+        assertEquals(Result.Failure(), result)
     }
 }

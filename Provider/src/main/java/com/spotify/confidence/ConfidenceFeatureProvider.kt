@@ -31,13 +31,13 @@ class ConfidenceFeatureProvider private constructor(
     override val hooks: List<Hook<*>>,
     override val metadata: ProviderMetadata,
     private val storage: DiskStorage,
+    private val providerCache: ProviderCache,
     private val initialisationStrategy: InitialisationStrategy,
     private val eventHandler: EventHandler,
-    private val confidenceAPI: Confidence,
+    private val confidence: Confidence,
     dispatcher: CoroutineDispatcher
 ) : FeatureProvider {
     private val job = SupervisorJob()
-    private lateinit var appliedFlagResolution: FlagResolution
 
     private val coroutineScope = CoroutineScope(job + dispatcher)
     private val networkExceptionHandler by lazy {
@@ -61,15 +61,15 @@ class ConfidenceFeatureProvider private constructor(
         strategy: InitialisationStrategy
     ) {
         // refresh cache with the last stored data
-        storage.read()?.let { appliedFlagResolution = it }
+        storage.read()?.let(providerCache::refresh)
 
         if (strategy == InitialisationStrategy.ActivateAndFetchAsync) {
             eventHandler.publish(OpenFeatureEvents.ProviderReady)
         }
 
         coroutineScope.launch(networkExceptionHandler) {
-            confidenceAPI.putContext("open_feature", initialContext.toConfidenceContext())
-            val resolveResponse = confidenceAPI.resolveFlags(listOf())
+            confidence.putContext("open_feature", initialContext.toConfidenceContext())
+            val resolveResponse = confidence.resolve(listOf())
             if (resolveResponse is Result.Success) {
                 // we store the flag anyways
                 storage.store(resolveResponse.data)
@@ -77,7 +77,7 @@ class ConfidenceFeatureProvider private constructor(
                 when (strategy) {
                     InitialisationStrategy.FetchAndActivate -> {
                         // refresh the cache from the stored data
-                        appliedFlagResolution = resolveResponse.data
+                        providerCache.refresh(resolveResponse.data)
                         eventHandler.publish(OpenFeatureEvents.ProviderReady)
                     }
 
@@ -166,12 +166,12 @@ class ConfidenceFeatureProvider private constructor(
         context: EvaluationContext?
     ): ProviderEvaluation<T> {
         context ?: throw InvalidContextError()
-        return appliedFlagResolution.getEvaluation(
+        return providerCache.get().getEvaluation(
             key,
             defaultValue,
-            confidenceAPI.getContext().openFeatureFlatten()
+            confidence.getContext().openFeatureFlatten()
         ) { flagName, resolveToken ->
-            confidenceAPI.applyFlag(flagName, resolveToken)
+            confidence.apply(flagName, resolveToken)
         }.toProviderEvaluation()
     }
     companion object {
@@ -193,6 +193,7 @@ class ConfidenceFeatureProvider private constructor(
             hooks: List<Hook<*>> = listOf(),
             metadata: ProviderMetadata = ConfidenceMetadata(),
             storage: DiskStorage? = null,
+            cache: ProviderCache = InMemoryCache(),
             eventHandler: EventHandler = EventHandler(Dispatchers.IO),
             dispatcher: CoroutineDispatcher = Dispatchers.IO
         ): ConfidenceFeatureProvider {
@@ -202,9 +203,10 @@ class ConfidenceFeatureProvider private constructor(
                 metadata = metadata,
                 storage = diskStorage,
                 initialisationStrategy = initialisationStrategy,
-                eventHandler,
-                confidence,
-                dispatcher
+                providerCache = cache,
+                eventHandler = eventHandler,
+                confidence = confidence,
+                dispatcher = dispatcher
             )
         }
     }
@@ -242,9 +244,9 @@ private fun <T> Evaluation<T>.toProviderEvaluation() = ProviderEvaluation(
 
 private fun ErrorCode?.toOFErrorCode() = when (this) {
     ErrorCode.FLAG_NOT_FOUND -> dev.openfeature.sdk.exceptions.ErrorCode.FLAG_NOT_FOUND
-    ErrorCode.RESOLVE_STALE -> dev.openfeature.sdk.exceptions.ErrorCode.PROVIDER_NOT_READY
     ErrorCode.INVALID_CONTEXT -> dev.openfeature.sdk.exceptions.ErrorCode.INVALID_CONTEXT
-    null -> null
+    else ->
+        dev.openfeature.sdk.exceptions.ErrorCode.PROVIDER_NOT_READY
 }
 
 sealed interface InitialisationStrategy {

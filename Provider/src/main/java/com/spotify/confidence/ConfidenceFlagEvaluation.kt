@@ -2,13 +2,21 @@ package com.spotify.confidence
 
 import com.spotify.confidence.client.ResolveReason
 
-internal fun <T> FlagResolution.getEvaluation(
+internal fun <T> FlagResolution?.getEvaluation(
     flag: String,
     defaultValue: T,
     context: Map<String, ConfidenceValue>,
     applyFlag: (String, String) -> Unit = { _, _ -> }
 ): Evaluation<T> {
     val parsedKey = FlagKey(flag)
+    if (this == null) {
+        return Evaluation(
+            value = defaultValue,
+            errorCode = ErrorCode.PROVIDER_NOT_READY,
+            reason = ResolveReason.RESOLVE_REASON_UNSPECIFIED
+        )
+    }
+    requireNotNull(this)
     val resolvedFlag = this.flags.firstOrNull { it.flag == parsedKey.flagName }
         ?: return Evaluation(
             value = defaultValue,
@@ -108,7 +116,8 @@ enum class ErrorCode {
 
     // The flag could not be found.
     FLAG_NOT_FOUND,
-    INVALID_CONTEXT
+    INVALID_CONTEXT,
+    PROVIDER_NOT_READY
 }
 
 class ParseError(message: String) : Error(message)

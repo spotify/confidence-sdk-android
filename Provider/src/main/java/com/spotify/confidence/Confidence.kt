@@ -2,8 +2,10 @@ package com.spotify.confidence
 
 import android.content.Context
 import com.spotify.confidence.apply.FlagApplierWithRetries
+import com.spotify.confidence.cache.DiskStorage
 import com.spotify.confidence.cache.FileDiskStorage
 import com.spotify.confidence.client.ConfidenceRegion
+import com.spotify.confidence.client.FlagApplierClient
 import com.spotify.confidence.client.FlagApplierClientImpl
 import com.spotify.confidence.client.SdkMetadata
 import kotlinx.coroutines.CoroutineDispatcher
@@ -14,33 +16,33 @@ import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import java.io.File
 
-class Confidence private constructor(
+class Confidence internal constructor(
     private val clientSecret: String,
     private val dispatcher: CoroutineDispatcher,
     private val eventSenderEngine: EventSenderEngine,
+    private val diskStorage: DiskStorage,
+    private val flagResolver: FlagResolver,
+    private val flagApplierClient: FlagApplierClient,
     private val root: ConfidenceContextProvider? = null,
-    private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
-    private val flagApplier: FlagApplierWithRetries
+    private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL
 ) : Contextual, EventSender {
     private val removedKeys = mutableListOf<String>()
     private val coroutineScope = CoroutineScope(dispatcher)
     private var contextMap: MutableMap<String, ConfidenceValue> = mutableMapOf()
 
-    private val flagResolver by lazy {
-        RemoteFlagResolver(
-            clientSecret,
-            region,
-            OkHttpClient(),
-            dispatcher,
-            SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION)
+    private val flagApplier by lazy {
+        FlagApplierWithRetries(
+            client = flagApplierClient,
+            dispatcher = dispatcher,
+            diskStorage = diskStorage
         )
     }
 
-    internal suspend fun resolveFlags(flags: List<String>): Result<FlagResolution> {
+    internal suspend fun resolve(flags: List<String>): Result<FlagResolution> {
         return flagResolver.resolve(flags, getContext().openFeatureFlatten())
     }
 
-    internal fun applyFlag(flagName: String, resolveToken: String) {
+    internal fun apply(flagName: String, resolveToken: String) {
         flagApplier.apply(flagName, resolveToken)
     }
 
@@ -70,9 +72,11 @@ class Confidence private constructor(
         clientSecret,
         dispatcher,
         eventSenderEngine,
+        diskStorage,
+        flagResolver,
+        flagApplierClient,
         this,
-        region,
-        flagApplier
+        region
     ).also {
         it.putContext(context)
     }
@@ -118,17 +122,22 @@ class Confidence private constructor(
                 region,
                 dispatcher
             )
-            val flagApplier = FlagApplierWithRetries(
-                client = flagApplierClient,
+
+            val flagResolver = RemoteFlagResolver(
+                clientSecret = clientSecret,
+                region = region,
+                httpClient = OkHttpClient(),
                 dispatcher = dispatcher,
-                diskStorage = FileDiskStorage.create(context)
+                sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION)
             )
             return Confidence(
                 clientSecret,
                 dispatcher,
                 engine,
                 region = region,
-                flagApplier = flagApplier
+                flagResolver = flagResolver,
+                diskStorage = FileDiskStorage.create(context),
+                flagApplierClient = flagApplierClient
             ).addCommonContext(context)
         }
     }

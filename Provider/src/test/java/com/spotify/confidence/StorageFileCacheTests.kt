@@ -5,13 +5,9 @@ package com.spotify.confidence
 import android.content.Context
 import com.spotify.confidence.client.FlagApplierClient
 import com.spotify.confidence.client.Flags
-import com.spotify.confidence.client.ResolveFlags
 import com.spotify.confidence.client.ResolveReason
-import com.spotify.confidence.client.ResolveResponse
 import com.spotify.confidence.client.ResolvedFlag
-import com.spotify.confidence.client.Result
 import dev.openfeature.sdk.ImmutableContext
-import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.events.awaitReadyOrError
@@ -30,25 +26,24 @@ import java.time.Instant
 
 class StorageFileCacheTests {
     private val instant = Instant.parse("2023-03-01T14:01:46.999Z")
+    private val confidence: Confidence = mock()
     private val resolvedFlags = Flags(
         listOf(
             ResolvedFlag(
                 "test-kotlin-flag-1",
                 "flags/test-kotlin-flag-1/variants/variant-1",
-                ImmutableStructure(
-                    mutableMapOf(
-                        "mystring" to Value.String("red"),
-                        "myboolean" to Value.Boolean(false),
-                        "myinteger" to Value.Integer(7),
-                        "mydouble" to Value.Double(3.14),
-                        "mydate" to Value.String(instant.toString()),
-                        "mystruct" to Value.Structure(
-                            mapOf(
-                                "innerString" to Value.String("innerValue")
-                            )
-                        ),
-                        "mynull" to Value.Null
-                    )
+                mutableMapOf(
+                    "mystring" to ConfidenceValue.String("red"),
+                    "myboolean" to ConfidenceValue.Boolean(false),
+                    "myinteger" to ConfidenceValue.Integer(7),
+                    "mydouble" to ConfidenceValue.Double(3.14),
+                    "mydate" to ConfidenceValue.String(instant.toString()),
+                    "mystruct" to ConfidenceValue.Struct(
+                        mapOf(
+                            "innerString" to ConfidenceValue.String("innerValue")
+                        )
+                    ),
+                    "mynull" to ConfidenceValue.Null
                 ),
                 ResolveReason.RESOLVE_REASON_MATCH
             )
@@ -65,29 +60,31 @@ class StorageFileCacheTests {
     @Test
     fun testOfflineScenarioLoadsStoredCache() = runTest {
         val mockClient: FlagApplierClient = mock()
-        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success(Unit))
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val cache1 = InMemoryCache()
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
-            ResolveResponse.Resolved(
-                ResolveFlags(resolvedFlags, "token1")
+        whenever(confidence.resolve(eq(listOf()))).thenReturn(
+            Result.Success(
+                FlagResolution(
+                    mapOf(),
+                    resolvedFlags.list,
+                    "token1"
+                )
             )
         )
         val provider1 = ConfidenceFeatureProvider.create(
             context = mockContext,
-            clientSecret = "",
-            client = mockClient,
+            confidence = confidence,
             cache = cache1
         )
         provider1.initialize(ImmutableContext(targetingKey = "user1"))
         provider1.awaitReadyOrError(testDispatcher)
 
         // Simulate offline scenario
-        whenever(mockClient.resolve(eq(listOf()), any())).thenThrow(Error())
+        whenever(confidence.resolve(eq(listOf()))).thenThrow(Error())
         val provider2 = ConfidenceFeatureProvider.create(
             context = mockContext,
-            clientSecret = "",
-            client = mockClient,
+            confidence = confidence,
             cache = InMemoryCache()
         )
         provider2.initialize(ImmutableContext("user1"))

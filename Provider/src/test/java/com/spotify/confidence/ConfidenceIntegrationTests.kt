@@ -6,7 +6,6 @@ import com.spotify.confidence.cache.FileDiskStorage
 import com.spotify.confidence.client.ResolveReason
 import com.spotify.confidence.client.ResolvedFlag
 import dev.openfeature.sdk.ImmutableContext
-import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
@@ -35,6 +34,8 @@ class ConfidenceIntegrationTests {
 
     @get:Rule
     var tmpFile = TemporaryFolder()
+
+    private val mockConfidence: Confidence = mock()
 
     @Before
     fun setup() {
@@ -65,17 +66,11 @@ class ConfidenceIntegrationTests {
                     "kotlin-test-flag",
                     variant = "flags/kotlin-test-flag/off",
                     reason = ResolveReason.RESOLVE_REASON_MATCH,
-                    value = ImmutableStructure(
-                        mapOf("my-integer" to Value.Integer(storedValue))
-                    )
+                    value = mapOf("my-integer" to ConfidenceValue.Integer(storedValue))
                 )
             )
 
-            store(
-                flags,
-                resolveToken,
-                context
-            )
+            store(FlagResolution(context.toConfidenceContext().map, flags, resolveToken))
         }
 
         val eventsHandler = EventHandler(Dispatchers.IO).apply {
@@ -83,8 +78,8 @@ class ConfidenceIntegrationTests {
         }
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
-                mockContext,
-                clientSecret,
+                context = mockContext,
+                confidence = mockConfidence,
                 storage = storage,
                 initialisationStrategy = InitialisationStrategy.ActivateAndFetchAsync,
                 eventHandler = eventsHandler
@@ -115,8 +110,8 @@ class ConfidenceIntegrationTests {
         }
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
-                mockContext,
-                clientSecret,
+                context = mockContext,
+                confidence = mockConfidence,
                 initialisationStrategy = InitialisationStrategy.FetchAndActivate,
                 eventHandler = eventsHandler
             ),
@@ -156,7 +151,11 @@ class ConfidenceIntegrationTests {
         val cacheFile = File(mockContext.filesDir, FLAGS_FILE_NAME)
         assertEquals(0L, cacheFile.length())
         OpenFeatureAPI.setProvider(
-            ConfidenceFeatureProvider.create(mockContext, clientSecret, eventHandler = eventsHandler),
+            ConfidenceFeatureProvider.create(
+                context = mockContext,
+                confidence = mockConfidence,
+                eventHandler = eventsHandler
+            ),
             ImmutableContext(
                 targetingKey = UUID.randomUUID().toString(),
                 attributes = mutableMapOf(

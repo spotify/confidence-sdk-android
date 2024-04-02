@@ -1,5 +1,6 @@
 package com.spotify.confidence.client
 
+import com.spotify.confidence.Result
 import com.spotify.confidence.client.network.ApplyFlagsInteractor
 import com.spotify.confidence.client.network.ApplyFlagsInteractorImpl
 import com.spotify.confidence.client.network.ApplyFlagsRequest
@@ -76,7 +77,7 @@ internal class FlagApplierClientImpl : FlagApplierClient {
         )
     }
 
-    override suspend fun apply(flags: List<AppliedFlag>, resolveToken: String): Result {
+    override suspend fun apply(flags: List<AppliedFlag>, resolveToken: String): Result<Unit> {
         val request = ApplyFlagsRequest(
             flags.map { AppliedFlag("flags/${it.flag}", it.applyTime) },
             clock.currentTime(),
@@ -86,12 +87,12 @@ internal class FlagApplierClientImpl : FlagApplierClient {
         )
         val result = applyInteractor(request).runCatching {
             if (isSuccessful) {
-                Result.Success
+                Result.Success(Unit)
             } else {
-                Result.Failure
+                Result.Failure()
             }
         }.getOrElse {
-            Result.Failure
+            Result.Failure()
         }
 
         return result

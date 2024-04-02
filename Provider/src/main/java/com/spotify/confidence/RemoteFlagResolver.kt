@@ -14,6 +14,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import okhttp3.Headers
+import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -27,8 +28,9 @@ internal class RemoteFlagResolver(
     private val clientSecret: String,
     private val region: ConfidenceRegion,
     private val httpClient: OkHttpClient,
+    private val sdkMetadata: SdkMetadata,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
-    private val sdkMetadata: SdkMetadata
+    private val baseUrl: HttpUrl? = null
 ) : FlagResolver {
     private val headers = Headers.headersOf(
         "Content-Type",
@@ -63,7 +65,7 @@ internal class RemoteFlagResolver(
         }
     }
 
-    private fun baseUrl() = when (region) {
+    private fun baseUrl() = baseUrl ?: when (region) {
         ConfidenceRegion.GLOBAL -> "https://resolver.confidence.dev"
         ConfidenceRegion.EUROPE -> "https://resolver.eu.confidence.dev"
         ConfidenceRegion.USA -> "https://resolver.us.confidence.dev"

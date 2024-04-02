@@ -37,11 +37,10 @@ class EventSenderIntegrationTest {
     fun emitting_an_event_writes_to_file() = runTest {
         val eventStorage = EventStorageImpl(mockContext)
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        eventSender = EventSenderImpl.create(
+        eventSender = Confidence.create(
             mockContext,
             clientSecret,
-            dispatcher = testDispatcher,
-            confidenceContext = CommonContext()
+            dispatcher = testDispatcher
         )
         val eventSender = this@EventSenderIntegrationTest.eventSender
         val eventCount = 4
@@ -92,10 +91,13 @@ class EventSenderIntegrationTest {
             dispatcher = testDispatcher,
             uploader = uploader
         )
-        eventSender = EventSenderImpl(
-            engine,
+        eventSender = Confidence(
+            eventSenderEngine = engine,
             dispatcher = testDispatcher,
-            confidenceContext = CommonContext()
+            diskStorage = mock(),
+            clientSecret = "",
+            flagApplierClient = mock(),
+            flagResolver = mock()
         )
         val eventSender = this@EventSenderIntegrationTest.eventSender
         val eventCount = 4 * batchSize + 2
@@ -154,10 +156,13 @@ class EventSenderIntegrationTest {
             dispatcher = testDispatcher,
             uploader = uploader
         )
-        eventSender = EventSenderImpl(
-            engine,
+        eventSender = Confidence(
+            eventSenderEngine = engine,
             dispatcher = testDispatcher,
-            confidenceContext = CommonContext()
+            diskStorage = mock(),
+            clientSecret = "",
+            flagApplierClient = mock(),
+            flagResolver = mock()
         )
         val eventSender = this@EventSenderIntegrationTest.eventSender
         val eventCount = 4 * batchSize + 2

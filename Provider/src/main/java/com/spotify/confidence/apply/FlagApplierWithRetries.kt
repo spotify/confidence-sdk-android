@@ -1,10 +1,10 @@
 package com.spotify.confidence.apply
 
 import com.spotify.confidence.EventProcessor
+import com.spotify.confidence.Result
 import com.spotify.confidence.cache.DiskStorage
 import com.spotify.confidence.client.AppliedFlag
 import com.spotify.confidence.client.FlagApplierClient
-import com.spotify.confidence.client.Result
 import com.spotify.confidence.client.serializers.DateSerializer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -23,7 +23,7 @@ data class FlagApplierInput(
 data class FlagApplierBatchProcessedInput(
     val resolveToken: String,
     val flags: List<AppliedFlag>,
-    val result: Result
+    val result: Result<Unit>
 )
 
 enum class EventStatus {
