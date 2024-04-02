@@ -9,12 +9,10 @@ import com.spotify.confidence.client.FlagApplierClientImpl
 import com.spotify.confidence.client.Flags
 import com.spotify.confidence.client.ResolveFlags
 import com.spotify.confidence.client.ResolveReason
-import com.spotify.confidence.client.ResolveResponse
 import com.spotify.confidence.client.ResolvedFlag
 import com.spotify.confidence.client.SdkMetadata
 import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.Value
-import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -26,6 +24,7 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.mock
@@ -144,7 +143,7 @@ internal class ConfidenceRemoteClientTests {
             expectedFlags,
             "token1"
         )
-        assertEquals(expectedParsed, (parsedResponse as ResolveResponse.Resolved).flags)
+        assertEquals(expectedParsed.resolvedFlags.list, (parsedResponse as Result.Success<FlagResolution>).data.flags)
     }
 
     @Test
@@ -176,8 +175,7 @@ internal class ConfidenceRemoteClientTests {
                 dispatcher = testDispatcher,
                 httpClient = OkHttpClient(),
                 sdkMetadata = SdkMetadata("", "")
-            )
-                .resolve(listOf(), ImmutableContext("user1").toConfidenceContext().map)
+            ).resolve(listOf(), ImmutableContext("user1").toConfidenceContext().map)
         val expectedParsed = ResolveFlags(
             Flags(
                 listOf(
@@ -190,7 +188,8 @@ internal class ConfidenceRemoteClientTests {
             ),
             "token1"
         )
-        assertEquals(expectedParsed, (parsedResponse as ResolveResponse.Resolved).flags)
+        assertEquals(expectedParsed.resolvedFlags.list, (parsedResponse as Result.Success<FlagResolution>).data.flags)
+        assertEquals(expectedParsed.resolveToken, parsedResponse.data.resolveToken)
     }
 
     @Test
@@ -247,7 +246,7 @@ internal class ConfidenceRemoteClientTests {
             ),
             "token1"
         )
-        assertEquals(expectedParsed, (parsedResponse as ResolveResponse.Resolved).flags)
+        assertEquals(expectedParsed.resolvedFlags.list, (parsedResponse as Result.Success<FlagResolution>).data.flags)
     }
 
     @Test
@@ -480,7 +479,7 @@ internal class ConfidenceRemoteClientTests {
             baseUrl = mockWebServer.url("/v1/flags:resolve"),
             dispatcher = testDispatcher,
             httpClient = OkHttpClient(),
-            sdkMetadata = SdkMetadata("", "")
+            sdkMetadata = SdkMetadata("SDK_ID_KOTLIN_PROVIDER_TEST", "")
         )
             .resolve(
                 listOf("flag1", "flag2"),
@@ -595,6 +594,6 @@ internal class ConfidenceRemoteClientTests {
         )
             .apply(listOf(AppliedFlag("flag1", applyDate)), "token1")
 
-        assertEquals(Result.Failure(), result)
+        assertTrue(result is Result.Failure)
     }
 }

@@ -40,7 +40,7 @@ internal class RemoteFlagResolver(
     )
     override suspend fun resolve(flags: List<String>, context: Map<String, ConfidenceValue>): Result<FlagResolution> {
         val sdk = Sdk(sdkMetadata.sdkId, sdkMetadata.sdkVersion)
-        val request = ResolveFlagsRequest(flags, context, clientSecret, false, sdk)
+        val request = ResolveFlagsRequest(flags.map { "flags/$it" }, context, clientSecret, false, sdk)
 
         val response = withContext(dispatcher) {
             val jsonRequest = Json.encodeToString(request)
