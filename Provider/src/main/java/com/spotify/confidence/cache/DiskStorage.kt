@@ -5,7 +5,7 @@ import com.spotify.confidence.apply.ApplyInstance
 
 interface DiskStorage {
     fun store(flagResolution: FlagResolution)
-    fun read(): FlagResolution?
+    fun read(): FlagResolution
 
     fun clear()
     fun writeApplyData(applyData: Map<String, MutableMap<String, ApplyInstance>>)

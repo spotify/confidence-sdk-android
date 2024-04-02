@@ -84,7 +84,7 @@ class EventSenderIntegrationTest {
                 return false
             }
         }
-        val engine = EventSenderEngine(
+        val engine = EventSenderEngineImpl(
             eventStorage,
             clientSecret,
             flushPolicies = listOf(flushPolicy),
@@ -149,7 +149,7 @@ class EventSenderIntegrationTest {
                 return true
             }
         }
-        val engine = EventSenderEngine(
+        val engine = EventSenderEngineImpl(
             eventStorage,
             clientSecret,
             flushPolicies = listOf(flushPolicy),

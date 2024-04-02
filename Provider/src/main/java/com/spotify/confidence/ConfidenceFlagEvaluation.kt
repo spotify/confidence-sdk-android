@@ -12,21 +12,26 @@ internal fun <T> FlagResolution?.getEvaluation(
     if (this == null) {
         return Evaluation(
             value = defaultValue,
-            errorCode = ErrorCode.PROVIDER_NOT_READY,
-            reason = ResolveReason.RESOLVE_REASON_UNSPECIFIED
+            reason = ResolveReason.ERROR,
+            errorCode = ErrorCode.PROVIDER_NOT_READY
         )
     }
     requireNotNull(this)
     val resolvedFlag = this.flags.firstOrNull { it.flag == parsedKey.flagName }
-        ?: return Evaluation(
-            value = defaultValue,
-            reason = ResolveReason.RESOLVE_REASON_UNSPECIFIED,
-            errorCode = ErrorCode.FLAG_NOT_FOUND
+        ?: throw FlagNotFoundError(
+            "Could not find flag named: ${parsedKey.flagName}"
         )
 
     // TODO revisit where to apply flags
     if (resolvedFlag.reason != ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR) {
         applyFlag(parsedKey.flagName, resolveToken)
+    } else {
+        return Evaluation(
+            value = defaultValue,
+            reason = ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR,
+            errorMessage = "Invalid targeting key",
+            errorCode = ErrorCode.INVALID_CONTEXT
+        )
     }
 
     // handle stale case
@@ -40,10 +45,15 @@ internal fun <T> FlagResolution?.getEvaluation(
 
     // handle flag found
     val flagValue = resolvedFlag.value
-    val resolvedValue: ConfidenceValue = findValueFromValuePath(ConfidenceValue.Struct(flagValue), parsedKey.valuePath)
-        ?: throw ParseError(
-            "Unable to parse flag value: ${parsedKey.valuePath.joinToString(separator = "/")}"
-        )
+    val resolvedValue: ConfidenceValue =
+        findValueFromValuePath(ConfidenceValue.Struct(flagValue), parsedKey.valuePath)
+            ?: if (resolvedFlag.reason == ResolveReason.RESOLVE_REASON_MATCH) {
+                throw ParseError(
+                    "Unable to parse flag value: ${parsedKey.valuePath}"
+                )
+            } else {
+                return Evaluation(value = defaultValue, reason = ResolveReason.DEFAULT)
+            }
 
     return when (resolvedFlag.reason) {
         ResolveReason.RESOLVE_REASON_MATCH -> {
@@ -79,7 +89,7 @@ private fun <T> getTyped(v: ConfidenceValue): T? {
         is ConfidenceValue.Struct -> v as T
         is ConfidenceValue.Date -> v as T
         is ConfidenceValue.List -> v as T
-        is ConfidenceValue.Null -> v as T
+        is ConfidenceValue.Null -> null
     }
 }
 
@@ -121,3 +131,4 @@ enum class ErrorCode {
 }
 
 class ParseError(message: String) : Error(message)
+class FlagNotFoundError(message: String) : Error(message)

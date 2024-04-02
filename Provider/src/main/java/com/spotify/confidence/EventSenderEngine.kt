@@ -13,14 +13,21 @@ import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import java.io.File
 
-internal class EventSenderEngine(
+internal interface EventSenderEngine {
+    fun onLowMemoryChannel(): Channel<List<File>>
+    fun emit(definition: String, payload: ConfidenceFieldsType, context: Map<String, ConfidenceValue>)
+
+    fun stop()
+}
+
+internal class EventSenderEngineImpl(
     private val eventStorage: EventStorage,
     private val clientSecret: String,
     private val uploader: EventSenderUploader,
     private val flushPolicies: List<FlushPolicy> = listOf(),
     private val clock: Clock = Clock.CalendarBacked.systemUTC(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
-) {
+) : EventSenderEngine {
     private val writeReqChannel: Channel<Event> = Channel()
     private val sendChannel: Channel<String> = Channel()
     private val coroutineScope by lazy {
@@ -71,10 +78,10 @@ internal class EventSenderEngine(
         }
     }
 
-    fun onLowMemoryChannel(): Channel<List<File>> {
+    override fun onLowMemoryChannel(): Channel<List<File>> {
         return eventStorage.onLowMemoryChannel()
     }
-    fun emit(definition: String, payload: ConfidenceFieldsType, context: Map<String, ConfidenceValue>) {
+    override fun emit(definition: String, payload: ConfidenceFieldsType, context: Map<String, ConfidenceValue>) {
         coroutineScope.launch {
             val event = Event(
                 eventDefinition = definition,
@@ -86,7 +93,7 @@ internal class EventSenderEngine(
         }
     }
 
-    fun stop() {
+    override fun stop() {
         coroutineScope.cancel()
         eventStorage.stop()
     }
@@ -101,7 +108,7 @@ internal class EventSenderEngine(
             dispatcher: CoroutineDispatcher = Dispatchers.IO
         ): EventSenderEngine {
             return Instance ?: run {
-                EventSenderEngine(
+                EventSenderEngineImpl(
                     EventStorageImpl(context),
                     clientSecret,
                     uploader = EventSenderUploaderImpl(OkHttpClient(), dispatcher),

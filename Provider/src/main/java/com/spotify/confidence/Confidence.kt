@@ -30,13 +30,11 @@ class Confidence internal constructor(
     private val coroutineScope = CoroutineScope(dispatcher)
     private var contextMap: MutableMap<String, ConfidenceValue> = mutableMapOf()
 
-    private val flagApplier by lazy {
-        FlagApplierWithRetries(
-            client = flagApplierClient,
-            dispatcher = dispatcher,
-            diskStorage = diskStorage
-        )
-    }
+    private val flagApplier = FlagApplierWithRetries(
+        client = flagApplierClient,
+        dispatcher = dispatcher,
+        diskStorage = diskStorage
+    )
 
     internal suspend fun resolve(flags: List<String>): Result<FlagResolution> {
         return flagResolver.resolve(flags, getContext().openFeatureFlatten())
@@ -110,7 +108,7 @@ class Confidence internal constructor(
             region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
             dispatcher: CoroutineDispatcher = Dispatchers.IO
         ): Confidence {
-            val engine = EventSenderEngine.instance(
+            val engine = EventSenderEngineImpl.instance(
                 context,
                 clientSecret,
                 flushPolicies = listOf(confidenceSizeFlushPolicy),

@@ -15,9 +15,9 @@ data class Evaluation<T>(
 
 @Serializable
 data class FlagResolution(
-    val context: ConfidenceValueMap,
-    val flags: List<ResolvedFlag>,
-    val resolveToken: String
+    val context: ConfidenceValueMap = mapOf(),
+    val flags: List<ResolvedFlag> = listOf(),
+    val resolveToken: String = ""
 )
 
 sealed class Result<out T> {

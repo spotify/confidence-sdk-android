@@ -13,7 +13,9 @@ import android.content.Context
 import com.spotify.confidence.apply.EventStatus
 import com.spotify.confidence.apply.FlagsAppliedMap
 import com.spotify.confidence.cache.APPLY_FILE_NAME
+import com.spotify.confidence.cache.FileDiskStorage
 import com.spotify.confidence.client.AppliedFlag
+import com.spotify.confidence.client.ConfidenceRegion
 import com.spotify.confidence.client.ConfidenceValueMap
 import com.spotify.confidence.client.FlagApplierClient
 import com.spotify.confidence.client.Flags
@@ -24,9 +26,8 @@ import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.events.EventHandler
 import dev.openfeature.sdk.exceptions.ErrorCode
-import dev.openfeature.sdk.exceptions.OpenFeatureError.FlagNotFoundError
-import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
 import junit.framework.TestCase.assertEquals
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -76,7 +77,7 @@ private const val cacheFileData = "{\n" +
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class ConfidenceFeatureProviderTests {
     private val flagApplierClient: FlagApplierClient = mock()
-    private val mockConfidence: Confidence = mock()
+    private val flagResolverClient: FlagResolver = mock()
     private val mockContext: Context = mock()
     private val instant = Instant.parse("2023-03-01T14:01:46.645Z")
     private val blueStringValues = mutableMapOf(
@@ -111,10 +112,21 @@ internal class ConfidenceFeatureProviderTests {
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
     }
 
+    private fun getConfidence(dispatcher: CoroutineDispatcher): Confidence = Confidence(
+        clientSecret = "",
+        dispatcher = dispatcher,
+        eventSenderEngine = mock(),
+        flagResolver = flagResolverClient,
+        flagApplierClient = flagApplierClient,
+        diskStorage = FileDiskStorage.create(mockContext),
+        region = ConfidenceRegion.EUROPE
+    )
+
     @Test
     fun testMatching() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val eventHandler = EventHandler(testDispatcher)
+        val mockConfidence = getConfidence(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             confidence = mockConfidence,
@@ -122,7 +134,12 @@ internal class ConfidenceFeatureProviderTests {
             dispatcher = testDispatcher
         )
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
-        whenever(mockConfidence.resolve(eq(listOf()))).thenReturn(
+        whenever(
+            flagResolverClient.resolve(
+                eq(listOf()),
+                eq(ImmutableContext("foo").toConfidenceContext().map)
+            )
+        ).thenReturn(
             Result.Success(
                 FlagResolution(
                     ImmutableContext("foo").toConfidenceContext().map,
@@ -133,7 +150,11 @@ internal class ConfidenceFeatureProviderTests {
         )
         confidenceFeatureProvider.initialize(ImmutableContext("foo"))
         advanceUntilIdle()
-        verify(mockConfidence, times(1)).resolve(any())
+        verify(flagResolverClient, times(1))
+            .resolve(
+                any(),
+                eq(ImmutableContext("foo").toConfidenceContext().map)
+            )
         val evalString = confidenceFeatureProvider.getStringEvaluation(
             "test-kotlin-flag-1.mystring",
             "default",
@@ -176,7 +197,7 @@ internal class ConfidenceFeatureProviderTests {
         )
 
         advanceUntilIdle()
-        verify(mockConfidence, times(1)).apply(any(), eq("token1"))
+        verify(flagApplierClient, times(1)).apply(any(), eq("token1"))
 
         assertEquals("red", evalString.value)
         assertEquals(false, evalBool.value)
@@ -230,6 +251,7 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testDelayedApply() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val mockConfidence = getConfidence(testDispatcher)
         val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
@@ -238,10 +260,11 @@ internal class ConfidenceFeatureProviderTests {
             dispatcher = testDispatcher
         )
         val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
-        whenever(mockConfidence.resolve(eq(listOf()))).thenReturn(
+        val context = ImmutableContext("foo").toConfidenceContext().map
+        whenever(flagResolverClient.resolve(eq(listOf()), eq(context))).thenReturn(
             Result.Success(
                 FlagResolution(
-                    ImmutableContext("foo").toConfidenceContext().map,
+                    context,
                     resolvedFlags.list,
                     "token1"
                 )
@@ -253,7 +276,7 @@ internal class ConfidenceFeatureProviderTests {
         confidenceFeatureProvider.initialize(evaluationContext)
         advanceUntilIdle()
 
-        verify(mockConfidence, times(1)).resolve(any())
+        verify(flagResolverClient, times(1)).resolve(any(), eq(context))
 
         val evalString = confidenceFeatureProvider.getStringEvaluation(
             "test-kotlin-flag-1.mystring",
@@ -297,7 +320,7 @@ internal class ConfidenceFeatureProviderTests {
         )
 
         advanceUntilIdle()
-        verify(mockConfidence, times(8)).apply(any(), eq("token1"))
+        verify(flagApplierClient, times(8)).apply(any(), eq("token1"))
         val expectedStatus = Json.decodeFromString<FlagsAppliedMap>(cacheFile.readText())["token1"]
             ?.get("test-kotlin-flag-1")?.eventStatus
         assertEquals(EventStatus.CREATED, expectedStatus)
@@ -369,6 +392,7 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testNewContextFetchValuesAgain() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val mockConfidence = getConfidence(testDispatcher)
         val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
@@ -379,11 +403,13 @@ internal class ConfidenceFeatureProviderTests {
 
         val evaluationContext1 = ImmutableContext("foo")
         val evaluationContext2 = ImmutableContext("bar")
+        val context1 = ImmutableContext("foo").toConfidenceContext().map
+        val context2 = ImmutableContext("bar").toConfidenceContext().map
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
-        whenever(mockConfidence.resolve(eq(listOf()))).thenReturn(
+        whenever(flagResolverClient.resolve(eq(listOf()), eq(context1))).thenReturn(
             Result.Success(
                 FlagResolution(
-                    evaluationContext1.toConfidenceContext().map,
+                    context1,
                     resolvedFlags.list,
                     "token1"
                 )
@@ -392,10 +418,10 @@ internal class ConfidenceFeatureProviderTests {
 
         val newExpectedValue =
             resolvedFlags.list[0].copy(value = blueStringValues)
-        whenever(mockConfidence.resolve(eq(listOf()))).thenReturn(
+        whenever(flagResolverClient.resolve(eq(listOf()), eq(context2))).thenReturn(
             Result.Success(
                 FlagResolution(
-                    evaluationContext2.toConfidenceContext().map,
+                    context2,
                     listOf(newExpectedValue),
                     "token1"
                 )
@@ -424,6 +450,7 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testApplyOnMultipleEvaluations() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val mockConfidence = getConfidence(testDispatcher)
         val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
@@ -437,10 +464,12 @@ internal class ConfidenceFeatureProviderTests {
         val evaluationContext1 = ImmutableContext("foo")
         val evaluationContext2 = ImmutableContext("bar")
 
-        whenever(mockConfidence.resolve(eq(listOf()))).thenReturn(
+        val context1 = ImmutableContext("foo").toConfidenceContext().map
+
+        whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(
                 FlagResolution(
-                    mapOf(),
+                    evaluationContext1.toConfidenceContext().map,
                     resolvedFlags.list,
                     "token1"
                 )
@@ -448,7 +477,7 @@ internal class ConfidenceFeatureProviderTests {
         )
         confidenceFeatureProvider.initialize(evaluationContext1)
         advanceUntilIdle()
-        verify(mockConfidence, times(1)).resolve(any())
+        verify(flagResolverClient, times(1)).resolve(any(), eq(context1))
 
         val evalString1 = confidenceFeatureProvider.getStringEvaluation(
             "test-kotlin-flag-1.mystring",
@@ -463,7 +492,7 @@ internal class ConfidenceFeatureProviderTests {
         )
 
         advanceUntilIdle()
-        verify(mockConfidence, times(1)).apply(any(), eq("token1"))
+        verify(flagApplierClient, times(1)).apply(any(), eq("token1"))
         assertEquals(0, Json.parseToJsonElement(cacheFile.readText()).jsonObject.size)
 
         val captor1 = argumentCaptor<List<AppliedFlag>>()
@@ -477,10 +506,10 @@ internal class ConfidenceFeatureProviderTests {
         assertNull(evalString1.errorMessage)
         assertNull(evalString1.errorCode)
 
-        whenever(mockConfidence.resolve(eq(listOf()))).thenReturn(
+        whenever(flagResolverClient.resolve(eq(listOf()), eq(evaluationContext2.toConfidenceContext().map))).thenReturn(
             Result.Success(
                 FlagResolution(
-                    evaluationContext1.toConfidenceContext().map,
+                    evaluationContext2.toConfidenceContext().map,
                     resolvedFlags.list,
                     "token2"
                 )
@@ -488,7 +517,8 @@ internal class ConfidenceFeatureProviderTests {
         )
         confidenceFeatureProvider.onContextSet(evaluationContext1, evaluationContext2)
         advanceUntilIdle()
-        verify(mockConfidence, times(1)).resolve(any())
+        verify(flagResolverClient, times(1))
+            .resolve(any(), eq(evaluationContext2.toConfidenceContext().map))
 
         // Third evaluation with different context should trigger apply
         val evalString2 = confidenceFeatureProvider.getStringEvaluation(
@@ -520,6 +550,7 @@ internal class ConfidenceFeatureProviderTests {
         )
 
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val mockConfidence = getConfidence(testDispatcher)
         val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
@@ -528,10 +559,10 @@ internal class ConfidenceFeatureProviderTests {
             dispatcher = testDispatcher
         )
 
-        whenever(mockConfidence.resolve(eq(listOf()))).thenReturn(
+        whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(
                 FlagResolution(
-                    mapOf(),
+                    ImmutableContext("foo").toConfidenceContext().map,
                     resolvedFlags.list,
                     "token1"
                 )
@@ -543,7 +574,7 @@ internal class ConfidenceFeatureProviderTests {
         confidenceFeatureProvider.initialize(evaluationContext)
         advanceUntilIdle()
 
-        verify(mockConfidence, times(1)).resolve(any())
+        verify(flagResolverClient, times(1)).resolve(any(), any())
 
         confidenceFeatureProvider.getStringEvaluation(
             "test-kotlin-flag-1.mystring",
@@ -551,7 +582,7 @@ internal class ConfidenceFeatureProviderTests {
             evaluationContext
         )
         advanceUntilIdle()
-        verify(mockConfidence, times(1)).apply(any(), eq("token1"))
+        verify(flagApplierClient, times(1)).apply(any(), eq("token1"))
     }
 
     @Test
@@ -562,6 +593,7 @@ internal class ConfidenceFeatureProviderTests {
         )
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val mockConfidence = getConfidence(testDispatcher)
         val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
@@ -570,10 +602,10 @@ internal class ConfidenceFeatureProviderTests {
             dispatcher = testDispatcher
         )
 
-        whenever(mockConfidence.resolve(eq(listOf()))).thenReturn(
+        whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(
                 FlagResolution(
-                    mapOf(),
+                    ImmutableContext("foo").toConfidenceContext().map,
                     resolvedFlags.list,
                     "token1"
                 )
@@ -584,7 +616,7 @@ internal class ConfidenceFeatureProviderTests {
         confidenceFeatureProvider.initialize(evaluationContext)
         advanceUntilIdle()
 
-        verify(mockConfidence, times(1)).resolve(any())
+        verify(flagResolverClient, times(1)).resolve(any(), any())
 
         confidenceFeatureProvider.getStringEvaluation(
             "test-kotlin-flag-1.mystring",
@@ -592,7 +624,7 @@ internal class ConfidenceFeatureProviderTests {
             evaluationContext
         )
         advanceUntilIdle()
-        verify(mockConfidence, times(1)).apply(any(), eq("token1"))
+        verify(flagApplierClient, times(1)).apply(any(), eq("token1"))
     }
 
     @Test
@@ -601,8 +633,9 @@ internal class ConfidenceFeatureProviderTests {
         cacheFile.writeText(
             "{\"token1\":{\"test-kotlin-flag-1\":{\"time\":\"2023-06-26T11:55:33.184774Z\",\"eventStatus\":\"CREATED\"}}}"
         )
-        whenever(mockConfidence.apply(any(), any())).then { }
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val mockConfidence = getConfidence(testDispatcher)
+        whenever(flagApplierClient.apply(any(), any())).then { }
         val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
@@ -611,10 +644,10 @@ internal class ConfidenceFeatureProviderTests {
             dispatcher = testDispatcher
         )
 
-        whenever(mockConfidence.resolve(eq(listOf()))).thenReturn(
+        whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(
                 FlagResolution(
-                    mapOf(),
+                    ImmutableContext("foo").toConfidenceContext().map,
                     resolvedFlags.list,
                     "token1"
                 )
@@ -625,7 +658,7 @@ internal class ConfidenceFeatureProviderTests {
         confidenceFeatureProvider.initialize(evaluationContext)
         advanceUntilIdle()
 
-        verify(mockConfidence, times(1)).resolve(any())
+        verify(flagResolverClient, times(1)).resolve(any(), any())
 
         confidenceFeatureProvider.getStringEvaluation(
             "test-kotlin-flag-1.mystring",
@@ -639,7 +672,7 @@ internal class ConfidenceFeatureProviderTests {
             evaluationContext
         )
         advanceUntilIdle()
-        verify(mockConfidence, times(1)).apply(any(), eq("token1"))
+        verify(flagApplierClient, times(1)).apply(any(), eq("token1"))
     }
 
     @Test
@@ -651,6 +684,7 @@ internal class ConfidenceFeatureProviderTests {
 
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Failure())
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val mockConfidence = getConfidence(testDispatcher)
         val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
@@ -659,10 +693,10 @@ internal class ConfidenceFeatureProviderTests {
             dispatcher = testDispatcher
         )
 
-        whenever(mockConfidence.resolve(eq(listOf()))).thenReturn(
+        whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(
                 FlagResolution(
-                    mapOf(),
+                    ImmutableContext("foo").toConfidenceContext().map,
                     resolvedFlags.list,
                     "token1"
                 )
@@ -673,7 +707,7 @@ internal class ConfidenceFeatureProviderTests {
         confidenceFeatureProvider.initialize(evaluationContext)
         advanceUntilIdle()
 
-        verify(mockConfidence, times(1)).resolve(any())
+        verify(flagResolverClient, times(1)).resolve(any(), any())
 
         confidenceFeatureProvider.getStringEvaluation(
             "test-kotlin-flag-1.mystring",
@@ -687,7 +721,7 @@ internal class ConfidenceFeatureProviderTests {
             evaluationContext
         )
         advanceUntilIdle()
-        verify(mockConfidence, times(3)).apply(any(), eq("token1"))
+        verify(flagApplierClient, times(3)).apply(any(), eq("token1"))
     }
 
     @Test
@@ -696,6 +730,7 @@ internal class ConfidenceFeatureProviderTests {
         cacheFile.writeText(cacheFileData)
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val mockConfidence = getConfidence(testDispatcher)
         val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
@@ -704,12 +739,12 @@ internal class ConfidenceFeatureProviderTests {
             dispatcher = testDispatcher
         )
 
-        whenever(mockConfidence.resolve(eq(listOf()))).thenReturn(
+        whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(
                 FlagResolution(
-                    mapOf(),
+                    ImmutableContext("foo").toConfidenceContext().map,
                     resolvedFlags.list,
-                    "token1"
+                    "token2"
                 )
             )
         )
@@ -725,9 +760,9 @@ internal class ConfidenceFeatureProviderTests {
         )
 
         advanceUntilIdle()
-        verify(mockConfidence, times(0)).apply(any(), eq("token1"))
-        verify(mockConfidence, times(2)).apply(any(), eq("token2"))
-        verify(mockConfidence, times(1)).apply(any(), eq("token3"))
+        verify(flagApplierClient, times(0)).apply(any(), eq("token1"))
+        verify(flagApplierClient, times(2)).apply(any(), eq("token2"))
+        verify(flagApplierClient, times(1)).apply(any(), eq("token3"))
         assertEquals(0, Json.parseToJsonElement(cacheFile.readText()).jsonObject.size)
     }
 
@@ -737,24 +772,27 @@ internal class ConfidenceFeatureProviderTests {
         cacheFile.writeText(cacheFileData)
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val mockConfidence = getConfidence(testDispatcher)
         val eventHandler = EventHandler(testDispatcher)
         ConfidenceFeatureProvider.create(
             context = mockContext,
             confidence = mockConfidence,
+            cache = InMemoryCache(),
             eventHandler = eventHandler,
             dispatcher = testDispatcher
         )
 
         advanceUntilIdle()
-        verify(mockConfidence, times(0)).apply(any(), eq("token1"))
-        verify(mockConfidence, times(1)).apply(any(), eq("token2"))
-        verify(mockConfidence, times(1)).apply(any(), eq("token3"))
+        verify(flagApplierClient, times(0)).apply(any(), eq("token1"))
+        verify(flagApplierClient, times(1)).apply(any(), eq("token2"))
+        verify(flagApplierClient, times(1)).apply(any(), eq("token3"))
         assertEquals(0, Json.parseToJsonElement(cacheFile.readText()).jsonObject.size)
     }
 
     @Test
     fun testMatchingRootObject() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val mockConfidence = getConfidence(testDispatcher)
         val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
@@ -763,10 +801,10 @@ internal class ConfidenceFeatureProviderTests {
             confidence = mockConfidence
         )
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
-        whenever(mockConfidence.resolve(eq(listOf()))).thenReturn(
+        whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(
                 FlagResolution(
-                    mapOf(),
+                    ImmutableContext("foo").toConfidenceContext().map,
                     resolvedFlags.list,
                     "token1"
                 )
@@ -781,7 +819,7 @@ internal class ConfidenceFeatureProviderTests {
                 ImmutableContext("foo")
             )
 
-        assertEquals(resolvedValueAsMap, evalRootObject.value.asStructure())
+        assertEquals(ConfidenceValue.Struct(resolvedValueAsMap).toValue(), evalRootObject.value)
         assertEquals(Reason.TARGETING_MATCH.toString(), evalRootObject.reason)
         assertEquals("flags/test-kotlin-flag-1/variants/variant-1", evalRootObject.variant)
         assertNull(evalRootObject.errorMessage)
@@ -793,6 +831,7 @@ internal class ConfidenceFeatureProviderTests {
         val cache = InMemoryCache()
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val eventHandler = EventHandler(testDispatcher)
+        val mockConfidence = getConfidence(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
             eventHandler = eventHandler,
@@ -800,10 +839,10 @@ internal class ConfidenceFeatureProviderTests {
             confidence = mockConfidence
         )
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
-        whenever(mockConfidence.resolve(eq(listOf()))).thenReturn(
+        whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(
                 FlagResolution(
-                    mapOf(),
+                    ImmutableContext("user1").toConfidenceContext().map,
                     resolvedFlags.list,
                     "token1"
                 )
@@ -909,8 +948,10 @@ internal class ConfidenceFeatureProviderTests {
         val cache = InMemoryCache()
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val eventHandler = EventHandler(testDispatcher)
+        val mockConfidence = getConfidence(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
+            cache = cache,
             eventHandler = eventHandler,
             dispatcher = testDispatcher,
             confidence = mockConfidence
@@ -927,11 +968,11 @@ internal class ConfidenceFeatureProviderTests {
             )
         )
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
-        whenever(mockConfidence.resolve(eq(listOf()))).thenReturn(
+        whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(
                 FlagResolution(
-                    mapOf(),
-                    resolvedFlags.list,
+                    ImmutableContext("user1").toConfidenceContext().map,
+                    resolvedFlagInvalidKey.list,
                     "token1"
                 )
             )
@@ -958,6 +999,7 @@ internal class ConfidenceFeatureProviderTests {
     fun testNonMatching() = runTest {
         val cache = InMemoryCache()
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val mockConfidence = getConfidence(testDispatcher)
         val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
@@ -978,10 +1020,10 @@ internal class ConfidenceFeatureProviderTests {
             )
         )
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
-        whenever(mockConfidence.resolve(eq(listOf()))).thenReturn(
+        whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(
                 FlagResolution(
-                    mapOf(),
+                    ImmutableContext("user1").toConfidenceContext().map,
                     resolvedNonMatchingFlags.list,
                     "token1"
                 )
@@ -1008,6 +1050,7 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testFlagNotFound() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val mockConfidence = getConfidence(testDispatcher)
         val eventHandler = EventHandler(testDispatcher)
         val cache = InMemoryCache()
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
@@ -1018,10 +1061,10 @@ internal class ConfidenceFeatureProviderTests {
             confidence = mockConfidence
         )
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
-        whenever(mockConfidence.resolve(eq(listOf()))).thenReturn(
+        whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(
                 FlagResolution(
-                    mapOf(),
+                    ImmutableContext("user1").toConfidenceContext().map,
                     resolvedFlags.list,
                     "token1"
                 )
@@ -1049,6 +1092,7 @@ internal class ConfidenceFeatureProviderTests {
     fun testErrorInNetwork() = runTest {
         val cache = InMemoryCache()
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val mockConfidence = getConfidence(testDispatcher)
         val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
@@ -1058,7 +1102,7 @@ internal class ConfidenceFeatureProviderTests {
             confidence = mockConfidence
         )
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
-        whenever(mockConfidence.resolve(eq(listOf()))).thenThrow(Error())
+        whenever(flagResolverClient.resolve(eq(listOf()), any())).thenThrow(Error(""))
         confidenceFeatureProvider.initialize(ImmutableContext("user1"))
         advanceUntilIdle()
         val ex = assertThrows(FlagNotFoundError::class.java) {
@@ -1074,6 +1118,7 @@ internal class ConfidenceFeatureProviderTests {
     @Test
     fun testValueNotFound() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val mockConfidence = getConfidence(testDispatcher)
         val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
@@ -1082,10 +1127,15 @@ internal class ConfidenceFeatureProviderTests {
             confidence = mockConfidence
         )
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
-        whenever(mockConfidence.resolve(eq(listOf()))).thenReturn(
+        whenever(
+            flagResolverClient.resolve(
+                eq(listOf()),
+                eq(ImmutableContext("user2").toConfidenceContext().map)
+            )
+        ).thenReturn(
             Result.Success(
                 FlagResolution(
-                    mapOf(),
+                    ImmutableContext("user2").toConfidenceContext().map,
                     resolvedFlags.list,
                     "token1"
                 )
@@ -1100,12 +1150,13 @@ internal class ConfidenceFeatureProviderTests {
                 ImmutableContext("user2")
             )
         }
-        assertEquals("Unable to parse flag value: wrongid", ex.message)
+        assertEquals("Unable to parse flag value: [wrongid]", ex.message)
     }
 
     @Test
     fun testValueNotFoundLongPath() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val mockConfidence = getConfidence(testDispatcher)
         val eventHandler = EventHandler(testDispatcher)
         val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
             context = mockContext,
@@ -1114,10 +1165,10 @@ internal class ConfidenceFeatureProviderTests {
             confidence = mockConfidence
         )
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
-        whenever(mockConfidence.resolve(eq(listOf()))).thenReturn(
+        whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(
                 FlagResolution(
-                    mapOf(),
+                    ImmutableContext("user2").toConfidenceContext().map,
                     resolvedFlags.list,
                     "token1"
                 )
@@ -1132,6 +1183,6 @@ internal class ConfidenceFeatureProviderTests {
                 ImmutableContext("user2")
             )
         }
-        assertEquals("Unable to parse flag value: mystring/extrapath", ex.message)
+        assertEquals("Unable to parse flag value: [mystring, extrapath]", ex.message)
     }
 }

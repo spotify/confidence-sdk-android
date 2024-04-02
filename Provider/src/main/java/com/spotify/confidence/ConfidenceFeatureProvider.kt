@@ -3,11 +3,13 @@ package com.spotify.confidence
 import android.content.Context
 import com.spotify.confidence.cache.DiskStorage
 import com.spotify.confidence.cache.FileDiskStorage
+import com.spotify.confidence.client.ResolveReason
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FeatureProvider
 import dev.openfeature.sdk.Hook
 import dev.openfeature.sdk.ProviderEvaluation
 import dev.openfeature.sdk.ProviderMetadata
+import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.events.EventHandler
 import dev.openfeature.sdk.events.OpenFeatureEvents
@@ -61,8 +63,7 @@ class ConfidenceFeatureProvider private constructor(
         strategy: InitialisationStrategy
     ) {
         // refresh cache with the last stored data
-        storage.read()?.let(providerCache::refresh)
-
+        storage.read().let(providerCache::refresh)
         if (strategy == InitialisationStrategy.ActivateAndFetchAsync) {
             eventHandler.publish(OpenFeatureEvents.ProviderReady)
         }
@@ -85,6 +86,8 @@ class ConfidenceFeatureProvider private constructor(
                         // do nothing
                     }
                 }
+            } else {
+                eventHandler.publish(OpenFeatureEvents.ProviderReady)
             }
         }
     }
@@ -212,7 +215,7 @@ class ConfidenceFeatureProvider private constructor(
     }
 }
 
-private fun Value.toConfidenceValue(): ConfidenceValue = when (this) {
+internal fun Value.toConfidenceValue(): ConfidenceValue = when (this) {
     is Value.Structure -> ConfidenceValue.Struct(structure.mapValues { it.value.toConfidenceValue() })
     is Value.Boolean -> ConfidenceValue.Boolean(this.boolean)
     is Value.Date -> ConfidenceValue.Date(this.date)
@@ -223,7 +226,7 @@ private fun Value.toConfidenceValue(): ConfidenceValue = when (this) {
     is Value.String -> ConfidenceValue.String(this.string)
 }
 
-private fun ConfidenceValue.toValue(): Value = when (this) {
+internal fun ConfidenceValue.toValue(): Value = when (this) {
     is ConfidenceValue.Boolean -> Value.Boolean(this.boolean)
     is ConfidenceValue.Date -> Value.Date(this.date)
     is ConfidenceValue.Double -> Value.Double(this.double)
@@ -235,18 +238,27 @@ private fun ConfidenceValue.toValue(): Value = when (this) {
 }
 
 private fun <T> Evaluation<T>.toProviderEvaluation() = ProviderEvaluation(
-    reason = this.reason.name,
+    reason = this.reason.toOFReason().name,
     errorCode = this.errorCode.toOFErrorCode(),
     errorMessage = this.errorMessage,
     value = this.value,
     variant = this.variant
 )
 
+private fun ResolveReason.toOFReason(): Reason = when (this) {
+    ResolveReason.ERROR -> Reason.ERROR
+    ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR -> Reason.ERROR
+    ResolveReason.RESOLVE_REASON_UNSPECIFIED -> Reason.UNKNOWN
+    ResolveReason.RESOLVE_REASON_MATCH -> Reason.TARGETING_MATCH
+    ResolveReason.RESOLVE_REASON_STALE -> Reason.STALE
+    else -> Reason.DEFAULT
+}
+
 private fun ErrorCode?.toOFErrorCode() = when (this) {
+    null -> null
     ErrorCode.FLAG_NOT_FOUND -> dev.openfeature.sdk.exceptions.ErrorCode.FLAG_NOT_FOUND
     ErrorCode.INVALID_CONTEXT -> dev.openfeature.sdk.exceptions.ErrorCode.INVALID_CONTEXT
-    else ->
-        dev.openfeature.sdk.exceptions.ErrorCode.PROVIDER_NOT_READY
+    else -> dev.openfeature.sdk.exceptions.ErrorCode.PROVIDER_NOT_READY
 }
 
 sealed interface InitialisationStrategy {

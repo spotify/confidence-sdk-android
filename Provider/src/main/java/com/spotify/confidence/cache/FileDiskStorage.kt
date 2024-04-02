@@ -41,11 +41,11 @@ internal class FileDiskStorage private constructor(
         flagsFile.writeText(data)
     }
 
-    override fun read(): FlagResolution? {
-        if (!flagsFile.exists()) return null
+    override fun read(): FlagResolution {
+        if (!flagsFile.exists()) return FlagResolution()
         val fileText: String = flagsFile.bufferedReader().use { it.readText() }
         return if (fileText.isEmpty()) {
-            null
+            FlagResolution()
         } else {
             Json.decodeFromString(fileText)
         }
@@ -57,13 +57,6 @@ internal class FileDiskStorage private constructor(
                 flagsFile = File(context.filesDir, FLAGS_FILE_NAME),
                 applyFile = File(context.filesDir, APPLY_FILE_NAME)
             )
-        }
-
-        /**
-         * Testing purposes only!
-         */
-        fun forFiles(flagsFile: File, applyFile: File): DiskStorage {
-            return FileDiskStorage(flagsFile, applyFile)
         }
     }
 }
