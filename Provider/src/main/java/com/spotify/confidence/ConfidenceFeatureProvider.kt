@@ -142,7 +142,14 @@ class ConfidenceFeatureProvider private constructor(
         defaultValue: Value,
         context: EvaluationContext?
     ): ProviderEvaluation<Value> {
-        return generateEvaluation(key, defaultValue.toConfidenceValue(), context).toValue()
+        val evaluation = generateEvaluation(key, defaultValue.toConfidenceValue(), context)
+        return ProviderEvaluation(
+            value = evaluation.value.toValue(),
+            reason = evaluation.reason,
+            variant = evaluation.variant,
+            errorCode = evaluation.errorCode,
+            errorMessage = evaluation.errorMessage
+        )
     }
 
     override fun getStringEvaluation(
@@ -203,12 +210,26 @@ class ConfidenceFeatureProvider private constructor(
     }
 }
 
-private fun Value.toConfidenceValue(): ConfidenceValue.Struct {
-    TODO("Not yet implemented")
+private fun Value.toConfidenceValue(): ConfidenceValue = when (this) {
+    is Value.Structure -> ConfidenceValue.Struct(structure.mapValues { it.value.toConfidenceValue() })
+    is Value.Boolean -> ConfidenceValue.Boolean(this.boolean)
+    is Value.Date -> ConfidenceValue.Date(this.date)
+    is Value.Double -> ConfidenceValue.Double(this.double)
+    is Value.Integer -> ConfidenceValue.Integer(this.integer)
+    is Value.List -> ConfidenceValue.List(this.list.map { it.toConfidenceValue() })
+    Value.Null -> ConfidenceValue.Null
+    is Value.String -> ConfidenceValue.String(this.string)
 }
 
-private fun ProviderEvaluation<ConfidenceValue.Struct>.toValue(): ProviderEvaluation<Value> {
-    TODO("Not yet implemented")
+private fun ConfidenceValue.toValue(): Value = when (this) {
+    is ConfidenceValue.Boolean -> Value.Boolean(this.boolean)
+    is ConfidenceValue.Date -> Value.Date(this.date)
+    is ConfidenceValue.Double -> Value.Double(this.double)
+    is ConfidenceValue.Integer -> Value.Integer(this.integer)
+    is ConfidenceValue.List -> Value.List(this.list.map { it.toValue() })
+    ConfidenceValue.Null -> Value.Null
+    is ConfidenceValue.String -> Value.String(this.string)
+    is ConfidenceValue.Struct -> Value.Structure(this.map.mapValues { it.value.toValue() })
 }
 
 private fun <T> Evaluation<T>.toProviderEvaluation() = ProviderEvaluation(
