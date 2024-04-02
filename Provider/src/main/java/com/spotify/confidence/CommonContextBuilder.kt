@@ -20,18 +20,28 @@ internal fun Confidence.addCommonContext(context: Context): Confidence {
     with(this) {
         // OS and OS Version
         putContext(OS_NAME_KEY, ConfidenceValue.String("Android"))
-        putContext(OS_VERSION_KEY, ConfidenceValue.String(Build.VERSION.RELEASE))
+        if (Build.VERSION.RELEASE != null) {
+            putContext(OS_VERSION_KEY, ConfidenceValue.String(Build.VERSION.RELEASE))
+        }
         // Screen
         val displayMetrics = context.resources.displayMetrics
-        putContext(SCREEN_DENSITY_KEY, ConfidenceValue.Double(displayMetrics.density.toDouble()))
-        putContext(SCREEN_HEIGHT_KEY, ConfidenceValue.Double(displayMetrics.heightPixels.toDouble()))
+        putContext(
+            SCREEN_DENSITY_KEY,
+            ConfidenceValue.Double(displayMetrics.density.toDouble())
+        )
+        putContext(
+            SCREEN_HEIGHT_KEY,
+            ConfidenceValue.Double(displayMetrics.heightPixels.toDouble())
+        )
         putContext(SCREEN_WIDTH_KEY, ConfidenceValue.Integer(displayMetrics.widthPixels))
         // Package
         val packageManager = context.packageManager
         val packageInfo = packageManager.getPackageInfo(context.packageName, 0)
         putContext(
             APP_NAME_KEY,
-            ConfidenceValue.String(packageInfo.applicationInfo.loadLabel(packageManager).toString())
+            ConfidenceValue.String(
+                packageInfo.applicationInfo.loadLabel(packageManager).toString()
+            )
         )
         putContext(APP_VERSION_KEY, ConfidenceValue.String(packageInfo.versionName))
         putContext(APP_NAMESPACE_KEY, ConfidenceValue.String(packageInfo.packageName))

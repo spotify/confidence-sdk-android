@@ -106,7 +106,8 @@ class Confidence internal constructor(
             context: Context,
             clientSecret: String,
             region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
-            dispatcher: CoroutineDispatcher = Dispatchers.IO
+            dispatcher: CoroutineDispatcher = Dispatchers.IO,
+            addCommonContext: Boolean = true
         ): Confidence {
             val engine = EventSenderEngineImpl.instance(
                 context,
@@ -136,7 +137,11 @@ class Confidence internal constructor(
                 flagResolver = flagResolver,
                 diskStorage = FileDiskStorage.create(context),
                 flagApplierClient = flagApplierClient
-            ).addCommonContext(context)
+            ).also {
+                if (addCommonContext) {
+                    it.addCommonContext(context)
+                }
+            }
         }
     }
 }

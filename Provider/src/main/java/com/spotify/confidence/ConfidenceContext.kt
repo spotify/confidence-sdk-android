@@ -22,5 +22,7 @@ class CommonContext : ConfidenceContextProvider {
 }
 
 fun EvaluationContext.toConfidenceContext(): ConfidenceValue.Struct {
-    return ConfidenceValue.Struct(mapOf("targeting_key" to ConfidenceValue.String(this.getTargetingKey())))
+    val map = asMap().mapValues { it.value.toConfidenceValue() }.toMutableMap()
+    map.put("targeting_key", ConfidenceValue.String(getTargetingKey()))
+    return ConfidenceValue.Struct(map)
 }

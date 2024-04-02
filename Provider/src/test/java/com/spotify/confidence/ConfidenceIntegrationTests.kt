@@ -21,6 +21,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.io.File
@@ -35,11 +36,10 @@ class ConfidenceIntegrationTests {
     @get:Rule
     var tmpFile = TemporaryFolder()
 
-    private val mockConfidence: Confidence = mock()
-
     @Before
     fun setup() {
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
+        whenever(mockContext.getDir(any(), any())).thenReturn(Files.createTempDirectory("events").toFile())
     }
 
     @Test
@@ -76,6 +76,7 @@ class ConfidenceIntegrationTests {
         val eventsHandler = EventHandler(Dispatchers.IO).apply {
             publish(OpenFeatureEvents.ProviderStale)
         }
+        val mockConfidence = Confidence.create(mockContext, clientSecret, addCommonContext = false)
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
                 context = mockContext,
@@ -108,6 +109,7 @@ class ConfidenceIntegrationTests {
         val eventsHandler = EventHandler(Dispatchers.IO).apply {
             publish(OpenFeatureEvents.ProviderStale)
         }
+        val mockConfidence = Confidence.create(mockContext, clientSecret, addCommonContext = false)
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
                 context = mockContext,
@@ -150,6 +152,7 @@ class ConfidenceIntegrationTests {
         }
         val cacheFile = File(mockContext.filesDir, FLAGS_FILE_NAME)
         assertEquals(0L, cacheFile.length())
+        val mockConfidence = Confidence.create(mockContext, clientSecret, addCommonContext = false)
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
                 context = mockContext,

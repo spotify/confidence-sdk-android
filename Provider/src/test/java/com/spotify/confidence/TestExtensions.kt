@@ -13,13 +13,9 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.Result
 
 suspend fun awaitProviderReady(
-
     eventsHandler: EventHandler,
-
     dispatcher: CoroutineDispatcher = Dispatchers.IO
-
 ) = suspendCancellableCoroutine { continuation ->
-
     fun observeProviderReady() = eventsHandler
         .observe<OpenFeatureEvents.ProviderReady>()
         .onStart {
