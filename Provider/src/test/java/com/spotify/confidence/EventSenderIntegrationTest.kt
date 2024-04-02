@@ -40,7 +40,8 @@ class EventSenderIntegrationTest {
         eventSender = Confidence.create(
             mockContext,
             clientSecret,
-            dispatcher = testDispatcher
+            dispatcher = testDispatcher,
+            addCommonContext = false
         )
         val eventSender = this@EventSenderIntegrationTest.eventSender
         val eventCount = 4
