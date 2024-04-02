@@ -16,6 +16,7 @@ internal fun <T> FlagResolution.getEvaluation(
             errorCode = ErrorCode.FLAG_NOT_FOUND
         )
 
+    // TODO revisit where to apply flags
     if (resolvedFlag.reason != ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR) {
         applyFlag(parsedKey.flagName, resolveToken)
     }

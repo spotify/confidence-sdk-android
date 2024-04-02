@@ -142,7 +142,7 @@ class ConfidenceFeatureProvider private constructor(
         defaultValue: Value,
         context: EvaluationContext?
     ): ProviderEvaluation<Value> {
-        return generateEvaluation(key, defaultValue, context)
+        return generateEvaluation(key, defaultValue.toConfidenceValue(), context).toValue()
     }
 
     override fun getStringEvaluation(
@@ -201,6 +201,14 @@ class ConfidenceFeatureProvider private constructor(
             )
         }
     }
+}
+
+private fun Value.toConfidenceValue(): ConfidenceValue.Struct {
+    TODO("Not yet implemented")
+}
+
+private fun ProviderEvaluation<ConfidenceValue.Struct>.toValue(): ProviderEvaluation<Value> {
+    TODO("Not yet implemented")
 }
 
 private fun <T> Evaluation<T>.toProviderEvaluation() = ProviderEvaluation(

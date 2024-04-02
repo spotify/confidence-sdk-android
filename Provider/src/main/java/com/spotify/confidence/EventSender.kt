@@ -7,7 +7,7 @@ interface EventSender : Contextual {
         definition: String,
         payload: ConfidenceFieldsType = mapOf()
     )
-    fun onLowMemory(body: (List<File>) -> Unit): EventSender
+    fun onLowMemory(body: (List<File>) -> Unit): Contextual
     fun stop()
 }
 

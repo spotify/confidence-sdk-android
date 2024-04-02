@@ -40,7 +40,7 @@ class Confidence private constructor(
         return flagResolver.resolve(flags, getContext().openFeatureFlatten())
     }
 
-    fun applyFlag(flagName: String, resolveToken: String) {
+    internal fun applyFlag(flagName: String, resolveToken: String) {
         flagApplier.apply(flagName, resolveToken)
     }
 
@@ -76,6 +76,7 @@ class Confidence private constructor(
     ).also {
         it.putContext(context)
     }
+
     override fun send(
         definition: String,
         payload: ConfidenceFieldsType
@@ -83,7 +84,7 @@ class Confidence private constructor(
         eventSenderEngine.emit(definition, payload, getContext())
     }
 
-    override fun onLowMemory(body: (List<File>) -> Unit): EventSender {
+    override fun onLowMemory(body: (List<File>) -> Unit): Contextual {
         coroutineScope.launch {
             eventSenderEngine
                 .onLowMemoryChannel()

@@ -2,12 +2,12 @@ package com.spotify.confidence.client.serializers
 
 import android.annotation.SuppressLint
 import com.spotify.confidence.ConfidenceValue
+import com.spotify.confidence.ParseError
 import com.spotify.confidence.client.Flags
 import com.spotify.confidence.client.ResolveReason
 import com.spotify.confidence.client.ResolvedFlag
 import com.spotify.confidence.client.SchemaType
 import dev.openfeature.sdk.ValueSerializer
-import dev.openfeature.sdk.exceptions.OpenFeatureError
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
@@ -175,7 +175,7 @@ internal object NetworkResolvedFlagSerializer : KSerializer<ResolvedFlag> {
                 Json.decodeFromString(FlagValueSerializer(flagSchema), valueJson)
 
             if (flagSchema.schema.size != values.map.size) {
-                throw OpenFeatureError.ParseError("Unexpected flag name in resolve flag data: $flag")
+                throw ParseError("Unexpected flag name in resolve flag data: $flag")
             }
 
             ResolvedFlag(
@@ -211,7 +211,7 @@ internal class FlagValueSerializer(
         for ((key, value) in jsonElement.jsonObject) {
             schemaStruct.schema[key]?.let {
                 valueMap[key] = value.convertToValue(key, it)
-            } ?: throw OpenFeatureError.ParseError("Couldn't find value \"$key\" in schema")
+            } ?: throw ParseError("Couldn't find value \"$key\" in schema")
         }
 
         return ConfidenceValue.Struct(valueMap)
@@ -250,7 +250,7 @@ private fun JsonElement.convertToValue(key: String, schemaType: SchemaType): Con
     is SchemaType.IntSchema -> {
         // passing double number to an integer schema
         if (toString().contains(".")) {
-            throw OpenFeatureError.ParseError("Incompatible value \"$key\" for schema")
+            throw ParseError("Incompatible value \"$key\" for schema")
         }
         toString().toIntOrNull()?.let { ConfidenceValue.Integer(it) } ?: ConfidenceValue.Null
     }

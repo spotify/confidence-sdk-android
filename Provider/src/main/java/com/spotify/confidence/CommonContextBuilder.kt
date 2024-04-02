@@ -17,8 +17,7 @@ import com.spotify.confidence.CommonContextKeys.SCREEN_HEIGHT_KEY
 import com.spotify.confidence.CommonContextKeys.SCREEN_WIDTH_KEY
 
 internal fun Confidence.addCommonContext(context: Context): Confidence {
-    val newContext = withContext(mapOf())
-    with(newContext) {
+    with(this) {
         // OS and OS Version
         putContext(OS_NAME_KEY, ConfidenceValue.String("Android"))
         putContext(OS_VERSION_KEY, ConfidenceValue.String(Build.VERSION.RELEASE))
@@ -52,5 +51,5 @@ internal fun Confidence.addCommonContext(context: Context): Confidence {
         putContext(DEVICE_TYPE_KEY, ConfidenceValue.String("android"))
     }
 
-    return newContext
+    return this
 }
