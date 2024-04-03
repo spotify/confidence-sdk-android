@@ -4,6 +4,7 @@ import java.util.Properties
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    kotlin("plugin.serialization")
 }
 
 object Versions {
@@ -12,6 +13,7 @@ object Versions {
     const val core = "1.7.0"
     const val lifecycleRuntime = "2.3.1"
     const val activityCompose = "1.3.1"
+    const val kotlinxSerialization = "1.6.0"
     const val composeUi = "1.2.0"
     const val composeUiToolingPreview = "1.2.0"
     const val composeMaterial = "1.2.0"
@@ -62,11 +64,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
     buildFeatures {
         compose = true
@@ -89,6 +91,9 @@ dependencies {
     implementation( "androidx.lifecycle:lifecycle-runtime-ktx:${Versions.lifecycleRuntime}")
     implementation( "androidx.activity:activity-compose:${Versions.activityCompose}")
     implementation( "androidx.compose.ui:ui:${Versions.composeUi}")
+    implementation(
+        "org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}"
+    )
     implementation( "androidx.compose.ui:ui-tooling-preview:${Versions.composeUiToolingPreview}")
     implementation( "androidx.compose.material:material:${Versions.composeMaterial}")
     testImplementation( "junit:junit:${Versions.jUnit}")

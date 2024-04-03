@@ -13,6 +13,9 @@ import com.spotify.confidence.ConfidenceValue
 import com.spotify.confidence.EventSender
 import com.spotify.confidence.InitialisationStrategy
 import com.spotify.confidence.client.ConfidenceRegion
+import com.spotify.confidence.putContext
+import com.spotify.confidence.send
+import com.spotify.confidence.withContext
 import dev.openfeature.sdk.Client
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FlagEvaluationDetails
@@ -21,6 +24,7 @@ import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.Value
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import java.util.UUID
 
 class MainVm(app: Application) : AndroidViewModel(app) {
@@ -60,7 +64,12 @@ class MainVm(app: Application) : AndroidViewModel(app) {
             clientSecret,
             ConfidenceRegion.EUROPE
         )
-        eventSender = confidence.withContext(mapOf())
+        eventSender = confidence.withContext(mapOf("hello" to "world"))
+        eventSender.putContext(mapOf())
+        eventSender.apply {
+            putContext("hello", "world")
+            putContext("boom", 2)
+        }
 
         viewModelScope.launch {
             OpenFeatureAPI.setEvaluationContext(ctx)
@@ -92,8 +101,13 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         }.toComposeColor()
         _message.postValue(messageValue)
         _color.postValue(colorFlag)
-         eventSender.send("eventDefinitions/navigate", mapOf("screen" to ConfidenceValue.String("Hello")))
+
+        eventSender.send("eventDefinitions/navigate", HelloPayload("world"))
+        eventSender.send("eventDefinitions/navigate", mapOf("hello2" to "west world", "boom" to 2))
     }
+
+    @Serializable
+    data class HelloPayload(val hello: String)
 
     fun updateContext() {
         val start = System.currentTimeMillis()
