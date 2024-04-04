@@ -149,8 +149,7 @@ object ConfidenceFactory {
         context: Context,
         clientSecret: String,
         region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
-        dispatcher: CoroutineDispatcher = Dispatchers.IO,
-        addCommonContext: Boolean = true
+        dispatcher: CoroutineDispatcher = Dispatchers.IO
     ): RootConfidence {
         val engine = EventSenderEngineImpl.instance(
             context,
@@ -181,10 +180,6 @@ object ConfidenceFactory {
             flagResolver = flagResolver,
             diskStorage = FileDiskStorage.create(context),
             flagApplierClient = flagApplierClient
-        ).also {
-            if (addCommonContext) {
-                it.addCommonContext(context)
-            }
-        }
+        )
     }
 }
