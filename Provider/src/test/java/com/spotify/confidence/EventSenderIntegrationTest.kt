@@ -1,6 +1,7 @@
 package com.spotify.confidence
 
 import android.content.Context
+import com.spotify.confidence.client.SdkMetadata
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -89,6 +90,7 @@ class EventSenderIntegrationTest {
             clientSecret,
             flushPolicies = listOf(flushPolicy),
             dispatcher = testDispatcher,
+            sdkMetadata = SdkMetadata("kotlin_test", ""),
             uploader = uploader
         )
         eventSender = RootConfidence(
@@ -154,6 +156,7 @@ class EventSenderIntegrationTest {
             clientSecret,
             flushPolicies = listOf(flushPolicy),
             dispatcher = testDispatcher,
+            sdkMetadata = SdkMetadata("kotlin_test", ""),
             uploader = uploader
         )
         eventSender = RootConfidence(

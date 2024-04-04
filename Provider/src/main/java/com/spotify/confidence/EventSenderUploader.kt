@@ -1,6 +1,7 @@
 package com.spotify.confidence
 
 import com.spotify.confidence.client.ConfidenceValueMap
+import com.spotify.confidence.client.Sdk
 import com.spotify.confidence.client.await
 import com.spotify.confidence.client.serializers.DateSerializer
 import kotlinx.coroutines.CoroutineDispatcher
@@ -21,6 +22,7 @@ internal interface EventSenderUploader {
 @Serializable
 internal data class EventBatch(
     val clientSecret: String,
+    val sdk: Sdk,
     val events: List<Event>,
     @Serializable(DateSerializer::class)
     val sendTime: Date

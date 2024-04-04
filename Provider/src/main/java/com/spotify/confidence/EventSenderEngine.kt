@@ -2,6 +2,8 @@ package com.spotify.confidence
 
 import android.content.Context
 import com.spotify.confidence.client.Clock
+import com.spotify.confidence.client.Sdk
+import com.spotify.confidence.client.SdkMetadata
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -26,7 +28,8 @@ internal class EventSenderEngineImpl(
     private val uploader: EventSenderUploader,
     private val flushPolicies: List<FlushPolicy> = listOf(),
     private val clock: Clock = Clock.CalendarBacked.systemUTC(),
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val sdkMetadata: SdkMetadata
 ) : EventSenderEngine {
     private val writeReqChannel: Channel<Event> = Channel()
     private val sendChannel: Channel<String> = Channel()
@@ -65,7 +68,8 @@ internal class EventSenderEngineImpl(
                     val batch = EventBatch(
                         clientSecret = clientSecret,
                         events = eventStorage.eventsFor(readyFile),
-                        sendTime = clock.currentTime()
+                        sendTime = clock.currentTime(),
+                        sdk = Sdk(sdkMetadata.sdkId, sdkMetadata.sdkVersion)
                     )
                     runCatching {
                         val shouldCleanup = uploader.upload(batch)
@@ -104,6 +108,7 @@ internal class EventSenderEngineImpl(
         fun instance(
             context: Context,
             clientSecret: String,
+            sdkMetadata: SdkMetadata,
             flushPolicies: List<FlushPolicy> = listOf(),
             dispatcher: CoroutineDispatcher = Dispatchers.IO
         ): EventSenderEngine {
@@ -113,7 +118,8 @@ internal class EventSenderEngineImpl(
                     clientSecret,
                     uploader = EventSenderUploaderImpl(OkHttpClient(), dispatcher),
                     flushPolicies = flushPolicies,
-                    dispatcher = dispatcher
+                    dispatcher = dispatcher,
+                    sdkMetadata = sdkMetadata
                 )
             }
         }

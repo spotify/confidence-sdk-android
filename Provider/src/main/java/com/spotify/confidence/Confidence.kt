@@ -56,7 +56,7 @@ class RootConfidence internal constructor(
     }
 }
 
-class ChildConfidence internal constructor(
+internal class ChildConfidence internal constructor(
     private val clientSecret: String,
     private val dispatcher: CoroutineDispatcher,
     private val eventSenderEngine: EventSenderEngine,
@@ -111,7 +111,7 @@ class ConfidenceImpl internal constructor(
             it.getContext().filterKeys { key -> !removedKeys.contains(key) } + contextMap
         } ?: contextMap
 
-    override fun withContext(context: Map<String, ConfidenceValue>) = ChildConfidence(
+    override fun withContext(context: Map<String, ConfidenceValue>): Confidence = ChildConfidence(
         clientSecret,
         dispatcher,
         eventSenderEngine,
@@ -156,6 +156,7 @@ object ConfidenceFactory {
             context,
             clientSecret,
             flushPolicies = listOf(minBatchSizeFlushPolicy),
+            sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
             dispatcher = dispatcher
         )
         val flagApplierClient = FlagApplierClientImpl(
