@@ -7,14 +7,13 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.spotify.confidence.Confidence
+import com.spotify.confidence.ConfidenceFactory
 import com.spotify.confidence.ConfidenceFeatureProvider
 import com.spotify.confidence.ConfidenceValue
 import com.spotify.confidence.EventSender
 import com.spotify.confidence.InitialisationStrategy
 import com.spotify.confidence.client.ConfidenceRegion
 import com.spotify.confidence.putContext
-import com.spotify.confidence.send
 import com.spotify.confidence.withContext
 import dev.openfeature.sdk.Client
 import dev.openfeature.sdk.EvaluationContext
@@ -24,7 +23,6 @@ import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.Value
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
 import java.util.UUID
 
 class MainVm(app: Application) : AndroidViewModel(app) {
@@ -59,7 +57,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         mutableMap["NN"] = ConfidenceValue.Double(20.0)
         mutableMap["my_struct"] = ConfidenceValue.Struct(mapOf("x" to ConfidenceValue.Double(2.0)))
 
-        val confidence = Confidence.create(
+        val confidence = ConfidenceFactory.create(
             app.applicationContext,
             clientSecret,
             ConfidenceRegion.EUROPE
@@ -102,12 +100,8 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         _message.postValue(messageValue)
         _color.postValue(colorFlag)
 
-        eventSender.send("eventDefinitions/navigate", HelloPayload("world"))
-        eventSender.send("eventDefinitions/navigate", mapOf("hello2" to "west world", "boom" to 2))
+        eventSender.send("eventDefinitions/navigate")
     }
-
-    @Serializable
-    data class HelloPayload(val hello: String)
 
     fun updateContext() {
         val start = System.currentTimeMillis()

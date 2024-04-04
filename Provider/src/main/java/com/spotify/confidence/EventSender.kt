@@ -13,7 +13,6 @@ interface EventSender : Contextual {
     )
 
     fun onLowMemory(body: (List<File>) -> Unit): Contextual
-    fun stop()
 }
 
 interface FlushPolicy {

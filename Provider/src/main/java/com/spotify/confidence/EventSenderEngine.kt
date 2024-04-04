@@ -84,7 +84,7 @@ internal class EventSenderEngineImpl(
     override fun emit(definition: String, payload: ConfidenceFieldsType, context: Map<String, ConfidenceValue>) {
         coroutineScope.launch {
             val event = Event(
-                eventDefinition = definition,
+                eventDefinition = "eventDefinitions/$definition",
                 eventTime = clock.currentTime(),
                 payload = payload + context,
                 context = mapOf()

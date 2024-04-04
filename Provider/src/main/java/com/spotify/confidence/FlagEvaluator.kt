@@ -15,10 +15,14 @@ data class Evaluation<T>(
 
 @Serializable
 data class FlagResolution(
-    val context: ConfidenceValueMap = mapOf(),
-    val flags: List<ResolvedFlag> = listOf(),
-    val resolveToken: String = ""
-)
+    val context: ConfidenceValueMap,
+    val flags: List<ResolvedFlag>,
+    val resolveToken: String
+) {
+    companion object {
+        val EMPTY = FlagResolution(mapOf(), listOf(), "")
+    }
+}
 
 sealed class Result<out T> {
     data class Success<T>(val data: T) : Result<T>()

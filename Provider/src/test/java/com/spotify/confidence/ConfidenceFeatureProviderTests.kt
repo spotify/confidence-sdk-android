@@ -26,6 +26,7 @@ import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.events.EventHandler
 import dev.openfeature.sdk.exceptions.ErrorCode
+import dev.openfeature.sdk.exceptions.OpenFeatureError
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -112,7 +113,7 @@ internal class ConfidenceFeatureProviderTests {
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
     }
 
-    private fun getConfidence(dispatcher: CoroutineDispatcher): Confidence = Confidence(
+    private fun getConfidence(dispatcher: CoroutineDispatcher): RootConfidence = RootConfidence(
         clientSecret = "",
         dispatcher = dispatcher,
         eventSenderEngine = mock(),
@@ -1078,7 +1079,7 @@ internal class ConfidenceFeatureProviderTests {
             "token2"
         )
         cache.refresh(cacheData)
-        val ex = assertThrows(FlagNotFoundError::class.java) {
+        val ex = assertThrows(OpenFeatureError.FlagNotFoundError::class.java) {
             confidenceFeatureProvider.getStringEvaluation(
                 "test-kotlin-flag-2.mystring",
                 "default",
@@ -1105,7 +1106,7 @@ internal class ConfidenceFeatureProviderTests {
         whenever(flagResolverClient.resolve(eq(listOf()), any())).thenThrow(Error(""))
         confidenceFeatureProvider.initialize(ImmutableContext("user1"))
         advanceUntilIdle()
-        val ex = assertThrows(FlagNotFoundError::class.java) {
+        val ex = assertThrows(OpenFeatureError.FlagNotFoundError::class.java) {
             confidenceFeatureProvider.getStringEvaluation(
                 "test-kotlin-flag-2.mystring",
                 "default",
@@ -1143,7 +1144,7 @@ internal class ConfidenceFeatureProviderTests {
         )
         confidenceFeatureProvider.initialize(ImmutableContext("user2"))
         advanceUntilIdle()
-        val ex = assertThrows(ParseError::class.java) {
+        val ex = assertThrows(OpenFeatureError.ParseError::class.java) {
             confidenceFeatureProvider.getStringEvaluation(
                 "test-kotlin-flag-1.wrongid",
                 "default",
@@ -1176,7 +1177,7 @@ internal class ConfidenceFeatureProviderTests {
         )
         confidenceFeatureProvider.initialize(ImmutableContext("user2"))
         advanceUntilIdle()
-        val ex = assertThrows(ParseError::class.java) {
+        val ex = assertThrows(OpenFeatureError.ParseError::class.java) {
             confidenceFeatureProvider.getStringEvaluation(
                 "test-kotlin-flag-1.mystring.extrapath",
                 "default",

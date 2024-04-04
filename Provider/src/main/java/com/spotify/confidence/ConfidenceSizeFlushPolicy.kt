@@ -1,6 +1,6 @@
 package com.spotify.confidence
 
-internal val confidenceSizeFlushPolicy = object : FlushPolicy {
+internal val minBatchSizeFlushPolicy = object : FlushPolicy {
     private var size = 0
     override fun reset() {
         size = 0

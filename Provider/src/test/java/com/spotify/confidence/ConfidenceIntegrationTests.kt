@@ -76,7 +76,7 @@ class ConfidenceIntegrationTests {
         val eventsHandler = EventHandler(Dispatchers.IO).apply {
             publish(OpenFeatureEvents.ProviderStale)
         }
-        val mockConfidence = Confidence.create(mockContext, clientSecret, addCommonContext = false)
+        val mockConfidence = ConfidenceFactory.create(mockContext, clientSecret, addCommonContext = false)
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
                 context = mockContext,
@@ -109,7 +109,7 @@ class ConfidenceIntegrationTests {
         val eventsHandler = EventHandler(Dispatchers.IO).apply {
             publish(OpenFeatureEvents.ProviderStale)
         }
-        val mockConfidence = Confidence.create(mockContext, clientSecret, addCommonContext = false)
+        val mockConfidence = ConfidenceFactory.create(mockContext, clientSecret, addCommonContext = false)
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
                 context = mockContext,
@@ -152,7 +152,7 @@ class ConfidenceIntegrationTests {
         }
         val cacheFile = File(mockContext.filesDir, FLAGS_FILE_NAME)
         assertEquals(0L, cacheFile.length())
-        val mockConfidence = Confidence.create(mockContext, clientSecret, addCommonContext = false)
+        val mockConfidence = ConfidenceFactory.create(mockContext, clientSecret, addCommonContext = false)
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
                 context = mockContext,

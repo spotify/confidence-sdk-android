@@ -33,7 +33,6 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.serializer
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.TimeZone
@@ -70,7 +69,9 @@ internal object ConfidenceValueSerializer : KSerializer<ConfidenceValue> {
             is JsonPrimitive -> {
                 val jsonPrimitive = element.jsonPrimitive
                 return when {
-                    jsonPrimitive.isString -> ConfidenceValue.String(jsonPrimitive.content)
+                    jsonPrimitive.isString -> {
+                        ConfidenceValue.String(jsonPrimitive.content)
+                    }
                     jsonPrimitive.booleanOrNull != null -> ConfidenceValue.Boolean(jsonPrimitive.boolean)
                     jsonPrimitive.intOrNull != null -> ConfidenceValue.Integer(jsonPrimitive.int)
                     jsonPrimitive.doubleOrNull != null -> ConfidenceValue.Double(jsonPrimitive.double)
@@ -176,7 +177,10 @@ internal object NetworkResolvedFlagSerializer : KSerializer<ResolvedFlag> {
                 Json.decodeFromString(FlagValueSerializer(flagSchema), valueJson)
 
             if (flagSchema.schema.size != values.map.size) {
-                throw ParseError("Unexpected flag name in resolve flag data: $flag")
+                throw ParseError(
+                    "Unexpected flag name in resolve flag data: $flag",
+                    listOf(flag)
+                )
             }
 
             ResolvedFlag(
@@ -212,7 +216,7 @@ internal class FlagValueSerializer(
         for ((key, value) in jsonElement.jsonObject) {
             schemaStruct.schema[key]?.let {
                 valueMap[key] = value.convertToValue(key, it)
-            } ?: throw ParseError("Couldn't find value \"$key\" in schema")
+            } ?: throw ParseError("Couldn't find value \"$key\" in schema", listOf(key))
         }
 
         return ConfidenceValue.Struct(valueMap)
@@ -251,7 +255,7 @@ private fun JsonElement.convertToValue(key: String, schemaType: SchemaType): Con
     is SchemaType.IntSchema -> {
         // passing double number to an integer schema
         if (toString().contains(".")) {
-            throw ParseError("Incompatible value \"$key\" for schema")
+            throw ParseError("Incompatible value \"$key\" for schema", listOf(key))
         }
         toString().toIntOrNull()?.let { ConfidenceValue.Integer(it) } ?: ConfidenceValue.Null
     }

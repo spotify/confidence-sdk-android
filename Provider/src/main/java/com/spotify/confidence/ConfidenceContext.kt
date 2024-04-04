@@ -1,8 +1,6 @@
 package com.spotify.confidence
 
 import com.spotify.confidence.client.serializers.JsonAnySerializer
-import dev.openfeature.sdk.EvaluationContext
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -19,17 +17,6 @@ interface Contextual : ConfidenceContextProvider {
     fun setContext(context: Map<String, ConfidenceValue>)
     fun putContext(key: String, value: ConfidenceValue)
     fun removeContext(key: String)
-}
-
-class CommonContext : ConfidenceContextProvider {
-    override fun getContext(): Map<String, ConfidenceValue> = mapOf()
-}
-
-fun EvaluationContext.toConfidenceContext(): ConfidenceValue.Struct {
-    val map = mutableMapOf<String, ConfidenceValue>()
-    map["targeting_key"] = ConfidenceValue.String(getTargetingKey())
-    map.putAll(asMap().mapValues { it.value.toConfidenceValue() })
-    return ConfidenceValue.Struct(map)
 }
 
 fun Contextual.withContext(context: Map<String, Any>): Contextual {

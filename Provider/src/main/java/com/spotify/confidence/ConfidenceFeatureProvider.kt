@@ -13,7 +13,7 @@ import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.events.EventHandler
 import dev.openfeature.sdk.events.OpenFeatureEvents
-import dev.openfeature.sdk.exceptions.OpenFeatureError.InvalidContextError
+import dev.openfeature.sdk.exceptions.OpenFeatureError
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -36,7 +36,7 @@ class ConfidenceFeatureProvider private constructor(
     private val providerCache: ProviderCache,
     private val initialisationStrategy: InitialisationStrategy,
     private val eventHandler: EventHandler,
-    private val confidence: Confidence,
+    private val confidence: RootConfidence,
     dispatcher: CoroutineDispatcher
 ) : FeatureProvider {
     private val job = SupervisorJob()
@@ -69,25 +69,29 @@ class ConfidenceFeatureProvider private constructor(
         }
 
         coroutineScope.launch(networkExceptionHandler) {
-            confidence.putContext("open_feature", initialContext.toConfidenceContext())
-            val resolveResponse = confidence.resolve(listOf())
-            if (resolveResponse is Result.Success) {
-                // we store the flag anyways
-                storage.store(resolveResponse.data)
+            confidence.putContext(OPEN_FEATURE_CONTEXT_KEY, initialContext.toConfidenceContext())
+            try {
+                val resolveResponse = confidence.resolve(listOf())
+                if (resolveResponse is Result.Success) {
+                    // we store the flag anyways
+                    storage.store(resolveResponse.data)
 
-                when (strategy) {
-                    InitialisationStrategy.FetchAndActivate -> {
-                        // refresh the cache from the stored data
-                        providerCache.refresh(resolveResponse.data)
-                        eventHandler.publish(OpenFeatureEvents.ProviderReady)
-                    }
+                    when (strategy) {
+                        InitialisationStrategy.FetchAndActivate -> {
+                            // refresh the cache from the stored data
+                            providerCache.refresh(resolveResponse.data)
+                            eventHandler.publish(OpenFeatureEvents.ProviderReady)
+                        }
 
-                    InitialisationStrategy.ActivateAndFetchAsync -> {
-                        // do nothing
+                        InitialisationStrategy.ActivateAndFetchAsync -> {
+                            // do nothing
+                        }
                     }
+                } else {
+                    eventHandler.publish(OpenFeatureEvents.ProviderReady)
                 }
-            } else {
-                eventHandler.publish(OpenFeatureEvents.ProviderReady)
+            } catch (e: ParseError) {
+                throw OpenFeatureError.ParseError(e.message)
             }
         }
     }
@@ -121,7 +125,7 @@ class ConfidenceFeatureProvider private constructor(
         defaultValue: Boolean,
         context: EvaluationContext?
     ): ProviderEvaluation<Boolean> {
-        return generateEvaluation(key, defaultValue, context)
+        return generateEvaluation(key, defaultValue)
     }
 
     override fun getDoubleEvaluation(
@@ -129,7 +133,7 @@ class ConfidenceFeatureProvider private constructor(
         defaultValue: Double,
         context: EvaluationContext?
     ): ProviderEvaluation<Double> {
-        return generateEvaluation(key, defaultValue, context)
+        return generateEvaluation(key, defaultValue)
     }
 
     override fun getIntegerEvaluation(
@@ -137,7 +141,7 @@ class ConfidenceFeatureProvider private constructor(
         defaultValue: Int,
         context: EvaluationContext?
     ): ProviderEvaluation<Int> {
-        return generateEvaluation(key, defaultValue, context)
+        return generateEvaluation(key, defaultValue)
     }
 
     override fun getObjectEvaluation(
@@ -145,7 +149,7 @@ class ConfidenceFeatureProvider private constructor(
         defaultValue: Value,
         context: EvaluationContext?
     ): ProviderEvaluation<Value> {
-        val evaluation = generateEvaluation(key, defaultValue.toConfidenceValue(), context)
+        val evaluation = generateEvaluation(key, defaultValue.toConfidenceValue())
         return ProviderEvaluation(
             value = evaluation.value.toValue(),
             reason = evaluation.reason,
@@ -160,22 +164,28 @@ class ConfidenceFeatureProvider private constructor(
         defaultValue: String,
         context: EvaluationContext?
     ): ProviderEvaluation<String> {
-        return generateEvaluation(key, defaultValue, context)
+        return generateEvaluation(key, defaultValue)
     }
 
     private fun <T> generateEvaluation(
         key: String,
-        defaultValue: T,
-        context: EvaluationContext?
+        defaultValue: T
     ): ProviderEvaluation<T> {
-        context ?: throw InvalidContextError()
-        return providerCache.get().getEvaluation(
-            key,
-            defaultValue,
-            confidence.getContext().openFeatureFlatten()
-        ) { flagName, resolveToken ->
-            confidence.apply(flagName, resolveToken)
-        }.toProviderEvaluation()
+        try {
+            return providerCache.get().getEvaluation(
+                key,
+                defaultValue,
+                confidence.getContext().openFeatureFlatten()
+            ) { flagName, resolveToken ->
+                // this lambda will be invoked inside the evaluation process
+                // and only if the resolve reason is not targeting key error.
+                confidence.apply(flagName, resolveToken)
+            }.toProviderEvaluation()
+        } catch (e: ParseError) {
+            throw OpenFeatureError.ParseError(e.message)
+        } catch (e: FlagNotFoundError) {
+            throw OpenFeatureError.FlagNotFoundError(e.flag)
+        }
     }
     companion object {
         private class ConfidenceMetadata(override var name: String? = "confidence") : ProviderMetadata
@@ -185,12 +195,12 @@ class ConfidenceFeatureProvider private constructor(
         ): Boolean {
             val storage = FileDiskStorage.create(context)
             val data = storage.read()
-            return data == null
+            return data == FlagResolution.EMPTY
         }
 
         @Suppress("LongParameterList")
         fun create(
-            confidence: Confidence,
+            confidence: RootConfidence,
             context: Context,
             initialisationStrategy: InitialisationStrategy = InitialisationStrategy.FetchAndActivate,
             hooks: List<Hook<*>> = listOf(),
@@ -264,4 +274,11 @@ private fun ErrorCode?.toOFErrorCode() = when (this) {
 sealed interface InitialisationStrategy {
     object FetchAndActivate : InitialisationStrategy
     object ActivateAndFetchAsync : InitialisationStrategy
+}
+
+fun EvaluationContext.toConfidenceContext(): ConfidenceValue.Struct {
+    val map = mutableMapOf<String, ConfidenceValue>()
+    map["targeting_key"] = ConfidenceValue.String(getTargetingKey())
+    map.putAll(asMap().mapValues { it.value.toConfidenceValue() })
+    return ConfidenceValue.Struct(map)
 }

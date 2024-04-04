@@ -9,32 +9,44 @@ import com.spotify.confidence.client.FlagApplierClient
 import com.spotify.confidence.client.FlagApplierClientImpl
 import com.spotify.confidence.client.SdkMetadata
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.consumeEach
-import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import java.io.File
 
-class Confidence internal constructor(
+interface Confidence : Contextual, EventSender
+interface ConfidenceShutdownAPI {
+    fun shutdown()
+}
+
+class RootConfidence internal constructor(
     private val clientSecret: String,
     private val dispatcher: CoroutineDispatcher,
     private val eventSenderEngine: EventSenderEngine,
     private val diskStorage: DiskStorage,
     private val flagResolver: FlagResolver,
     private val flagApplierClient: FlagApplierClient,
-    private val root: ConfidenceContextProvider? = null,
+    private val parent: ConfidenceContextProvider? = null,
     private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL
-) : Contextual, EventSender {
-    private val removedKeys = mutableListOf<String>()
-    private val coroutineScope = CoroutineScope(dispatcher)
-    private var contextMap: MutableMap<String, ConfidenceValue> = mutableMapOf()
-
+) : Confidence by ConfidenceImpl(
+    clientSecret,
+    dispatcher,
+    eventSenderEngine,
+    diskStorage,
+    flagResolver,
+    flagApplierClient,
+    parent,
+    region
+),
+    ConfidenceShutdownAPI {
     private val flagApplier = FlagApplierWithRetries(
         client = flagApplierClient,
         dispatcher = dispatcher,
         diskStorage = diskStorage
     )
+
+    override fun shutdown() {
+        eventSenderEngine.stop()
+    }
 
     internal suspend fun resolve(flags: List<String>): Result<FlagResolution> {
         return flagResolver.resolve(flags, getContext().openFeatureFlatten())
@@ -43,6 +55,40 @@ class Confidence internal constructor(
     internal fun apply(flagName: String, resolveToken: String) {
         flagApplier.apply(flagName, resolveToken)
     }
+}
+
+class ChildConfidence internal constructor(
+    private val clientSecret: String,
+    private val dispatcher: CoroutineDispatcher,
+    private val eventSenderEngine: EventSenderEngine,
+    private val diskStorage: DiskStorage,
+    private val flagResolver: FlagResolver,
+    private val flagApplierClient: FlagApplierClient,
+    private val parent: ConfidenceContextProvider? = null,
+    private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL
+) : Confidence by ConfidenceImpl(
+    clientSecret,
+    dispatcher,
+    eventSenderEngine,
+    diskStorage,
+    flagResolver,
+    flagApplierClient,
+    parent,
+    region
+)
+
+class ConfidenceImpl internal constructor(
+    private val clientSecret: String,
+    private val dispatcher: CoroutineDispatcher,
+    private val eventSenderEngine: EventSenderEngine,
+    private val diskStorage: DiskStorage,
+    private val flagResolver: FlagResolver,
+    private val flagApplierClient: FlagApplierClient,
+    private val parent: ConfidenceContextProvider? = null,
+    private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL
+) : Confidence {
+    private val removedKeys = mutableListOf<String>()
+    private var contextMap: MutableMap<String, ConfidenceValue> = mutableMapOf()
 
     override fun putContext(key: String, value: ConfidenceValue) {
         contextMap[key] = value
@@ -62,11 +108,11 @@ class Confidence internal constructor(
     }
 
     override fun getContext(): Map<String, ConfidenceValue> =
-        this.root?.let {
+        this.parent?.let {
             it.getContext().filterKeys { key -> !removedKeys.contains(key) } + contextMap
         } ?: contextMap
 
-    override fun withContext(context: Map<String, ConfidenceValue>) = Confidence(
+    override fun withContext(context: Map<String, ConfidenceValue>) = ChildConfidence(
         clientSecret,
         dispatcher,
         eventSenderEngine,
@@ -87,71 +133,62 @@ class Confidence internal constructor(
     }
 
     override fun onLowMemory(body: (List<File>) -> Unit): Contextual {
-        coroutineScope.launch {
-            eventSenderEngine
-                .onLowMemoryChannel()
-                .consumeEach {
-                    body(it)
-                }
-        }
         return this
-    }
-
-    override fun stop() {
-        eventSenderEngine.stop()
-    }
-
-    companion object {
-        fun create(
-            context: Context,
-            clientSecret: String,
-            region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
-            dispatcher: CoroutineDispatcher = Dispatchers.IO,
-            addCommonContext: Boolean = true
-        ): Confidence {
-            val engine = EventSenderEngineImpl.instance(
-                context,
-                clientSecret,
-                flushPolicies = listOf(confidenceSizeFlushPolicy),
-                dispatcher = dispatcher
-            )
-            val flagApplierClient = FlagApplierClientImpl(
-                clientSecret,
-                SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
-                region,
-                dispatcher
-            )
-
-            val flagResolver = RemoteFlagResolver(
-                clientSecret = clientSecret,
-                region = region,
-                httpClient = OkHttpClient(),
-                dispatcher = dispatcher,
-                sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION)
-            )
-            return Confidence(
-                clientSecret,
-                dispatcher,
-                engine,
-                region = region,
-                flagResolver = flagResolver,
-                diskStorage = FileDiskStorage.create(context),
-                flagApplierClient = flagApplierClient
-            ).also {
-                if (addCommonContext) {
-                    it.addCommonContext(context)
-                }
-            }
-        }
     }
 }
 
 internal fun Map<String, ConfidenceValue>.openFeatureFlatten(): Map<String, ConfidenceValue> {
-    val context = toMutableMap()
-    val openFeatureContext = context["open_feature"]?.let { it as ConfidenceValue.Struct }
+    val context = this.toMutableMap()
+    val openFeatureContext = context[OPEN_FEATURE_CONTEXT_KEY]?.let { it as ConfidenceValue.Struct }
     openFeatureContext?.let {
         context += it.map
     }
-    context.remove("open_feature")
+    context.remove(OPEN_FEATURE_CONTEXT_KEY)
     return context
+}
+
+internal const val OPEN_FEATURE_CONTEXT_KEY = "open_feature"
+
+object ConfidenceFactory {
+    fun create(
+        context: Context,
+        clientSecret: String,
+        region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
+        dispatcher: CoroutineDispatcher = Dispatchers.IO,
+        addCommonContext: Boolean = true
+    ): RootConfidence {
+        val engine = EventSenderEngineImpl.instance(
+            context,
+            clientSecret,
+            flushPolicies = listOf(minBatchSizeFlushPolicy),
+            dispatcher = dispatcher
+        )
+        val flagApplierClient = FlagApplierClientImpl(
+            clientSecret,
+            SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
+            region,
+            dispatcher
+        )
+
+        val flagResolver = RemoteFlagResolver(
+            clientSecret = clientSecret,
+            region = region,
+            httpClient = OkHttpClient(),
+            dispatcher = dispatcher,
+            sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION)
+        )
+        return RootConfidence(
+            clientSecret,
+            dispatcher,
+            engine,
+            region = region,
+            flagResolver = flagResolver,
+            diskStorage = FileDiskStorage.create(context),
+            flagApplierClient = flagApplierClient
+        ).also {
+            if (addCommonContext) {
+                it.addCommonContext(context)
+            }
+        }
+    }
 }

@@ -1,7 +1,9 @@
 package com.spotify.confidence
 
 import com.spotify.confidence.client.ResolveReason
+import kotlin.jvm.Throws
 
+@Throws(FlagNotFoundError::class, ParseError::class)
 internal fun <T> FlagResolution?.getEvaluation(
     flag: String,
     defaultValue: T,
@@ -19,7 +21,8 @@ internal fun <T> FlagResolution?.getEvaluation(
     requireNotNull(this)
     val resolvedFlag = this.flags.firstOrNull { it.flag == parsedKey.flagName }
         ?: throw FlagNotFoundError(
-            "Could not find flag named: ${parsedKey.flagName}"
+            "Could not find flag named: ${parsedKey.flagName}",
+            parsedKey.flagName
         )
 
     // TODO revisit where to apply flags
@@ -49,7 +52,8 @@ internal fun <T> FlagResolution?.getEvaluation(
         findValueFromValuePath(ConfidenceValue.Struct(flagValue), parsedKey.valuePath)
             ?: if (resolvedFlag.reason == ResolveReason.RESOLVE_REASON_MATCH) {
                 throw ParseError(
-                    "Unable to parse flag value: ${parsedKey.valuePath}"
+                    "Unable to parse flag value: ${parsedKey.valuePath}",
+                    parsedKey.valuePath
                 )
             } else {
                 return Evaluation(value = defaultValue, reason = ResolveReason.DEFAULT)
@@ -64,15 +68,6 @@ internal fun <T> FlagResolution?.getEvaluation(
                 variant = resolvedFlag.variant
             )
         }
-        ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR -> {
-            Evaluation(
-                value = defaultValue,
-                reason = resolvedFlag.reason,
-                errorCode = ErrorCode.INVALID_CONTEXT,
-                errorMessage = "Invalid targeting key"
-            )
-        }
-
         else -> {
             Evaluation(defaultValue, reason = resolvedFlag.reason)
         }
@@ -130,5 +125,11 @@ enum class ErrorCode {
     PROVIDER_NOT_READY
 }
 
-class ParseError(message: String) : Error(message)
-class FlagNotFoundError(message: String) : Error(message)
+data class ParseError(
+    override val message: String,
+    val flagPaths: List<String>
+) : Error(message)
+data class FlagNotFoundError(
+    override val message: String,
+    val flag: String
+) : Error(message)

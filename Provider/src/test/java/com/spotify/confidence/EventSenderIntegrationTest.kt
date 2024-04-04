@@ -26,7 +26,6 @@ class EventSenderIntegrationTest {
     @Before
     fun setup() {
         whenever(mockContext.getDir("events", Context.MODE_PRIVATE)).thenReturn(directory)
-        eventSender?.stop()
         eventSender = null
         for (file in directory.walkFiles()) {
             file.delete()
@@ -37,7 +36,7 @@ class EventSenderIntegrationTest {
     fun emitting_an_event_writes_to_file() = runTest {
         val eventStorage = EventStorageImpl(mockContext)
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        eventSender = Confidence.create(
+        eventSender = ConfidenceFactory.create(
             mockContext,
             clientSecret,
             dispatcher = testDispatcher,
@@ -47,7 +46,7 @@ class EventSenderIntegrationTest {
         val eventCount = 4
         requireNotNull(eventSender)
         repeat(eventCount) {
-            eventSender.send("eventDefinitions/navigate")
+            eventSender.send("navigate")
         }
         val list = mutableListOf<File>()
         for (file in directory.walkFiles()) {
@@ -92,7 +91,7 @@ class EventSenderIntegrationTest {
             dispatcher = testDispatcher,
             uploader = uploader
         )
-        eventSender = Confidence(
+        eventSender = RootConfidence(
             eventSenderEngine = engine,
             dispatcher = testDispatcher,
             diskStorage = mock(),
@@ -104,7 +103,7 @@ class EventSenderIntegrationTest {
         val eventCount = 4 * batchSize + 2
         requireNotNull(eventSender)
         repeat(eventCount) {
-            eventSender.send("eventDefinitions/navigate")
+            eventSender.send("navigate")
         }
         advanceUntilIdle()
         runBlocking {
@@ -157,7 +156,7 @@ class EventSenderIntegrationTest {
             dispatcher = testDispatcher,
             uploader = uploader
         )
-        eventSender = Confidence(
+        eventSender = RootConfidence(
             eventSenderEngine = engine,
             dispatcher = testDispatcher,
             diskStorage = mock(),
@@ -169,7 +168,7 @@ class EventSenderIntegrationTest {
         val eventCount = 4 * batchSize + 2
         requireNotNull(eventSender)
         repeat(eventCount) {
-            eventSender.send("eventDefinitions/navigate")
+            eventSender.send("navigate")
         }
         advanceUntilIdle()
         Assert.assertEquals(uploadRequestCount, eventCount / batchSize)

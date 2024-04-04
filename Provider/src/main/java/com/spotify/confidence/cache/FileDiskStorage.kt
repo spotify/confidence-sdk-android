@@ -42,10 +42,10 @@ internal class FileDiskStorage private constructor(
     }
 
     override fun read(): FlagResolution {
-        if (!flagsFile.exists()) return FlagResolution()
+        if (!flagsFile.exists()) return FlagResolution.EMPTY
         val fileText: String = flagsFile.bufferedReader().use { it.readText() }
         return if (fileText.isEmpty()) {
-            FlagResolution()
+            FlagResolution.EMPTY
         } else {
             Json.decodeFromString(fileText)
         }
