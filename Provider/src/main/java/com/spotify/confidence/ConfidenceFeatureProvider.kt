@@ -73,8 +73,10 @@ class ConfidenceFeatureProvider private constructor(
             try {
                 val resolveResponse = confidence.resolve(listOf())
                 if (resolveResponse is Result.Success) {
-                    // we store the flag anyways
-                    storage.store(resolveResponse.data)
+                    // we store the flag anyways except when the response was not modified
+                    if (resolveResponse.data != FlagResolution.EMPTY) {
+                        storage.store(resolveResponse.data)
+                    }
 
                     when (strategy) {
                         InitialisationStrategy.FetchAndActivate -> {

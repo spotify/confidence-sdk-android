@@ -58,8 +58,8 @@ internal class RemoteFlagResolver(
                 Result.Success(FlagResolution(context, flagList.list, resolveToken))
             }
 
-            else -> {
-                Result.Failure(Error("could not return flag resolution"))
+            is ResolveResponse.NotModified -> {
+                Result.Success(FlagResolution.EMPTY)
             }
         }
     }

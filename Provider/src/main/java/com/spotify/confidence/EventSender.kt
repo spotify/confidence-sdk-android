@@ -10,6 +10,8 @@ interface EventSender : Contextual {
         definition: String,
         payload: ConfidenceFieldsType = mapOf()
     )
+
+    override fun withContext(context: Map<String, ConfidenceValue>): EventSender
 }
 
 interface FlushPolicy {

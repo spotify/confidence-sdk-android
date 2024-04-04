@@ -13,8 +13,6 @@ import com.spotify.confidence.ConfidenceValue
 import com.spotify.confidence.EventSender
 import com.spotify.confidence.InitialisationStrategy
 import com.spotify.confidence.client.ConfidenceRegion
-import com.spotify.confidence.putContext
-import com.spotify.confidence.withContext
 import dev.openfeature.sdk.Client
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FlagEvaluationDetails
@@ -62,12 +60,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
             clientSecret,
             ConfidenceRegion.EUROPE
         )
-        eventSender = confidence.withContext(mapOf("hello" to "world"))
-        eventSender.putContext(mapOf())
-        eventSender.apply {
-            putContext("hello", "world")
-            putContext("boom", 2)
-        }
+        eventSender = confidence.withContext(mapOf())
 
         viewModelScope.launch {
             OpenFeatureAPI.setEvaluationContext(ctx)
@@ -78,7 +71,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
             )
             OpenFeatureAPI.setProviderAndWait(provider, Dispatchers.IO)
 
-            eventSender.send("eventDefinitions/navigate")
+            eventSender.send("navigate")
 
             Log.d(TAG, "client secret is $clientSecret")
             Log.d(TAG, "init took ${System.currentTimeMillis() - start} ms")
@@ -100,7 +93,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         _message.postValue(messageValue)
         _color.postValue(colorFlag)
 
-        eventSender.send("eventDefinitions/navigate")
+        eventSender.send("navigate")
     }
 
     fun updateContext() {

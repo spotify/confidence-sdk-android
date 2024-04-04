@@ -1,6 +1,7 @@
 package com.spotify.confidence
 
 import android.content.Context
+import com.spotify.confidence.client.serializers.ConfidenceValueSerializer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -10,6 +11,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.contextual
 import java.io.File
 import java.io.OutputStream
 
@@ -33,6 +36,12 @@ internal class EventStorageImpl(
     private val onLowMemoryChannel = Channel<List<File>>()
     private val coroutineScope = CoroutineScope(dispatcher)
 
+    private val storageJson = Json {
+        serializersModule = SerializersModule {
+            contextual(ConfidenceValueSerializer)
+        }
+    }
+
     init {
         resetCurrentFile()
     }
@@ -46,7 +55,7 @@ internal class EventStorageImpl(
 
     override suspend fun writeEvent(event: Event) = withLock {
         val delimiter = EVENT_WRITE_DELIMITER
-        val byteArray = (Json.encodeToString(event) + delimiter).toByteArray()
+        val byteArray = (storageJson.encodeToString(event) + delimiter).toByteArray()
         outputStream?.write(byteArray)
         outputStream?.flush()
         coroutineScope.launch {
@@ -76,7 +85,7 @@ internal class EventStorageImpl(
         return text
             .split(EVENT_WRITE_DELIMITER)
             .filter { it.isNotEmpty() }
-            .map { Json.decodeFromString(it) }
+            .map { storageJson.decodeFromString(it) }
     }
 
     override fun onLowMemoryChannel(): Channel<List<File>> = onLowMemoryChannel

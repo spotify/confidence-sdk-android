@@ -1,14 +1,16 @@
 package com.spotify.confidence
 
-import com.spotify.confidence.client.ConfidenceValueMap
 import com.spotify.confidence.client.Sdk
 import com.spotify.confidence.client.await
 import com.spotify.confidence.client.serializers.DateSerializer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.contextual
 import okhttp3.Headers
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -33,8 +35,7 @@ data class Event(
     val eventDefinition: String,
     @Serializable(DateSerializer::class)
     val eventTime: Date,
-    val payload: ConfidenceValueMap,
-    val context: ConfidenceValueMap
+    val payload: Map<String, @Contextual ConfidenceValue>
 )
 
 internal class EventSenderUploaderImpl(
@@ -51,10 +52,15 @@ internal class EventSenderUploaderImpl(
     }
 
     override suspend fun upload(events: EventBatchRequest): Boolean = withContext(dispatcher) {
+        val networkJson = Json {
+            serializersModule = SerializersModule {
+                contextual(NetworkConfidenceValueSerializer)
+            }
+        }
         val httpRequest = Request.Builder()
             .url(BASE_URL)
             .headers(headers)
-            .post(Json.encodeToString(events).toRequestBody())
+            .post(networkJson.encodeToString(events).toRequestBody())
             .build()
 
         val response = httpClient.newCall(httpRequest).await()
