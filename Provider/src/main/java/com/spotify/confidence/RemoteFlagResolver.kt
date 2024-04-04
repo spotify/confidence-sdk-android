@@ -5,7 +5,6 @@ import com.spotify.confidence.client.ResolveResponse
 import com.spotify.confidence.client.Sdk
 import com.spotify.confidence.client.SdkMetadata
 import com.spotify.confidence.client.await
-import com.spotify.confidence.client.serializers.ConfidenceValueSerializer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -75,9 +74,7 @@ internal class RemoteFlagResolver(
 @Serializable
 private data class ResolveFlagsRequest(
     val flags: List<String>,
-    val evaluationContext: Map<
-        String,
-        @Serializable(ConfidenceValueSerializer::class) ConfidenceValue>,
+    val evaluationContext: Map<String, @Serializable(NetworkConfidenceValueSerializer::class) ConfidenceValue>,
     val clientSecret: String,
     val apply: Boolean,
     val sdk: Sdk

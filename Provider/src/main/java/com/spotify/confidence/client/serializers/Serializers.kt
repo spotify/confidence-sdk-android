@@ -16,7 +16,6 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.encoding.encodeStructure
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonContentPolymorphicSerializer
 import kotlinx.serialization.json.JsonDecoder
@@ -28,28 +27,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.TimeZone
-
-/***
- * the struct serializer needed for sending the resolve request
- */
-
-internal object StructSerializer : KSerializer<ConfidenceValue.Struct> {
-    override val descriptor: SerialDescriptor =
-        MapSerializer(String.serializer(), String.serializer()).descriptor
-
-    override fun deserialize(decoder: Decoder): ConfidenceValue.Struct {
-        error("no deserializer is needed")
-    }
-
-    override fun serialize(encoder: Encoder, value: ConfidenceValue.Struct) {
-        encoder.encodeStructure(descriptor) {
-            for ((key, mapValue) in value.map) {
-                encodeStringElement(descriptor, 0, key)
-                encodeSerializableElement(descriptor, 1, ConfidenceValueSerializer, mapValue)
-            }
-        }
-    }
-}
 
 object ConfidenceValueSerializer : JsonContentPolymorphicSerializer<ConfidenceValue>(ConfidenceValue::class) {
     override fun selectDeserializer(element: JsonElement) = when (element.jsonObject.keys) {
