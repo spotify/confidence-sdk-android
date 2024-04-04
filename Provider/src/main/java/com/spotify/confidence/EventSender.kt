@@ -4,15 +4,12 @@ import com.spotify.confidence.client.serializers.JsonAnySerializer
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.io.File
 
 interface EventSender : Contextual {
     fun send(
         definition: String,
         payload: ConfidenceFieldsType = mapOf()
     )
-
-    fun onLowMemory(body: (List<File>) -> Unit): Contextual
 }
 
 interface FlushPolicy {

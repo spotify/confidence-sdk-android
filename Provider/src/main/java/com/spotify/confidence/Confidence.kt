@@ -11,7 +11,6 @@ import com.spotify.confidence.client.SdkMetadata
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import okhttp3.OkHttpClient
-import java.io.File
 
 interface Confidence : Contextual, EventSender
 interface ConfidenceShutdownAPI {
@@ -130,10 +129,6 @@ class ConfidenceImpl internal constructor(
         payload: ConfidenceFieldsType
     ) {
         eventSenderEngine.emit(definition, payload, getContext())
-    }
-
-    override fun onLowMemory(body: (List<File>) -> Unit): Contextual {
-        return this
     }
 }
 
