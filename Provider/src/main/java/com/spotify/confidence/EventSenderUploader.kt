@@ -16,11 +16,11 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.Date
 
 internal interface EventSenderUploader {
-    suspend fun upload(events: EventBatch): Boolean
+    suspend fun upload(events: EventBatchRequest): Boolean
 }
 
 @Serializable
-internal data class EventBatch(
+internal data class EventBatchRequest(
     val clientSecret: String,
     val sdk: Sdk,
     val events: List<Event>,
@@ -50,7 +50,7 @@ internal class EventSenderUploaderImpl(
         )
     }
 
-    override suspend fun upload(events: EventBatch): Boolean = withContext(dispatcher) {
+    override suspend fun upload(events: EventBatchRequest): Boolean = withContext(dispatcher) {
         val httpRequest = Request.Builder()
             .url(BASE_URL)
             .headers(headers)

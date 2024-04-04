@@ -84,13 +84,15 @@ private data class ResolveFlagsRequest(
 )
 
 private fun Response.toResolveFlags(): ResolveResponse {
-    val bodyString = body!!.string()
+    body?.let { body ->
+        val bodyString = body.string()
 
-    // building the json class responsible for serializing the object
-    val networkJson = Json {
-        serializersModule = SerializersModule {
-            ignoreUnknownKeys = true
+        // building the json class responsible for serializing the object
+        val networkJson = Json {
+            serializersModule = SerializersModule {
+                ignoreUnknownKeys = true
+            }
         }
-    }
-    return ResolveResponse.Resolved(networkJson.decodeFromString(bodyString))
+        return ResolveResponse.Resolved(networkJson.decodeFromString(bodyString))
+    } ?: throw ParseError("Response body is null", listOf())
 }

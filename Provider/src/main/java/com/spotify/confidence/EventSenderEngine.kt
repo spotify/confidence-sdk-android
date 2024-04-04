@@ -65,7 +65,7 @@ internal class EventSenderEngineImpl(
                 eventStorage.rollover()
                 val readyFiles = eventStorage.batchReadyFiles()
                 for (readyFile in readyFiles) {
-                    val batch = EventBatch(
+                    val batch = EventBatchRequest(
                         clientSecret = clientSecret,
                         events = eventStorage.eventsFor(readyFile),
                         sendTime = clock.currentTime(),

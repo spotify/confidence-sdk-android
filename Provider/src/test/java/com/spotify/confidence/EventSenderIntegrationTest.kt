@@ -81,7 +81,7 @@ class EventSenderIntegrationTest {
             }
         }
         val uploader = object : EventSenderUploader {
-            override suspend fun upload(events: EventBatch): Boolean {
+            override suspend fun upload(events: EventBatchRequest): Boolean {
                 return false
             }
         }
@@ -146,7 +146,7 @@ class EventSenderIntegrationTest {
         }
         var uploadRequestCount = 0
         val uploader = object : EventSenderUploader {
-            override suspend fun upload(events: EventBatch): Boolean {
+            override suspend fun upload(events: EventBatchRequest): Boolean {
                 uploadRequestCount++
                 return true
             }
