@@ -60,7 +60,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
             clientSecret,
             ConfidenceRegion.EUROPE
         )
-        eventSender = confidence.withContext(mapOf())
+        eventSender = confidence.withContext(mutableMap)
 
         viewModelScope.launch {
             OpenFeatureAPI.setEvaluationContext(ctx)
