@@ -25,7 +25,6 @@ internal fun <T> FlagResolution?.getEvaluation(
             parsedKey.flagName
         )
 
-    // TODO revisit where to apply flags
     if (resolvedFlag.reason != ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR) {
         applyFlag(parsedKey.flagName, resolveToken)
     } else {
@@ -127,7 +126,7 @@ enum class ErrorCode {
 
 data class ParseError(
     override val message: String,
-    val flagPaths: List<String>
+    val flagPaths: List<String> = listOf()
 ) : Error(message)
 data class FlagNotFoundError(
     override val message: String,

@@ -5,14 +5,22 @@ import dev.openfeature.sdk.DateSerializer
 import kotlinx.serialization.Serializable
 
 @Serializable(ConfidenceValueSerializer::class)
-sealed class ConfidenceValue {
-    data class String(val string: kotlin.String) : ConfidenceValue()
-    data class Double(val double: kotlin.Double) : ConfidenceValue()
-    data class Boolean(val boolean: kotlin.Boolean) : ConfidenceValue()
-    data class Integer(val integer: Int) : ConfidenceValue()
-    data class Struct(val map: Map<kotlin.String, ConfidenceValue>) : ConfidenceValue()
-    data class List(val list: kotlin.collections.List<ConfidenceValue>) : ConfidenceValue()
-    data class Date(@Serializable(DateSerializer::class) val date: java.util.Date) : ConfidenceValue()
+sealed interface ConfidenceValue {
+    @Serializable
+    data class String(val string: kotlin.String) : ConfidenceValue
 
-    object Null : ConfidenceValue()
+    @Serializable
+    data class Double(val double: kotlin.Double) : ConfidenceValue
+
+    @Serializable data class Boolean(val boolean: kotlin.Boolean) : ConfidenceValue
+
+    @Serializable data class Integer(val integer: Int) : ConfidenceValue
+
+    @Serializable data class Struct(val map: Map<kotlin.String, ConfidenceValue>) : ConfidenceValue
+
+    @Serializable data class List(val list: kotlin.collections.List<ConfidenceValue>) : ConfidenceValue
+
+    @Serializable data class Date(@Serializable(DateSerializer::class) val date: java.util.Date) : ConfidenceValue
+
+    @Serializable object Null : ConfidenceValue
 }
