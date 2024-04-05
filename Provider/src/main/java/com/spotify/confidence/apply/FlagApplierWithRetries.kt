@@ -1,17 +1,17 @@
 package com.spotify.confidence.apply
 
 import com.spotify.confidence.EventProcessor
+import com.spotify.confidence.Result
 import com.spotify.confidence.cache.DiskStorage
 import com.spotify.confidence.client.AppliedFlag
-import com.spotify.confidence.client.ConfidenceClient
-import com.spotify.confidence.client.Result
+import com.spotify.confidence.client.FlagApplierClient
+import com.spotify.confidence.client.serializers.DateTimeSerializer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import java.util.Date
 
@@ -23,7 +23,7 @@ data class FlagApplierInput(
 data class FlagApplierBatchProcessedInput(
     val resolveToken: String,
     val flags: List<AppliedFlag>,
-    val result: Result
+    val result: Result<Unit>
 )
 
 enum class EventStatus {
@@ -34,7 +34,7 @@ enum class EventStatus {
 
 @Serializable
 data class ApplyInstance(
-    @Contextual
+    @Serializable(DateTimeSerializer::class)
     val time: Date,
     val eventStatus: EventStatus
 )
@@ -43,7 +43,7 @@ internal typealias FlagsAppliedMap =
     MutableMap<String, MutableMap<String, ApplyInstance>>
 
 class FlagApplierWithRetries(
-    private val client: ConfidenceClient,
+    private val client: FlagApplierClient,
     private val dispatcher: CoroutineDispatcher,
     private val diskStorage: DiskStorage
 ) : FlagApplier {

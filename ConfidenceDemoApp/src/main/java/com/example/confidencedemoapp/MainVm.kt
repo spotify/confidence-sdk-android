@@ -7,8 +7,12 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.spotify.confidence.ConfidenceFactory
 import com.spotify.confidence.ConfidenceFeatureProvider
+import com.spotify.confidence.ConfidenceValue
+import com.spotify.confidence.EventSender
 import com.spotify.confidence.InitialisationStrategy
+import com.spotify.confidence.client.ConfidenceRegion
 import dev.openfeature.sdk.Client
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FlagEvaluationDetails
@@ -17,6 +21,7 @@ import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.Value
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.util.Date
 import java.util.UUID
 
 class MainVm(app: Application) : AndroidViewModel(app) {
@@ -26,11 +31,12 @@ class MainVm(app: Application) : AndroidViewModel(app) {
     }
 
     private var client: Client
-    private var ctx: EvaluationContext = ImmutableContext(targetingKey = UUID.randomUUID().toString())
+    private var ctx: EvaluationContext = ImmutableContext(targetingKey = "a98a4291-53b0-49d9-bae8-73d3f5da2070")
     private val _message: MutableLiveData<String> = MutableLiveData("initial")
     private val _color: MutableLiveData<Color> = MutableLiveData(Color.Gray)
     val message: LiveData<String> = _message
     val color: LiveData<Color> = _color
+    private var eventSender: EventSender
 
     init {
         val start = System.currentTimeMillis()
@@ -43,16 +49,29 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         }
 
         client = OpenFeatureAPI.getClient()
+
+        val mutableMap = mutableMapOf<String, ConfidenceValue>()
+        mutableMap["screen"] = ConfidenceValue.String("value")
+        mutableMap["hello"] = ConfidenceValue.Boolean(false)
+        mutableMap["NN"] = ConfidenceValue.Double(20.0)
+        mutableMap["my_struct"] = ConfidenceValue.Struct(mapOf("x" to ConfidenceValue.Double(2.0)))
+
+        val confidence = ConfidenceFactory.create(
+            app.applicationContext,
+            clientSecret,
+            ConfidenceRegion.EUROPE
+        )
+        eventSender = confidence.withContext(mutableMap)
+
         viewModelScope.launch {
             OpenFeatureAPI.setEvaluationContext(ctx)
-            OpenFeatureAPI.setProviderAndWait(
-                ConfidenceFeatureProvider.create(
-                    app.applicationContext,
-                    clientSecret,
-                    initialisationStrategy = strategy
-                ),
-                dispatcher = Dispatchers.IO
+            val provider = ConfidenceFeatureProvider.create(
+                confidence,
+                context = app.applicationContext,
+                initialisationStrategy = strategy
             )
+            OpenFeatureAPI.setProviderAndWait(provider, Dispatchers.IO)
+
             Log.d(TAG, "client secret is $clientSecret")
             Log.d(TAG, "init took ${System.currentTimeMillis() - start} ms")
             refreshUi()
@@ -72,6 +91,8 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         }.toComposeColor()
         _message.postValue(messageValue)
         _color.postValue(colorFlag)
+
+        eventSender.send("navigate", mapOf("my_date" to ConfidenceValue.Date(Date()), "my_time" to ConfidenceValue.Timestamp(Date())))
     }
 
     fun updateContext() {

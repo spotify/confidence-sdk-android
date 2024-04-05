@@ -13,6 +13,8 @@ enum class ResolveReason {
     // The flag was successfully resolved because one rule matched.
     RESOLVE_REASON_MATCH,
 
+    RESOLVE_REASON_STALE,
+
     // The flag could not be resolved because no rule matched.
     RESOLVE_REASON_NO_SEGMENT_MATCH,
 
@@ -25,5 +27,7 @@ enum class ResolveReason {
     RESOLVE_REASON_TARGETING_KEY_ERROR,
 
     // The flag could not be resolved because it was archived.
-    RESOLVE_REASON_FLAG_ARCHIVED
+    RESOLVE_REASON_FLAG_ARCHIVED,
+    DEFAULT,
+    ERROR
 }

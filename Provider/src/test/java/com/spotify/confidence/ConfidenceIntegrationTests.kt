@@ -2,11 +2,10 @@ package com.spotify.confidence
 
 import android.content.Context
 import com.spotify.confidence.cache.FLAGS_FILE_NAME
-import com.spotify.confidence.cache.StorageFileCache
+import com.spotify.confidence.cache.FileDiskStorage
 import com.spotify.confidence.client.ResolveReason
 import com.spotify.confidence.client.ResolvedFlag
 import dev.openfeature.sdk.ImmutableContext
-import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
@@ -22,6 +21,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.io.File
@@ -39,6 +39,7 @@ class ConfidenceIntegrationTests {
     @Before
     fun setup() {
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
+        whenever(mockContext.getDir(any(), any())).thenReturn(Files.createTempDirectory("events").toFile())
     }
 
     @Test
@@ -59,32 +60,27 @@ class ConfidenceIntegrationTests {
             )
         )
 
-        val storage = StorageFileCache.create(mockContext).apply {
+        val storage = FileDiskStorage.create(mockContext).apply {
             val flags = listOf(
                 ResolvedFlag(
                     "kotlin-test-flag",
                     variant = "flags/kotlin-test-flag/off",
                     reason = ResolveReason.RESOLVE_REASON_MATCH,
-                    value = ImmutableStructure(
-                        mapOf("my-integer" to Value.Integer(storedValue))
-                    )
+                    value = mapOf("my-integer" to ConfidenceValue.Integer(storedValue))
                 )
             )
 
-            store(
-                flags,
-                resolveToken,
-                context
-            )
+            store(FlagResolution(context.toConfidenceContext().map, flags, resolveToken))
         }
 
         val eventsHandler = EventHandler(Dispatchers.IO).apply {
             publish(OpenFeatureEvents.ProviderStale)
         }
+        val mockConfidence = ConfidenceFactory.create(mockContext, clientSecret)
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
-                mockContext,
-                clientSecret,
+                context = mockContext,
+                confidence = mockConfidence,
                 storage = storage,
                 initialisationStrategy = InitialisationStrategy.ActivateAndFetchAsync,
                 eventHandler = eventsHandler
@@ -113,10 +109,11 @@ class ConfidenceIntegrationTests {
         val eventsHandler = EventHandler(Dispatchers.IO).apply {
             publish(OpenFeatureEvents.ProviderStale)
         }
+        val mockConfidence = ConfidenceFactory.create(mockContext, clientSecret)
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
-                mockContext,
-                clientSecret,
+                context = mockContext,
+                confidence = mockConfidence,
                 initialisationStrategy = InitialisationStrategy.FetchAndActivate,
                 eventHandler = eventsHandler
             ),
@@ -155,8 +152,13 @@ class ConfidenceIntegrationTests {
         }
         val cacheFile = File(mockContext.filesDir, FLAGS_FILE_NAME)
         assertEquals(0L, cacheFile.length())
+        val mockConfidence = ConfidenceFactory.create(mockContext, clientSecret)
         OpenFeatureAPI.setProvider(
-            ConfidenceFeatureProvider.create(mockContext, clientSecret, eventHandler = eventsHandler),
+            ConfidenceFeatureProvider.create(
+                context = mockContext,
+                confidence = mockConfidence,
+                eventHandler = eventsHandler
+            ),
             ImmutableContext(
                 targetingKey = UUID.randomUUID().toString(),
                 attributes = mutableMapOf(

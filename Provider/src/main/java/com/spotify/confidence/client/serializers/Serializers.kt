@@ -1,16 +1,12 @@
 package com.spotify.confidence.client.serializers
 
+import android.annotation.SuppressLint
+import com.spotify.confidence.ConfidenceValue
+import com.spotify.confidence.ParseError
 import com.spotify.confidence.client.Flags
 import com.spotify.confidence.client.ResolveReason
 import com.spotify.confidence.client.ResolvedFlag
 import com.spotify.confidence.client.SchemaType
-import dev.openfeature.sdk.DateSerializer
-import dev.openfeature.sdk.ImmutableStructure
-import dev.openfeature.sdk.Structure
-import dev.openfeature.sdk.Value
-import dev.openfeature.sdk.ValueSerializer
-import dev.openfeature.sdk.exceptions.OpenFeatureError
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
@@ -20,81 +16,31 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.encoding.encodeStructure
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonContentPolymorphicSerializer
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import java.util.UUID
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.TimeZone
 
-/***
- * the struct serializer needed for sending the resolve request
- */
-
-internal object StructureSerializer : KSerializer<Structure> {
-    override val descriptor: SerialDescriptor =
-        MapSerializer(String.serializer(), String.serializer()).descriptor
-
-    override fun deserialize(decoder: Decoder): Structure {
-        error("no deserializer is needed")
-    }
-
-    override fun serialize(encoder: Encoder, value: Structure) {
-        encoder.encodeStructure(descriptor) {
-            for ((key, mapValue) in value.asMap()) {
-                encodeStringElement(descriptor, 0, key)
-                encodeSerializableElement(descriptor, 1, StructureValueSerializer, mapValue)
-            }
-        }
-    }
-}
-
-private object StructureValueSerializer : KSerializer<Value> {
-    override val descriptor: SerialDescriptor
-        get() = ValueSerializer.descriptor
-
-    override fun deserialize(decoder: Decoder): Value {
-        error("we don't need to deserialize here")
-    }
-
-    @OptIn(ExperimentalSerializationApi::class)
-    override fun serialize(encoder: Encoder, value: Value) {
-        when (value) {
-            is Value.String -> encoder.encodeString(value.string)
-            is Value.Boolean -> encoder.encodeBoolean(value.boolean)
-            is Value.Double -> encoder.encodeDouble(value.double)
-            is Value.Date -> encoder.encodeSerializableValue(
-                DateSerializer,
-                value.date
-            )
-
-            is Value.Integer -> encoder.encodeInt(value.integer)
-            is Value.List -> encoder.encodeSerializableValue(
-                ListSerializer(StructureValueSerializer),
-                value.list
-            )
-
-            Value.Null -> encoder.encodeNull()
-            is Value.Structure -> encoder.encodeSerializableValue(
-                StructureSerializer,
-                ImmutableStructure(value.structure.toMutableMap())
-            )
-        }
-    }
-}
-
-object UUIDSerializer : KSerializer<UUID> {
-    override val descriptor = PrimitiveSerialDescriptor("UUID", PrimitiveKind.STRING)
-
-    override fun deserialize(decoder: Decoder): UUID {
-        return UUID.fromString(decoder.decodeString())
-    }
-
-    override fun serialize(encoder: Encoder, value: UUID) {
-        encoder.encodeString(value.toString())
+object ConfidenceValueSerializer : JsonContentPolymorphicSerializer<ConfidenceValue>(ConfidenceValue::class) {
+    override fun selectDeserializer(element: JsonElement) = when (element.jsonObject.keys) {
+        emptySet<String>() -> ConfidenceValue.Null.serializer()
+        setOf("string") -> ConfidenceValue.String.serializer()
+        setOf("boolean") -> ConfidenceValue.Boolean.serializer()
+        setOf("integer") -> ConfidenceValue.Integer.serializer()
+        setOf("double") -> ConfidenceValue.Double.serializer()
+        setOf("date") -> ConfidenceValue.Date.serializer()
+        setOf("list") -> ConfidenceValue.List.serializer()
+        setOf("map") -> ConfidenceValue.Struct.serializer()
+        setOf("date") -> ConfidenceValue.Date.serializer()
+        setOf("dateTime") -> ConfidenceValue.Timestamp.serializer()
+        else -> throw ParseError("couldn't find deserialization key for Confidence Value")
     }
 }
 
@@ -150,25 +96,28 @@ internal object NetworkResolvedFlagSerializer : KSerializer<ResolvedFlag> {
             val flagSchema =
                 Json.decodeFromString(SchemaTypeSerializer, schemasJson.toString())
             val valueJson = json["value"].toString()
-            val values: Structure =
+            val values: ConfidenceValue.Struct =
                 Json.decodeFromString(FlagValueSerializer(flagSchema), valueJson)
 
-            if (flagSchema.schema.size != values.asMap().size) {
-                throw OpenFeatureError.ParseError("Unexpected flag name in resolve flag data: $flag")
+            if (flagSchema.schema.size != values.map.size) {
+                throw ParseError(
+                    "Unexpected flag name in resolve flag data: $flag",
+                    listOf(flag)
+                )
             }
 
             ResolvedFlag(
                 flag = flag,
                 variant = variant,
                 reason = resolvedReason,
-                value = values
+                value = values.map
             )
         } else {
             ResolvedFlag(
                 flag = flag,
                 variant = variant,
                 reason = resolvedReason,
-                value = ImmutableStructure(mutableMapOf())
+                value = mutableMapOf()
             )
         }
     }
@@ -182,21 +131,21 @@ internal class FlagValueSerializer(
     private val schemaStruct: SchemaType.SchemaStruct,
     override val descriptor: SerialDescriptor =
         MapSerializer(String.serializer(), String.serializer()).descriptor
-) : KSerializer<Structure> {
-    override fun deserialize(decoder: Decoder): Structure {
-        val valueMap = mutableMapOf<String, Value>()
+) : KSerializer<ConfidenceValue.Struct> {
+    override fun deserialize(decoder: Decoder): ConfidenceValue.Struct {
+        val valueMap = mutableMapOf<String, ConfidenceValue>()
         val jsonDecoder = decoder as JsonDecoder
         val jsonElement = jsonDecoder.decodeJsonElement()
         for ((key, value) in jsonElement.jsonObject) {
             schemaStruct.schema[key]?.let {
                 valueMap[key] = value.convertToValue(key, it)
-            } ?: throw OpenFeatureError.ParseError("Couldn't find value \"$key\" in schema")
+            } ?: throw ParseError("Couldn't find value \"$key\" in schema", listOf(key))
         }
 
-        return ImmutableStructure(valueMap)
+        return ConfidenceValue.Struct(valueMap)
     }
 
-    override fun serialize(encoder: Encoder, value: Structure) {
+    override fun serialize(encoder: Encoder, value: ConfidenceValue.Struct) {
         error("no serialization is needed")
     }
 }
@@ -220,34 +169,35 @@ internal object FlagsSerializer : KSerializer<Flags> {
     }
 }
 
-private fun JsonElement.convertToValue(key: String, schemaType: SchemaType): Value = when (schemaType) {
-    is SchemaType.BoolSchema -> toString().toBooleanStrictOrNull()?.let(Value::Boolean) ?: Value.Null
+private fun JsonElement.convertToValue(key: String, schemaType: SchemaType): ConfidenceValue = when (schemaType) {
+    is SchemaType.BoolSchema -> toString().toBooleanStrictOrNull()?.let(ConfidenceValue::Boolean)
+        ?: ConfidenceValue.Null
     is SchemaType.DoubleSchema -> {
-        toString().toDoubleOrNull()?.let(Value::Double) ?: Value.Null
+        toString().toDoubleOrNull()?.let(ConfidenceValue::Double) ?: ConfidenceValue.Null
     }
     is SchemaType.IntSchema -> {
         // passing double number to an integer schema
         if (toString().contains(".")) {
-            throw OpenFeatureError.ParseError("Incompatible value \"$key\" for schema")
+            throw ParseError("Incompatible value \"$key\" for schema", listOf(key))
         }
-        toString().toIntOrNull()?.let(Value::Integer) ?: Value.Null
+        toString().toIntOrNull()?.let { ConfidenceValue.Integer(it) } ?: ConfidenceValue.Null
     }
     is SchemaType.SchemaStruct -> {
         if (jsonObject.isEmpty()) {
-            Value.Null
+            ConfidenceValue.Struct(mapOf())
         } else {
             val serializedMap = Json.decodeFromString(
                 FlagValueSerializer(schemaType),
                 jsonObject.toString()
-            ).asMap()
+            ).map
 
-            Value.Structure(serializedMap)
+            ConfidenceValue.Struct(serializedMap)
         }
     }
     is SchemaType.StringSchema -> if (!jsonPrimitive.isString) {
-        Value.Null
+        ConfidenceValue.Null
     } else {
-        Value.String(toString().replace("\"", ""))
+        ConfidenceValue.String(toString().replace("\"", ""))
     }
 }
 
@@ -263,4 +213,35 @@ private fun JsonElement.convertToSchemaTypeValue(): SchemaType = when {
         )
     }
     else -> error("not a valid schema")
+}
+
+@SuppressLint("SimpleDateFormat")
+internal object DateTimeSerializer : KSerializer<Date> {
+    private val dateFormatter =
+        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").apply { timeZone = TimeZone.getTimeZone("UTC") }
+    private val fallbackDateFormatter =
+        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").apply { timeZone = TimeZone.getTimeZone("UTC") }
+    override val descriptor = PrimitiveSerialDescriptor("Instant", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: Date) = encoder.encodeString(dateFormatter.format(value))
+    override fun deserialize(decoder: Decoder): Date = with(decoder.decodeString()) {
+        try {
+            dateFormatter.parse(this)
+                ?: throw IllegalArgumentException("unable to parse $this")
+        } catch (e: Exception) {
+            fallbackDateFormatter.parse(this)
+                ?: throw IllegalArgumentException("unable to parse $this")
+        }
+    }
+}
+
+@SuppressLint("SimpleDateFormat")
+internal object DateSerializer : KSerializer<Date> {
+    private val dateFormatter =
+        SimpleDateFormat("yyyy-MM-dd").apply { timeZone = TimeZone.getTimeZone("UTC") }
+    override val descriptor = PrimitiveSerialDescriptor("Instant", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: Date) = encoder.encodeString(dateFormatter.format(value))
+    override fun deserialize(decoder: Decoder): Date = with(decoder.decodeString()) {
+        dateFormatter.parse(this)
+            ?: throw IllegalArgumentException("unable to parse $this")
+    }
 }

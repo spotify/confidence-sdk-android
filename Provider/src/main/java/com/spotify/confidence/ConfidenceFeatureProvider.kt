@@ -1,18 +1,9 @@
 package com.spotify.confidence
 
 import android.content.Context
-import com.spotify.confidence.apply.FlagApplier
-import com.spotify.confidence.apply.FlagApplierWithRetries
 import com.spotify.confidence.cache.DiskStorage
-import com.spotify.confidence.cache.InMemoryCache
-import com.spotify.confidence.cache.ProviderCache
-import com.spotify.confidence.cache.ProviderCache.CacheResolveResult
-import com.spotify.confidence.cache.StorageFileCache
-import com.spotify.confidence.client.ConfidenceClient
-import com.spotify.confidence.client.ConfidenceRegion
-import com.spotify.confidence.client.ConfidenceRemoteClient
-import com.spotify.confidence.client.ResolveResponse
-import com.spotify.confidence.client.SdkMetadata
+import com.spotify.confidence.cache.FileDiskStorage
+import com.spotify.confidence.client.ResolveReason
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FeatureProvider
 import dev.openfeature.sdk.Hook
@@ -22,10 +13,7 @@ import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.events.EventHandler
 import dev.openfeature.sdk.events.OpenFeatureEvents
-import dev.openfeature.sdk.exceptions.ErrorCode
-import dev.openfeature.sdk.exceptions.OpenFeatureError.FlagNotFoundError
-import dev.openfeature.sdk.exceptions.OpenFeatureError.InvalidContextError
-import dev.openfeature.sdk.exceptions.OpenFeatureError.ParseError
+import dev.openfeature.sdk.exceptions.OpenFeatureError
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -44,15 +32,15 @@ const val SDK_ID = "SDK_ID_KOTLIN_PROVIDER"
 class ConfidenceFeatureProvider private constructor(
     override val hooks: List<Hook<*>>,
     override val metadata: ProviderMetadata,
-    private val cache: ProviderCache,
     private val storage: DiskStorage,
+    private val providerCache: ProviderCache,
     private val initialisationStrategy: InitialisationStrategy,
-    private val client: ConfidenceClient,
-    private val flagApplier: FlagApplier,
     private val eventHandler: EventHandler,
+    private val confidence: Confidence,
     dispatcher: CoroutineDispatcher
 ) : FeatureProvider {
     private val job = SupervisorJob()
+
     private val coroutineScope = CoroutineScope(job + dispatcher)
     private val networkExceptionHandler by lazy {
         CoroutineExceptionHandler { _, _ ->
@@ -75,38 +63,37 @@ class ConfidenceFeatureProvider private constructor(
         strategy: InitialisationStrategy
     ) {
         // refresh cache with the last stored data
-        storage.read()?.let(cache::refresh)
-
+        storage.read().let(providerCache::refresh)
         if (strategy == InitialisationStrategy.ActivateAndFetchAsync) {
             eventHandler.publish(OpenFeatureEvents.ProviderReady)
         }
 
         coroutineScope.launch(networkExceptionHandler) {
-            val resolveResponse = client.resolve(listOf(), initialContext)
-            if (resolveResponse is ResolveResponse.Resolved) {
-                val (flags, resolveToken) = resolveResponse.flags
-
-                // update the cache and emit the ready signal when the strategy is expected
-                // to wait for the network response
-
-                // we store the flag anyways
-                val storedData = storage.store(
-                    flags.list,
-                    resolveToken,
-                    initialContext
-                )
-
-                when (strategy) {
-                    InitialisationStrategy.FetchAndActivate -> {
-                        // refresh the cache from the stored data
-                        cache.refresh(cacheData = storedData)
-                        eventHandler.publish(OpenFeatureEvents.ProviderReady)
+            confidence.putContext(OPEN_FEATURE_CONTEXT_KEY, initialContext.toConfidenceContext())
+            try {
+                val resolveResponse = confidence.resolve(listOf())
+                if (resolveResponse is Result.Success) {
+                    // we store the flag anyways except when the response was not modified
+                    if (resolveResponse.data != FlagResolution.EMPTY) {
+                        storage.store(resolveResponse.data)
                     }
 
-                    InitialisationStrategy.ActivateAndFetchAsync -> {
-                        // do nothing
+                    when (strategy) {
+                        InitialisationStrategy.FetchAndActivate -> {
+                            // refresh the cache from the stored data
+                            providerCache.refresh(resolveResponse.data)
+                            eventHandler.publish(OpenFeatureEvents.ProviderReady)
+                        }
+
+                        InitialisationStrategy.ActivateAndFetchAsync -> {
+                            // do nothing
+                        }
                     }
+                } else {
+                    eventHandler.publish(OpenFeatureEvents.ProviderReady)
                 }
+            } catch (e: ParseError) {
+                throw OpenFeatureError.ParseError(e.message)
             }
         }
     }
@@ -140,7 +127,7 @@ class ConfidenceFeatureProvider private constructor(
         defaultValue: Boolean,
         context: EvaluationContext?
     ): ProviderEvaluation<Boolean> {
-        return generateEvaluation(key, defaultValue, context)
+        return generateEvaluation(key, defaultValue)
     }
 
     override fun getDoubleEvaluation(
@@ -148,7 +135,7 @@ class ConfidenceFeatureProvider private constructor(
         defaultValue: Double,
         context: EvaluationContext?
     ): ProviderEvaluation<Double> {
-        return generateEvaluation(key, defaultValue, context)
+        return generateEvaluation(key, defaultValue)
     }
 
     override fun getIntegerEvaluation(
@@ -156,7 +143,7 @@ class ConfidenceFeatureProvider private constructor(
         defaultValue: Int,
         context: EvaluationContext?
     ): ProviderEvaluation<Int> {
-        return generateEvaluation(key, defaultValue, context)
+        return generateEvaluation(key, defaultValue)
     }
 
     override fun getObjectEvaluation(
@@ -164,7 +151,14 @@ class ConfidenceFeatureProvider private constructor(
         defaultValue: Value,
         context: EvaluationContext?
     ): ProviderEvaluation<Value> {
-        return generateEvaluation(key, defaultValue, context)
+        val evaluation = generateEvaluation(key, defaultValue.toConfidenceValue())
+        return ProviderEvaluation(
+            value = evaluation.value.toValue(),
+            reason = evaluation.reason,
+            variant = evaluation.variant,
+            errorCode = evaluation.errorCode,
+            errorMessage = evaluation.errorMessage
+        )
     }
 
     override fun getStringEvaluation(
@@ -172,70 +166,27 @@ class ConfidenceFeatureProvider private constructor(
         defaultValue: String,
         context: EvaluationContext?
     ): ProviderEvaluation<String> {
-        return generateEvaluation(key, defaultValue, context)
+        return generateEvaluation(key, defaultValue)
     }
 
     private fun <T> generateEvaluation(
         key: String,
-        defaultValue: T,
-        context: EvaluationContext?
+        defaultValue: T
     ): ProviderEvaluation<T> {
-        val parsedKey = FlagKey(key)
-        val evaluationContext = context ?: throw InvalidContextError()
-        return when (val resolve: CacheResolveResult = cache.resolve(parsedKey.flagName, evaluationContext)) {
-            is CacheResolveResult.Found -> {
-                resolve.entry.toProviderEvaluation(
-                    parsedKey,
-                    defaultValue
-                )
-            }
-            CacheResolveResult.Stale -> ProviderEvaluation(
-                value = defaultValue,
-                reason = Reason.ERROR.toString(),
-                errorCode = ErrorCode.PROVIDER_NOT_READY
-            )
-            CacheResolveResult.NotFound -> throw FlagNotFoundError(parsedKey.flagName)
-        }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun <T> getTyped(v: Value): T? {
-        return when (v) {
-            is Value.Boolean -> v.boolean as T
-            is Value.Double -> v.double as T
-            is Value.Date -> v.date as T
-            is Value.Integer -> v.integer as T
-            is Value.List -> v as T
-            is Value.String -> v.string as T
-            is Value.Structure -> v as T
-            Value.Null -> null
-        }
-    }
-
-    private fun findValueFromValuePath(value: Value.Structure, valuePath: List<String>): Value? {
-        if (valuePath.isEmpty()) return value
-        val currValue = value.structure[valuePath[0]]
-        return when {
-            currValue is Value.Structure -> {
-                findValueFromValuePath(currValue, valuePath.subList(1, valuePath.count()))
-            }
-            valuePath.count() == 1 -> currValue
-            else -> null
-        }
-    }
-
-    private data class FlagKey(
-        val flagName: String,
-        val valuePath: List<String>
-    ) {
-        companion object {
-            operator fun invoke(evalKey: String): FlagKey {
-                val splits = evalKey.split(".")
-                return FlagKey(
-                    splits.getOrNull(0)!!,
-                    splits.subList(1, splits.count())
-                )
-            }
+        try {
+            return providerCache.get().getEvaluation(
+                key,
+                defaultValue,
+                confidence.getContext().openFeatureFlatten()
+            ) { flagName, resolveToken ->
+                // this lambda will be invoked inside the evaluation process
+                // and only if the resolve reason is not targeting key error.
+                confidence.apply(flagName, resolveToken)
+            }.toProviderEvaluation()
+        } catch (e: ParseError) {
+            throw OpenFeatureError.ParseError(e.message)
+        } catch (e: FlagNotFoundError) {
+            throw OpenFeatureError.FlagNotFoundError(e.flag)
         }
     }
     companion object {
@@ -244,89 +195,93 @@ class ConfidenceFeatureProvider private constructor(
         fun isStorageEmpty(
             context: Context
         ): Boolean {
-            val storage = StorageFileCache.create(context)
+            val storage = FileDiskStorage.create(context)
             val data = storage.read()
-            return data == null
+            return data == FlagResolution.EMPTY
         }
 
         @Suppress("LongParameterList")
         fun create(
+            confidence: Confidence,
             context: Context,
-            clientSecret: String,
-            region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
             initialisationStrategy: InitialisationStrategy = InitialisationStrategy.FetchAndActivate,
             hooks: List<Hook<*>> = listOf(),
-            client: ConfidenceClient? = null,
             metadata: ProviderMetadata = ConfidenceMetadata(),
-            cache: ProviderCache? = null,
             storage: DiskStorage? = null,
-            flagApplier: FlagApplier? = null,
+            cache: ProviderCache = InMemoryCache(),
             eventHandler: EventHandler = EventHandler(Dispatchers.IO),
             dispatcher: CoroutineDispatcher = Dispatchers.IO
         ): ConfidenceFeatureProvider {
-            val configuredClient = client ?: ConfidenceRemoteClient(
-                clientSecret = clientSecret,
-                sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
-                region = region,
-                dispatcher = dispatcher
-            )
-            val diskStorage = storage ?: StorageFileCache.create(context)
-            val flagApplierWithRetries = flagApplier ?: FlagApplierWithRetries(
-                client = configuredClient,
-                dispatcher = dispatcher,
-                diskStorage = diskStorage
-            )
-
+            val diskStorage = storage ?: FileDiskStorage.create(context)
             return ConfidenceFeatureProvider(
                 hooks = hooks,
                 metadata = metadata,
-                cache = cache ?: InMemoryCache(),
                 storage = diskStorage,
                 initialisationStrategy = initialisationStrategy,
-                client = configuredClient,
-                flagApplier = flagApplierWithRetries,
-                eventHandler,
-                dispatcher
-            )
-        }
-    }
-
-    private fun <T> ProviderCache.CacheResolveEntry.toProviderEvaluation(
-        parsedKey: FlagKey,
-        defaultValue: T
-    ): ProviderEvaluation<T> = when (resolveReason) {
-        com.spotify.confidence.client.ResolveReason.RESOLVE_REASON_MATCH -> {
-            val resolvedValue: Value = findValueFromValuePath(value, parsedKey.valuePath)
-                ?: throw ParseError(
-                    "Unable to parse flag value: ${parsedKey.valuePath.joinToString(separator = "/")}"
-                )
-            val value = getTyped<T>(resolvedValue) ?: defaultValue
-            flagApplier.apply(parsedKey.flagName, resolveToken)
-            ProviderEvaluation(
-                value = value,
-                variant = variant,
-                reason = Reason.TARGETING_MATCH.toString()
-            )
-        }
-        com.spotify.confidence.client.ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR -> {
-            ProviderEvaluation(
-                value = defaultValue,
-                reason = Reason.ERROR.toString(),
-                errorCode = ErrorCode.INVALID_CONTEXT,
-                errorMessage = "Invalid targeting key"
-            )
-        }
-        else -> {
-            flagApplier.apply(parsedKey.flagName, resolveToken)
-            ProviderEvaluation(
-                value = defaultValue,
-                reason = Reason.DEFAULT.toString()
+                providerCache = cache,
+                eventHandler = eventHandler,
+                confidence = confidence,
+                dispatcher = dispatcher
             )
         }
     }
 }
 
+internal fun Value.toConfidenceValue(): ConfidenceValue = when (this) {
+    is Value.Structure -> ConfidenceValue.Struct(structure.mapValues { it.value.toConfidenceValue() })
+    is Value.Boolean -> ConfidenceValue.Boolean(this.boolean)
+    is Value.Date -> ConfidenceValue.Timestamp(this.date)
+    is Value.Double -> ConfidenceValue.Double(this.double)
+    is Value.Integer -> ConfidenceValue.Integer(this.integer)
+    is Value.List -> ConfidenceValue.List(this.list.map { it.toConfidenceValue() })
+    Value.Null -> ConfidenceValue.Null
+    is Value.String -> ConfidenceValue.String(this.string)
+}
+
+internal fun ConfidenceValue.toValue(): Value = when (this) {
+    is ConfidenceValue.Boolean -> Value.Boolean(this.boolean)
+    is ConfidenceValue.Date -> Value.Date(this.date)
+    is ConfidenceValue.Double -> Value.Double(this.double)
+    is ConfidenceValue.Integer -> Value.Integer(this.integer)
+    is ConfidenceValue.List -> Value.List(this.list.map { it.toValue() })
+    ConfidenceValue.Null -> Value.Null
+    is ConfidenceValue.String -> Value.String(this.string)
+    is ConfidenceValue.Struct -> Value.Structure(this.map.mapValues { it.value.toValue() })
+    is ConfidenceValue.Timestamp -> Value.Date(this.dateTime)
+}
+
+private fun <T> Evaluation<T>.toProviderEvaluation() = ProviderEvaluation(
+    reason = this.reason.toOFReason().name,
+    errorCode = this.errorCode.toOFErrorCode(),
+    errorMessage = this.errorMessage,
+    value = this.value,
+    variant = this.variant
+)
+
+private fun ResolveReason.toOFReason(): Reason = when (this) {
+    ResolveReason.ERROR -> Reason.ERROR
+    ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR -> Reason.ERROR
+    ResolveReason.RESOLVE_REASON_UNSPECIFIED -> Reason.UNKNOWN
+    ResolveReason.RESOLVE_REASON_MATCH -> Reason.TARGETING_MATCH
+    ResolveReason.RESOLVE_REASON_STALE -> Reason.STALE
+    else -> Reason.DEFAULT
+}
+
+private fun ErrorCode?.toOFErrorCode() = when (this) {
+    null -> null
+    ErrorCode.FLAG_NOT_FOUND -> dev.openfeature.sdk.exceptions.ErrorCode.FLAG_NOT_FOUND
+    ErrorCode.INVALID_CONTEXT -> dev.openfeature.sdk.exceptions.ErrorCode.INVALID_CONTEXT
+    else -> dev.openfeature.sdk.exceptions.ErrorCode.PROVIDER_NOT_READY
+}
+
 sealed interface InitialisationStrategy {
     object FetchAndActivate : InitialisationStrategy
     object ActivateAndFetchAsync : InitialisationStrategy
+}
+
+fun EvaluationContext.toConfidenceContext(): ConfidenceValue.Struct {
+    val map = mutableMapOf<String, ConfidenceValue>()
+    map["targeting_key"] = ConfidenceValue.String(getTargetingKey())
+    map.putAll(asMap().mapValues { it.value.toConfidenceValue() })
+    return ConfidenceValue.Struct(map)
 }

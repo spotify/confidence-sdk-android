@@ -12,6 +12,7 @@ object Versions {
     const val core = "1.7.0"
     const val lifecycleRuntime = "2.3.1"
     const val activityCompose = "1.3.1"
+    const val kotlinxSerialization = "1.6.0"
     const val composeUi = "1.2.0"
     const val composeUiToolingPreview = "1.2.0"
     const val composeMaterial = "1.2.0"

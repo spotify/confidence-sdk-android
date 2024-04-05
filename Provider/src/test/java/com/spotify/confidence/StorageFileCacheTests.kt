@@ -3,20 +3,18 @@
 package com.spotify.confidence
 
 import android.content.Context
-import com.spotify.confidence.cache.InMemoryCache
-import com.spotify.confidence.client.ConfidenceClient
+import com.spotify.confidence.cache.FileDiskStorage
+import com.spotify.confidence.client.ConfidenceRegion
+import com.spotify.confidence.client.FlagApplierClient
 import com.spotify.confidence.client.Flags
-import com.spotify.confidence.client.ResolveFlags
 import com.spotify.confidence.client.ResolveReason
-import com.spotify.confidence.client.ResolveResponse
 import com.spotify.confidence.client.ResolvedFlag
-import com.spotify.confidence.client.Result
 import dev.openfeature.sdk.ImmutableContext
-import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.events.awaitReadyOrError
 import junit.framework.TestCase
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -31,25 +29,25 @@ import java.time.Instant
 
 class StorageFileCacheTests {
     private val instant = Instant.parse("2023-03-01T14:01:46.999Z")
+    private val flagResolverClient = mock<FlagResolver>()
+
     private val resolvedFlags = Flags(
         listOf(
             ResolvedFlag(
                 "test-kotlin-flag-1",
                 "flags/test-kotlin-flag-1/variants/variant-1",
-                ImmutableStructure(
-                    mutableMapOf(
-                        "mystring" to Value.String("red"),
-                        "myboolean" to Value.Boolean(false),
-                        "myinteger" to Value.Integer(7),
-                        "mydouble" to Value.Double(3.14),
-                        "mydate" to Value.String(instant.toString()),
-                        "mystruct" to Value.Structure(
-                            mapOf(
-                                "innerString" to Value.String("innerValue")
-                            )
-                        ),
-                        "mynull" to Value.Null
-                    )
+                mutableMapOf(
+                    "mystring" to ConfidenceValue.String("red"),
+                    "myboolean" to ConfidenceValue.Boolean(false),
+                    "myinteger" to ConfidenceValue.Integer(7),
+                    "mydouble" to ConfidenceValue.Double(3.14),
+                    "mydate" to ConfidenceValue.String(instant.toString()),
+                    "mystruct" to ConfidenceValue.Struct(
+                        mapOf(
+                            "innerString" to ConfidenceValue.String("innerValue")
+                        )
+                    ),
+                    "mynull" to ConfidenceValue.Null
                 ),
                 ResolveReason.RESOLVE_REASON_MATCH
             )
@@ -65,30 +63,33 @@ class StorageFileCacheTests {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun testOfflineScenarioLoadsStoredCache() = runTest {
-        val mockClient: ConfidenceClient = mock()
-        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success)
+        val mockClient: FlagApplierClient = mock()
+        whenever(mockClient.apply(any(), any())).thenReturn(Result.Success(Unit))
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val cache1 = InMemoryCache()
-        whenever(mockClient.resolve(eq(listOf()), any())).thenReturn(
-            ResolveResponse.Resolved(
-                ResolveFlags(resolvedFlags, "token1")
+        val confidence = getConfidence(testDispatcher)
+        whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
+            Result.Success(
+                FlagResolution(
+                    ImmutableContext(targetingKey = "user1").toConfidenceContext().map,
+                    resolvedFlags.list,
+                    "token1"
+                )
             )
         )
         val provider1 = ConfidenceFeatureProvider.create(
             context = mockContext,
-            clientSecret = "",
-            client = mockClient,
+            confidence = confidence,
             cache = cache1
         )
         provider1.initialize(ImmutableContext(targetingKey = "user1"))
         provider1.awaitReadyOrError(testDispatcher)
 
         // Simulate offline scenario
-        whenever(mockClient.resolve(eq(listOf()), any())).thenThrow(Error())
+        whenever(flagResolverClient.resolve(eq(listOf()), any())).thenThrow(Error())
         val provider2 = ConfidenceFeatureProvider.create(
             context = mockContext,
-            clientSecret = "",
-            client = mockClient,
+            confidence = confidence,
             cache = InMemoryCache()
         )
         provider2.initialize(ImmutableContext("user1"))
@@ -123,4 +124,14 @@ class StorageFileCacheTests {
         TestCase.assertEquals(Reason.TARGETING_MATCH.toString(), evalNested.reason)
         TestCase.assertEquals(Reason.TARGETING_MATCH.toString(), evalNull.reason)
     }
+
+    private fun getConfidence(dispatcher: CoroutineDispatcher) = Confidence(
+        clientSecret = "",
+        dispatcher = dispatcher,
+        eventSenderEngine = mock(),
+        flagResolver = flagResolverClient,
+        flagApplierClient = mock(),
+        diskStorage = FileDiskStorage.create(mockContext),
+        region = ConfidenceRegion.EUROPE
+    )
 }
