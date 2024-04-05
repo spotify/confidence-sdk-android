@@ -9,7 +9,7 @@ import org.mockito.kotlin.mock
 class ConfidenceContextualTests {
     @Test
     fun test_forking_context_works() {
-        val confidence = ConfidenceImpl(
+        val confidence = Confidence(
             "",
             Dispatchers.IO,
             mock(),
@@ -35,7 +35,7 @@ class ConfidenceContextualTests {
 
     @Test
     fun removing_context_will_skip_the_context_coming_from_parent() {
-        val confidence = ConfidenceImpl(
+        val confidence = Confidence(
             "",
             Dispatchers.IO,
             mock(),
