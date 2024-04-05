@@ -21,6 +21,7 @@ import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.Value
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.util.Date
 import java.util.UUID
 
 class MainVm(app: Application) : AndroidViewModel(app) {
@@ -71,8 +72,6 @@ class MainVm(app: Application) : AndroidViewModel(app) {
             )
             OpenFeatureAPI.setProviderAndWait(provider, Dispatchers.IO)
 
-            eventSender.send("navigate")
-
             Log.d(TAG, "client secret is $clientSecret")
             Log.d(TAG, "init took ${System.currentTimeMillis() - start} ms")
             refreshUi()
@@ -93,7 +92,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         _message.postValue(messageValue)
         _color.postValue(colorFlag)
 
-        eventSender.send("navigate")
+        eventSender.send("navigate", mapOf("my_date" to ConfidenceValue.Date(Date()), "my_time" to ConfidenceValue.Timestamp(Date())))
     }
 
     fun updateContext() {

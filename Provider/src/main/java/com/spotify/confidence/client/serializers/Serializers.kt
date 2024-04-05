@@ -38,6 +38,8 @@ object ConfidenceValueSerializer : JsonContentPolymorphicSerializer<ConfidenceVa
         setOf("date") -> ConfidenceValue.Date.serializer()
         setOf("list") -> ConfidenceValue.List.serializer()
         setOf("map") -> ConfidenceValue.Struct.serializer()
+        setOf("date") -> ConfidenceValue.Date.serializer()
+        setOf("dateTime") -> ConfidenceValue.Timestamp.serializer()
         else -> throw ParseError("couldn't find deserialization key for Confidence Value")
     }
 }
