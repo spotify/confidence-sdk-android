@@ -1,6 +1,7 @@
 package com.spotify.confidence
 
 import com.spotify.confidence.client.serializers.DateSerializer
+import com.spotify.confidence.client.serializers.DateTimeSerializer
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
@@ -63,6 +64,11 @@ internal object NetworkConfidenceValueSerializer : KSerializer<ConfidenceValue> 
             is ConfidenceValue.Date -> encoder.encodeSerializableValue(
                 DateSerializer,
                 value.date
+            )
+
+            is ConfidenceValue.Timestamp -> encoder.encodeSerializableValue(
+                DateTimeSerializer,
+                value.dateTime
             )
         }
     }

@@ -214,7 +214,7 @@ private fun JsonElement.convertToSchemaTypeValue(): SchemaType = when {
 }
 
 @SuppressLint("SimpleDateFormat")
-internal object DateSerializer : KSerializer<Date> {
+internal object DateTimeSerializer : KSerializer<Date> {
     private val dateFormatter =
         SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").apply { timeZone = TimeZone.getTimeZone("UTC") }
     private val fallbackDateFormatter =
@@ -229,5 +229,17 @@ internal object DateSerializer : KSerializer<Date> {
             fallbackDateFormatter.parse(this)
                 ?: throw IllegalArgumentException("unable to parse $this")
         }
+    }
+}
+
+@SuppressLint("SimpleDateFormat")
+internal object DateSerializer : KSerializer<Date> {
+    private val dateFormatter =
+        SimpleDateFormat("yyyy-MM-dd").apply { timeZone = TimeZone.getTimeZone("UTC") }
+    override val descriptor = PrimitiveSerialDescriptor("Instant", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: Date) = encoder.encodeString(dateFormatter.format(value))
+    override fun deserialize(decoder: Decoder): Date = with(decoder.decodeString()) {
+        dateFormatter.parse(this)
+            ?: throw IllegalArgumentException("unable to parse $this")
     }
 }

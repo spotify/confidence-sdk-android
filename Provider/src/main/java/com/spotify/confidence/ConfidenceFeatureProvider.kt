@@ -36,7 +36,7 @@ class ConfidenceFeatureProvider private constructor(
     private val providerCache: ProviderCache,
     private val initialisationStrategy: InitialisationStrategy,
     private val eventHandler: EventHandler,
-    private val confidence: RootConfidence,
+    private val confidence: Confidence,
     dispatcher: CoroutineDispatcher
 ) : FeatureProvider {
     private val job = SupervisorJob()
@@ -202,7 +202,7 @@ class ConfidenceFeatureProvider private constructor(
 
         @Suppress("LongParameterList")
         fun create(
-            confidence: RootConfidence,
+            confidence: Confidence,
             context: Context,
             initialisationStrategy: InitialisationStrategy = InitialisationStrategy.FetchAndActivate,
             hooks: List<Hook<*>> = listOf(),
@@ -230,7 +230,7 @@ class ConfidenceFeatureProvider private constructor(
 internal fun Value.toConfidenceValue(): ConfidenceValue = when (this) {
     is Value.Structure -> ConfidenceValue.Struct(structure.mapValues { it.value.toConfidenceValue() })
     is Value.Boolean -> ConfidenceValue.Boolean(this.boolean)
-    is Value.Date -> ConfidenceValue.Date(this.date)
+    is Value.Date -> ConfidenceValue.Timestamp(this.date)
     is Value.Double -> ConfidenceValue.Double(this.double)
     is Value.Integer -> ConfidenceValue.Integer(this.integer)
     is Value.List -> ConfidenceValue.List(this.list.map { it.toConfidenceValue() })
@@ -247,6 +247,7 @@ internal fun ConfidenceValue.toValue(): Value = when (this) {
     ConfidenceValue.Null -> Value.Null
     is ConfidenceValue.String -> Value.String(this.string)
     is ConfidenceValue.Struct -> Value.Structure(this.map.mapValues { it.value.toValue() })
+    is ConfidenceValue.Timestamp -> Value.Date(this.dateTime)
 }
 
 private fun <T> Evaluation<T>.toProviderEvaluation() = ProviderEvaluation(

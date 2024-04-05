@@ -3,7 +3,7 @@ package com.spotify.confidence.client.network
 import com.spotify.confidence.client.AppliedFlag
 import com.spotify.confidence.client.Sdk
 import com.spotify.confidence.client.await
-import com.spotify.confidence.client.serializers.DateSerializer
+import com.spotify.confidence.client.serializers.DateTimeSerializer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -47,7 +47,7 @@ internal class ApplyFlagsInteractorImpl(
 @Serializable
 internal data class ApplyFlagsRequest(
     val flags: List<AppliedFlag>,
-    @Serializable(DateSerializer::class)
+    @Serializable(DateTimeSerializer::class)
     val sendTime: Date,
     val clientSecret: String,
     val resolveToken: String,

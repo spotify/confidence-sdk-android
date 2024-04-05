@@ -12,12 +12,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import okhttp3.OkHttpClient
 
-interface Confidence : Contextual, EventSender
-interface ConfidenceShutdownAPI {
-    fun shutdown()
-}
-
-class RootConfidence internal constructor(
+class Confidence internal constructor(
     private val clientSecret: String,
     private val dispatcher: CoroutineDispatcher,
     private val eventSenderEngine: EventSenderEngine,
@@ -25,26 +20,24 @@ class RootConfidence internal constructor(
     private val flagResolver: FlagResolver,
     private val flagApplierClient: FlagApplierClient,
     private val parent: ConfidenceContextProvider? = null,
-    private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL
-) : Confidence by ConfidenceImpl(
-    clientSecret,
-    dispatcher,
-    eventSenderEngine,
-    diskStorage,
-    flagResolver,
-    flagApplierClient,
-    parent,
-    region
-),
-    ConfidenceShutdownAPI {
+    private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
+    private val isRoot: Boolean = false
+) : Contextual, EventSender {
+    private val removedKeys = mutableListOf<String>()
+    private var contextMap: MutableMap<String, ConfidenceValue> = mutableMapOf()
+
     private val flagApplier = FlagApplierWithRetries(
         client = flagApplierClient,
         dispatcher = dispatcher,
         diskStorage = diskStorage
     )
 
-    override fun shutdown() {
-        eventSenderEngine.stop()
+    fun shutdown() {
+        if (isRoot) {
+            eventSenderEngine.stop()
+        } else {
+            // no-op for child confidence
+        }
     }
 
     internal suspend fun resolve(flags: List<String>): Result<FlagResolution> {
@@ -54,40 +47,6 @@ class RootConfidence internal constructor(
     internal fun apply(flagName: String, resolveToken: String) {
         flagApplier.apply(flagName, resolveToken)
     }
-}
-
-internal class ChildConfidence internal constructor(
-    private val clientSecret: String,
-    private val dispatcher: CoroutineDispatcher,
-    private val eventSenderEngine: EventSenderEngine,
-    private val diskStorage: DiskStorage,
-    private val flagResolver: FlagResolver,
-    private val flagApplierClient: FlagApplierClient,
-    private val parent: ConfidenceContextProvider? = null,
-    private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL
-) : Confidence by ConfidenceImpl(
-    clientSecret,
-    dispatcher,
-    eventSenderEngine,
-    diskStorage,
-    flagResolver,
-    flagApplierClient,
-    parent,
-    region
-)
-
-class ConfidenceImpl internal constructor(
-    private val clientSecret: String,
-    private val dispatcher: CoroutineDispatcher,
-    private val eventSenderEngine: EventSenderEngine,
-    private val diskStorage: DiskStorage,
-    private val flagResolver: FlagResolver,
-    private val flagApplierClient: FlagApplierClient,
-    private val parent: ConfidenceContextProvider? = null,
-    private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL
-) : Confidence {
-    private val removedKeys = mutableListOf<String>()
-    private var contextMap: MutableMap<String, ConfidenceValue> = mutableMapOf()
 
     override fun putContext(key: String, value: ConfidenceValue) {
         contextMap[key] = value
@@ -111,7 +70,7 @@ class ConfidenceImpl internal constructor(
             it.getContext().filterKeys { key -> !removedKeys.contains(key) } + contextMap
         } ?: contextMap
 
-    override fun withContext(context: Map<String, ConfidenceValue>): Confidence = ChildConfidence(
+    override fun withContext(context: Map<String, ConfidenceValue>): Confidence = Confidence(
         clientSecret,
         dispatcher,
         eventSenderEngine,
@@ -150,7 +109,7 @@ object ConfidenceFactory {
         clientSecret: String,
         region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
         dispatcher: CoroutineDispatcher = Dispatchers.IO
-    ): RootConfidence {
+    ): Confidence {
         val engine = EventSenderEngineImpl.instance(
             context,
             clientSecret,
@@ -172,14 +131,15 @@ object ConfidenceFactory {
             dispatcher = dispatcher,
             sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION)
         )
-        return RootConfidence(
+        return Confidence(
             clientSecret,
             dispatcher,
             engine,
             region = region,
             flagResolver = flagResolver,
             diskStorage = FileDiskStorage.create(context),
-            flagApplierClient = flagApplierClient
+            flagApplierClient = flagApplierClient,
+            isRoot = true
         )
     }
 }

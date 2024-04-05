@@ -2,7 +2,7 @@ package com.spotify.confidence.client
 
 import com.spotify.confidence.ConfidenceValue
 import com.spotify.confidence.client.serializers.ConfidenceValueSerializer
-import com.spotify.confidence.client.serializers.DateSerializer
+import com.spotify.confidence.client.serializers.DateTimeSerializer
 import com.spotify.confidence.client.serializers.FlagsSerializer
 import kotlinx.serialization.Serializable
 import java.util.Date
@@ -10,7 +10,7 @@ import java.util.Date
 @Serializable
 data class AppliedFlag(
     val flag: String,
-    @Serializable(DateSerializer::class)
+    @Serializable(DateTimeSerializer::class)
     val applyTime: Date
 )
 

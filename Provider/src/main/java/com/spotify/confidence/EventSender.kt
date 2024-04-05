@@ -9,7 +9,7 @@ interface EventSender : Contextual {
     override fun withContext(context: Map<String, ConfidenceValue>): EventSender
 }
 
-interface FlushPolicy {
+internal interface FlushPolicy {
     fun reset()
     fun hit(event: Event)
     fun shouldFlush(): Boolean

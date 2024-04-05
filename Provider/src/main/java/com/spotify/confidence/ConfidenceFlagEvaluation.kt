@@ -82,6 +82,7 @@ private fun <T> getTyped(v: ConfidenceValue): T? {
         is ConfidenceValue.String -> v.string as T
         is ConfidenceValue.Struct -> v as T
         is ConfidenceValue.Date -> v as T
+        is ConfidenceValue.Timestamp -> v as T
         is ConfidenceValue.List -> v as T
         is ConfidenceValue.Null -> null
     }

@@ -5,7 +5,7 @@ import com.spotify.confidence.Result
 import com.spotify.confidence.cache.DiskStorage
 import com.spotify.confidence.client.AppliedFlag
 import com.spotify.confidence.client.FlagApplierClient
-import com.spotify.confidence.client.serializers.DateSerializer
+import com.spotify.confidence.client.serializers.DateTimeSerializer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -34,7 +34,7 @@ enum class EventStatus {
 
 @Serializable
 data class ApplyInstance(
-    @Serializable(DateSerializer::class)
+    @Serializable(DateTimeSerializer::class)
     val time: Date,
     val eventStatus: EventStatus
 )

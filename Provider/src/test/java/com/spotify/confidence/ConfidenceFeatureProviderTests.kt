@@ -113,7 +113,7 @@ internal class ConfidenceFeatureProviderTests {
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
     }
 
-    private fun getConfidence(dispatcher: CoroutineDispatcher): RootConfidence = RootConfidence(
+    private fun getConfidence(dispatcher: CoroutineDispatcher): Confidence = Confidence(
         clientSecret = "",
         dispatcher = dispatcher,
         eventSenderEngine = mock(),

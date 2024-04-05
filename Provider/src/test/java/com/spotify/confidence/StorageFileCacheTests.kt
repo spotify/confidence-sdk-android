@@ -125,7 +125,7 @@ class StorageFileCacheTests {
         TestCase.assertEquals(Reason.TARGETING_MATCH.toString(), evalNull.reason)
     }
 
-    private fun getConfidence(dispatcher: CoroutineDispatcher) = RootConfidence(
+    private fun getConfidence(dispatcher: CoroutineDispatcher) = Confidence(
         clientSecret = "",
         dispatcher = dispatcher,
         eventSenderEngine = mock(),

@@ -92,7 +92,7 @@ class EventSenderIntegrationTest {
             sdkMetadata = SdkMetadata("kotlin_test", ""),
             uploader = uploader
         )
-        eventSender = RootConfidence(
+        eventSender = Confidence(
             eventSenderEngine = engine,
             dispatcher = testDispatcher,
             diskStorage = mock(),
@@ -158,7 +158,7 @@ class EventSenderIntegrationTest {
             sdkMetadata = SdkMetadata("kotlin_test", ""),
             uploader = uploader
         )
-        eventSender = RootConfidence(
+        eventSender = Confidence(
             eventSenderEngine = engine,
             dispatcher = testDispatcher,
             diskStorage = mock(),

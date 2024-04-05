@@ -2,7 +2,7 @@ package com.spotify.confidence
 
 import com.spotify.confidence.client.Sdk
 import com.spotify.confidence.client.await
-import com.spotify.confidence.client.serializers.DateSerializer
+import com.spotify.confidence.client.serializers.DateTimeSerializer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Contextual
@@ -26,14 +26,14 @@ internal data class EventBatchRequest(
     val clientSecret: String,
     val sdk: Sdk,
     val events: List<Event>,
-    @Serializable(DateSerializer::class)
+    @Serializable(DateTimeSerializer::class)
     val sendTime: Date
 )
 
 @Serializable
 data class Event(
     val eventDefinition: String,
-    @Serializable(DateSerializer::class)
+    @Serializable(DateTimeSerializer::class)
     val eventTime: Date,
     val payload: Map<String, @Contextual ConfidenceValue>
 )
