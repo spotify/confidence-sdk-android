@@ -20,8 +20,7 @@ class Confidence internal constructor(
     private val flagResolver: FlagResolver,
     private val flagApplierClient: FlagApplierClient,
     private val parent: ConfidenceContextProvider? = null,
-    private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
-    private val isRoot: Boolean = false
+    private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL
 ) : Contextual, EventSender {
     private val removedKeys = mutableListOf<String>()
     private var contextMap: MutableMap<String, ConfidenceValue> = mutableMapOf()
@@ -33,7 +32,7 @@ class Confidence internal constructor(
     )
 
     fun shutdown() {
-        if (isRoot) {
+        if (parent == null) {
             eventSenderEngine.stop()
         } else {
             // no-op for child confidence
@@ -138,8 +137,7 @@ object ConfidenceFactory {
             region = region,
             flagResolver = flagResolver,
             diskStorage = FileDiskStorage.create(context),
-            flagApplierClient = flagApplierClient,
-            isRoot = true
+            flagApplierClient = flagApplierClient
         )
     }
 }
