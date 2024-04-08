@@ -1,8 +1,8 @@
 package com.spotify.confidence
 
 import com.spotify.confidence.client.serializers.ConfidenceValueSerializer
+import com.spotify.confidence.client.serializers.DateSerializer
 import com.spotify.confidence.client.serializers.DateTimeSerializer
-import dev.openfeature.sdk.DateSerializer
 import kotlinx.serialization.Serializable
 
 @Serializable(ConfidenceValueSerializer::class)
