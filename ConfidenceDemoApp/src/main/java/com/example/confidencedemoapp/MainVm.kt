@@ -50,14 +50,10 @@ class MainVm(app: Application) : AndroidViewModel(app) {
 
         client = OpenFeatureAPI.getClient()
 
-        val values = Value.List(listOf(Value.String(""), Value.Double(2.0)))
-
-
         val mutableMap = mutableMapOf<String, ConfidenceValue>()
         mutableMap["screen"] = ConfidenceValue.String("value")
         mutableMap["hello"] = ConfidenceValue.Boolean(false)
         mutableMap["NN"] = ConfidenceValue.Double(20.0)
-        mutableMap["list"] = ConfidenceValue.stringList(listOf(""))
         mutableMap["my_struct"] = ConfidenceValue.Struct(mapOf("x" to ConfidenceValue.Double(2.0)))
 
         val confidence = ConfidenceFactory.create(
