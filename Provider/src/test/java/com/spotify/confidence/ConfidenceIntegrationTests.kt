@@ -1,6 +1,7 @@
 package com.spotify.confidence
 
 import android.content.Context
+import android.content.SharedPreferences
 import com.spotify.confidence.cache.FLAGS_FILE_NAME
 import com.spotify.confidence.cache.FileDiskStorage
 import com.spotify.confidence.client.ResolveReason
@@ -22,6 +23,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.io.File
@@ -30,6 +32,8 @@ import java.util.UUID
 
 private const val clientSecret = "21wxcxXpU6tKBRFtEFTXYiH7nDqL86Mm"
 private val mockContext: Context = mock()
+private val mockSharedPrefs: SharedPreferences = mock()
+private val mockSharedPrefsEdit: SharedPreferences.Editor = mock()
 
 class ConfidenceIntegrationTests {
 
@@ -40,6 +44,10 @@ class ConfidenceIntegrationTests {
     fun setup() {
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
         whenever(mockContext.getDir(any(), any())).thenReturn(Files.createTempDirectory("events").toFile())
+        whenever(mockContext.getSharedPreferences(SHARED_PREFS_NAME, Context.MODE_PRIVATE)).thenReturn(mockSharedPrefs)
+        whenever(mockSharedPrefs.edit()).thenReturn(mockSharedPrefsEdit)
+        whenever(mockSharedPrefsEdit.putString(any(), any())).thenReturn(mockSharedPrefsEdit)
+        doNothing().whenever(mockSharedPrefsEdit).apply()
     }
 
     @Test

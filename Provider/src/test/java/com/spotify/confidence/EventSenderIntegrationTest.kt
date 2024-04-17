@@ -1,6 +1,7 @@
 package com.spotify.confidence
 
 import android.content.Context
+import android.content.SharedPreferences
 import com.spotify.confidence.client.SdkMetadata
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -10,6 +11,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.io.File
@@ -17,6 +20,8 @@ import java.nio.file.Files
 
 private const val clientSecret = "WciJVLIEiNnRxV8gaYPZNCFF8vbAXOu6"
 private val mockContext: Context = mock()
+private val mockSharedPrefs: SharedPreferences = mock()
+private val mockSharedPrefsEdit: SharedPreferences.Editor = mock()
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class EventSenderIntegrationTest {
@@ -27,10 +32,27 @@ class EventSenderIntegrationTest {
     @Before
     fun setup() {
         whenever(mockContext.getDir("events", Context.MODE_PRIVATE)).thenReturn(directory)
+        whenever(mockContext.getSharedPreferences(SHARED_PREFS_NAME, Context.MODE_PRIVATE)).thenReturn(mockSharedPrefs)
+        whenever(mockSharedPrefs.edit()).thenReturn(mockSharedPrefsEdit)
+        whenever(mockSharedPrefsEdit.putString(any(), any())).thenReturn(mockSharedPrefsEdit)
+        doNothing().whenever(mockSharedPrefsEdit).apply()
         eventSender = null
         for (file in directory.walkFiles()) {
             file.delete()
         }
+    }
+
+    @Test
+    fun created_event_sender_has_visitor_id_context() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        eventSender = ConfidenceFactory.create(
+            mockContext,
+            clientSecret,
+            dispatcher = testDispatcher
+        )
+        val context = eventSender?.getContext()
+        Assert.assertNotNull(context)
+        Assert.assertTrue(context!!.containsKey(VISITOR_ID_CONTEXT_KEY))
     }
 
     @Test

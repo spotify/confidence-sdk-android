@@ -116,6 +116,8 @@ class Confidence internal constructor(
     }
 }
 
+internal const val VISITOR_ID_CONTEXT_KEY = "visitorId"
+
 object ConfidenceFactory {
     fun create(
         context: Context,
@@ -152,6 +154,8 @@ object ConfidenceFactory {
             flagResolver = flagResolver,
             diskStorage = FileDiskStorage.create(context),
             flagApplierClient = flagApplierClient
-        )
+        ).apply {
+            putContext(VISITOR_ID_CONTEXT_KEY, ConfidenceValue.String(VisitorUtil.getId(context)))
+        }
     }
 }
