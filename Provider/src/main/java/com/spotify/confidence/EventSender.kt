@@ -6,11 +6,15 @@ interface EventSender : Contextual {
         message: ConfidenceFieldsType = mapOf()
     )
 
+    fun track(eventProducer: EventProducer)
+
+    fun stop()
+
     override fun withContext(context: Map<String, ConfidenceValue>): EventSender
 }
 
 internal interface FlushPolicy {
     fun reset()
-    fun hit(event: Event)
+    fun hit(event: EngineEvent)
     fun shouldFlush(): Boolean
 }

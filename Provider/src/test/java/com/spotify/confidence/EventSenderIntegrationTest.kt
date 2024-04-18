@@ -93,7 +93,7 @@ class EventSenderIntegrationTest {
                 size = 0
             }
 
-            override fun hit(event: Event) {
+            override fun hit(event: EngineEvent) {
                 size++
             }
 
@@ -214,7 +214,7 @@ class EventSenderIntegrationTest {
                 size = 0
             }
 
-            override fun hit(event: Event) {
+            override fun hit(event: EngineEvent) {
                 size++
             }
 

@@ -6,7 +6,7 @@ internal val minBatchSizeFlushPolicy = object : FlushPolicy {
         size = 0
     }
 
-    override fun hit(event: Event) {
+    override fun hit(event: EngineEvent) {
         size++
     }
 

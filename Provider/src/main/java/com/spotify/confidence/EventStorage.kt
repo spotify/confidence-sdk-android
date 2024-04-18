@@ -18,9 +18,9 @@ import java.io.OutputStream
 
 internal interface EventStorage {
     suspend fun rollover()
-    suspend fun writeEvent(event: Event)
+    suspend fun writeEvent(event: EngineEvent)
     suspend fun batchReadyFiles(): List<File>
-    suspend fun eventsFor(file: File): List<Event>
+    suspend fun eventsFor(file: File): List<EngineEvent>
     fun onLowMemoryChannel(): Channel<List<File>>
     fun stop()
 }
@@ -53,7 +53,7 @@ internal class EventStorageImpl(
         resetCurrentFile()
     }
 
-    override suspend fun writeEvent(event: Event) = withLock {
+    override suspend fun writeEvent(event: EngineEvent) = withLock {
         val delimiter = EVENT_WRITE_DELIMITER
         val byteArray = (storageJson.encodeToString(event) + delimiter).toByteArray()
         outputStream?.write(byteArray)
@@ -80,7 +80,7 @@ internal class EventStorageImpl(
         return list
     }
 
-    override suspend fun eventsFor(file: File): List<Event> {
+    override suspend fun eventsFor(file: File): List<EngineEvent> {
         val text = file.readText()
         return text
             .split(EVENT_WRITE_DELIMITER)
