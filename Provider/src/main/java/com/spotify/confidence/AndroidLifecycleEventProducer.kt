@@ -29,7 +29,7 @@ class AndroidLifecycleEventProducer(
     private val sharedPreferences by lazy {
         application.getSharedPreferences("CONFIDENCE_EVENTS", Context.MODE_PRIVATE)
     }
-    private val packageInfo: PackageInfo
+    private val packageInfo: PackageInfo?
     private val lifecycle: Lifecycle
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
@@ -39,7 +39,7 @@ class AndroidLifecycleEventProducer(
         packageInfo = try {
             packageManager.getPackageInfo(application.packageName, 0)
         } catch (e: PackageManager.NameNotFoundException) {
-            throw Error("can't read package")
+            null
         }
 
         // setup lifecycle listeners
@@ -49,9 +49,9 @@ class AndroidLifecycleEventProducer(
             lifecycle.addObserver(this@AndroidLifecycleEventProducer)
         }
     }
-    override fun onActivityCreated(p0: Activity, p1: Bundle?) {
-        trackDeepLink(p0)
-        p0.trackActivity("activity-created")
+    override fun onActivityCreated(activity: Activity, bundle: Bundle?) {
+        trackDeepLink(activity)
+        activity.trackActivity("activity-created")
     }
 
     override fun onCreate(owner: LifecycleOwner) {
@@ -68,16 +68,16 @@ class AndroidLifecycleEventProducer(
             mapOf(IS_FOREGROUND_KEY to ConfidenceValue.Boolean(false))
     }
 
-    override fun onActivityStarted(p0: Activity) {
-        p0.trackActivity("activity-started")
+    override fun onActivityStarted(activity: Activity) {
+        activity.trackActivity("activity-started")
     }
 
-    override fun onActivityResumed(p0: Activity) {
-        p0.trackActivity("activity-resumed")
+    override fun onActivityResumed(activity: Activity) {
+        activity.trackActivity("activity-resumed")
     }
 
-    override fun onActivityPaused(p0: Activity) {
-        p0.trackActivity("activity-paused")
+    override fun onActivityPaused(activity: Activity) {
+        activity.trackActivity("activity-paused")
     }
 
     private fun Activity.trackActivity(state: String) {
@@ -112,21 +112,21 @@ class AndroidLifecycleEventProducer(
         coroutineScope.launch { eventsFlow.emit(Event("Deeplink", map)) }
     }
 
-    override fun onActivityStopped(p0: Activity) {
-        p0.trackActivity("activity-stopped")
+    override fun onActivityStopped(activity: Activity) {
+        activity.trackActivity("activity-stopped")
     }
 
-    override fun onActivitySaveInstanceState(p0: Activity, p1: Bundle) {}
+    override fun onActivitySaveInstanceState(activity: Activity, p1: Bundle) {}
 
-    override fun onActivityDestroyed(p0: Activity) {
-        p0.trackActivity("activity-destroyed")
+    override fun onActivityDestroyed(activity: Activity) {
+        activity.trackActivity("activity-destroyed")
     }
 
     private fun trackApplicationLifecycleEvents() {
         // Get the current version.
         val packageInfo = packageInfo
-        val currentVersion = ConfidenceValue.String(packageInfo.versionName)
-        val currentBuild = ConfidenceValue.String(packageInfo.getVersionCode().toString())
+        val currentVersion = ConfidenceValue.String(packageInfo?.versionName ?: "")
+        val currentBuild = ConfidenceValue.String(packageInfo?.getVersionCode().toString() ?: "")
 
         // Get the previous recorded version.
         val previousVersion = sharedPreferences
@@ -160,7 +160,7 @@ class AndroidLifecycleEventProducer(
 
         coroutineScope.launch {
             val message = mapOf("version" to currentVersion, "build" to currentBuild)
-            eventsFlow.emit(Event(APP_CREATED, message))
+            eventsFlow.emit(Event(APP_LAUNCHED, message))
         }
     }
 
@@ -181,7 +181,7 @@ class AndroidLifecycleEventProducer(
         private const val LEGACY_APP_BUILD = "LEGACY_APP_BUILD"
         private const val APP_INSTALLED_EVENT = "app-installed"
         private const val APP_UPDATED_EVENT = "app-updated"
-        private const val APP_CREATED = "app-on-created"
+        private const val APP_LAUNCHED = "app-launched"
     }
 }
 
@@ -204,7 +204,7 @@ fun getReferrer(activity: Activity): Uri? {
 
 // Returns the referrer on devices running SDK versions lower than 22.
 private fun getReferrerCompatible(activity: Activity): Uri? {
-    var referrerUri: Uri? = null
+    var referrerUri: Uri?
     val intent = activity.intent
     referrerUri = intent.getParcelableExtra(Intent.EXTRA_REFERRER)
 

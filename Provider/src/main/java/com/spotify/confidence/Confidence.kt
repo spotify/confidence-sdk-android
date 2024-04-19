@@ -138,10 +138,8 @@ class Confidence internal constructor(
         }
         if (parent == null) {
             eventSenderEngine.stop()
-        } else {
-            // no-op for child confidence
-            coroutineScope.cancel()
         }
+        coroutineScope.cancel()
     }
 }
 
