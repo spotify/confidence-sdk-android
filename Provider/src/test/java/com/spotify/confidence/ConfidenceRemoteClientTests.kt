@@ -444,8 +444,8 @@ internal class ConfidenceRemoteClientTests {
                     "    \"mydate\": \"2023-03-01T14:01:46.123Z\",\n" +
                     "    \"mynull\": null,\n" +
                     "    \"mylist\": [\n" +
-                    "      true,\n" +
-                    "      \"innerList\"\n" +
+                    "      \"innerList\",\n" +
+                    "      \"innerList_Second_Item\"\n" +
                     "    ],\n" +
                     "    \"mystructure\": {\n" +
                     "      \"myinnerString\": \"value\"\n" +
@@ -494,8 +494,8 @@ internal class ConfidenceRemoteClientTests {
                         "mynull" to Value.Null,
                         "mylist" to Value.List(
                             listOf(
-                                Value.Boolean(true),
-                                Value.String("innerList")
+                                Value.String("innerList"),
+                                Value.String("innerList_Second_Item")
                             )
                         ),
                         "mystructure" to Value.Structure(mapOf("myinnerString" to Value.String("value")))

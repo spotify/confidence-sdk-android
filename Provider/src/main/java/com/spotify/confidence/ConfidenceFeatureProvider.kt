@@ -233,7 +233,14 @@ internal fun Value.toConfidenceValue(): ConfidenceValue = when (this) {
     is Value.Date -> ConfidenceValue.Timestamp(this.date)
     is Value.Double -> ConfidenceValue.Double(this.double)
     is Value.Integer -> ConfidenceValue.Integer(this.integer)
-    is Value.List -> ConfidenceValue.List(this.list.map { it.toConfidenceValue() })
+    is Value.List -> {
+        // if types are different, return an empty list
+        if (this.list.map { it.javaClass.simpleName }.groupBy { it }.size > 1) {
+            ConfidenceValue.List(listOf())
+        } else {
+            ConfidenceValue.List(this.list.map { it.toConfidenceValue() })
+        }
+    }
     Value.Null -> ConfidenceValue.Null
     is Value.String -> ConfidenceValue.String(this.string)
 }
