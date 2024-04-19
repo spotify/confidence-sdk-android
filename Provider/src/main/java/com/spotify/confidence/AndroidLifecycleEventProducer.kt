@@ -116,7 +116,7 @@ class AndroidLifecycleEventProducer(
         activity.trackActivity("activity-stopped")
     }
 
-    override fun onActivitySaveInstanceState(activity: Activity, p1: Bundle) {}
+    override fun onActivitySaveInstanceState(activity: Activity, bundle: Bundle) {}
 
     override fun onActivityDestroyed(activity: Activity) {
         activity.trackActivity("activity-destroyed")
