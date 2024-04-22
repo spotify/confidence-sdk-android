@@ -12,6 +12,8 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import okhttp3.OkHttpClient
 
 class Confidence internal constructor(
@@ -26,7 +28,12 @@ class Confidence internal constructor(
 ) : Contextual, EventSender {
     private val removedKeys = mutableListOf<String>()
     private var contextMap = MutableStateFlow(mapOf<String, ConfidenceValue>())
+
+    // only return changes not the initial value
+    // only return distinct value
     internal val contextChanges: Flow<Map<String, ConfidenceValue>> = contextMap
+        .drop(1)
+        .distinctUntilChanged()
 
     private val flagApplier = FlagApplierWithRetries(
         client = flagApplierClient,

@@ -21,8 +21,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
 const val SDK_ID = "SDK_ID_KOTLIN_PROVIDER"
@@ -54,8 +52,6 @@ class ConfidenceFeatureProvider private constructor(
     private fun startListeningForContext() {
         coroutineScope.launch {
             confidence.contextChanges
-                .drop(1)
-                .distinctUntilChanged()
                 .collect {
                     resolve(InitialisationStrategy.FetchAndActivate)
                 }
