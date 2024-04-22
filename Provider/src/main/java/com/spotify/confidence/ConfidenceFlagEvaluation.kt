@@ -36,15 +36,6 @@ internal fun <T> FlagResolution?.getEvaluation(
         )
     }
 
-    // handle stale case
-    if (this.context != context) {
-        return Evaluation(
-            value = defaultValue,
-            reason = resolvedFlag.reason,
-            errorCode = ErrorCode.RESOLVE_STALE
-        )
-    }
-
     // handle flag found
     val flagValue = resolvedFlag.value
     val resolvedValue: ConfidenceValue =
@@ -61,9 +52,14 @@ internal fun <T> FlagResolution?.getEvaluation(
     return when (resolvedFlag.reason) {
         ResolveReason.RESOLVE_REASON_MATCH -> {
             val value = getTyped<T>(resolvedValue) ?: defaultValue
+            val resolveReason = if (this.context != context) {
+                ResolveReason.RESOLVE_REASON_STALE
+            } else {
+                resolvedFlag.reason
+            }
             return Evaluation(
                 value = value,
-                reason = resolvedFlag.reason,
+                reason = resolveReason,
                 variant = resolvedFlag.variant
             )
         }

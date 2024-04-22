@@ -544,6 +544,52 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
+    fun testStaleValueReturnValueAndStaleReason() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val mockConfidence = getConfidence(testDispatcher)
+        val eventHandler = EventHandler(testDispatcher)
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            eventHandler = eventHandler,
+            confidence = mockConfidence,
+            dispatcher = testDispatcher
+        )
+        val context = ImmutableContext("foo").toConfidenceContext().map
+        whenever(flagResolverClient.resolve(eq(listOf()), eq(context))).thenReturn(
+            Result.Success(
+                FlagResolution(
+                    context,
+                    resolvedFlags.list,
+                    "token1"
+                )
+            )
+        )
+
+        val evaluationContext = ImmutableContext("foo")
+        confidenceFeatureProvider.initialize(evaluationContext)
+        advanceUntilIdle()
+
+        verify(flagResolverClient, times(1)).resolve(any(), eq(context))
+
+        val evalString = confidenceFeatureProvider.getStringEvaluation(
+            "test-kotlin-flag-1.mystring",
+            "default",
+            evaluationContext
+        )
+        assertEquals(evalString.reason, Reason.TARGETING_MATCH.name)
+        assertEquals(evalString.value, "red")
+
+        mockConfidence.putContext("hello", ConfidenceValue.String("new context"))
+        val newContextEval = confidenceFeatureProvider.getStringEvaluation(
+            "test-kotlin-flag-1.mystring",
+            "default",
+            evaluationContext
+        )
+        assertEquals(newContextEval.reason, Reason.STALE.name)
+        assertEquals(newContextEval.value, "red")
+    }
+
+    @Test
     fun testApplyFromStoredCache() = runTest {
         val cacheFile = File(mockContext.filesDir, APPLY_FILE_NAME)
         cacheFile.writeText(
