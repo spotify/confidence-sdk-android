@@ -587,6 +587,7 @@ internal class ConfidenceFeatureProviderTests {
         )
         assertEquals(newContextEval.reason, Reason.STALE.name)
         assertEquals(newContextEval.value, "red")
+        verify(flagResolverClient, times(2)).resolve(any(), any())
     }
 
     @Test
