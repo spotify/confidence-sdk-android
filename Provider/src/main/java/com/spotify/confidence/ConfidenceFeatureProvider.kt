@@ -21,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
 const val SDK_ID = "SDK_ID_KOTLIN_PROVIDER"
@@ -49,52 +50,57 @@ class ConfidenceFeatureProvider private constructor(
         }
     }
 
-    override fun initialize(initialContext: EvaluationContext?) {
-        initialContext?.let {
-            internalInitialize(
-                initialContext,
-                initialisationStrategy
-            )
+    private fun startListeningForContext() {
+        coroutineScope.launch {
+            confidence.contextChanges
+                .drop(1)
+                .collect {
+                    resolve(InitialisationStrategy.FetchAndActivate)
+                }
         }
     }
 
-    private fun internalInitialize(
-        initialContext: EvaluationContext,
-        strategy: InitialisationStrategy
-    ) {
-        // refresh cache with the last stored data
-        storage.read().let(providerCache::refresh)
-        if (strategy == InitialisationStrategy.ActivateAndFetchAsync) {
-            eventHandler.publish(OpenFeatureEvents.ProviderReady)
-        }
-
-        coroutineScope.launch(networkExceptionHandler) {
-            confidence.putContext(OPEN_FEATURE_CONTEXT_KEY, initialContext.toConfidenceContext())
-            try {
-                val resolveResponse = confidence.resolve(listOf())
-                if (resolveResponse is Result.Success) {
-                    // we store the flag anyways except when the response was not modified
-                    if (resolveResponse.data != FlagResolution.EMPTY) {
-                        storage.store(resolveResponse.data)
-                    }
-
-                    when (strategy) {
-                        InitialisationStrategy.FetchAndActivate -> {
-                            // refresh the cache from the stored data
-                            providerCache.refresh(resolveResponse.data)
-                            eventHandler.publish(OpenFeatureEvents.ProviderReady)
-                        }
-
-                        InitialisationStrategy.ActivateAndFetchAsync -> {
-                            // do nothing
-                        }
-                    }
-                } else {
-                    eventHandler.publish(OpenFeatureEvents.ProviderReady)
-                }
-            } catch (e: ParseError) {
-                throw OpenFeatureError.ParseError(e.message)
+    override fun initialize(initialContext: EvaluationContext?) {
+        initialContext?.let {
+            // refresh cache with the last stored data
+            storage.read().let(providerCache::refresh)
+            if (initialisationStrategy == InitialisationStrategy.ActivateAndFetchAsync) {
+                eventHandler.publish(OpenFeatureEvents.ProviderReady)
             }
+
+            coroutineScope.launch(networkExceptionHandler) {
+                confidence.putContext(OPEN_FEATURE_CONTEXT_KEY, initialContext.toConfidenceContext())
+                resolve(initialisationStrategy)
+                startListeningForContext()
+            }
+        }
+    }
+
+    private suspend fun resolve(strategy: InitialisationStrategy) {
+        try {
+            val resolveResponse = confidence.resolve(listOf())
+            if (resolveResponse is Result.Success) {
+                // we store the flag anyways except when the response was not modified
+                if (resolveResponse.data != FlagResolution.EMPTY) {
+                    storage.store(resolveResponse.data)
+                }
+
+                when (strategy) {
+                    InitialisationStrategy.FetchAndActivate -> {
+                        // refresh the cache from the stored data
+                        providerCache.refresh(resolveResponse.data)
+                        eventHandler.publish(OpenFeatureEvents.ProviderReady)
+                    }
+
+                    InitialisationStrategy.ActivateAndFetchAsync -> {
+                        // do nothing
+                    }
+                }
+            } else {
+                eventHandler.publish(OpenFeatureEvents.ProviderReady)
+            }
+        } catch (e: ParseError) {
+            throw OpenFeatureError.ParseError(e.message)
         }
     }
 
@@ -106,14 +112,7 @@ class ConfidenceFeatureProvider private constructor(
         oldContext: EvaluationContext?,
         newContext: EvaluationContext
     ) {
-        if (newContext != oldContext) {
-            // on the new context we want to fetch new values and update
-            // the storage & cache right away which is why we pass `InitialisationStrategy.FetchAndActivate`
-            internalInitialize(
-                newContext,
-                InitialisationStrategy.FetchAndActivate
-            )
-        }
+        confidence.putContext(OPEN_FEATURE_CONTEXT_KEY, newContext.toConfidenceContext())
     }
 
     override fun observe(): Flow<OpenFeatureEvents> = eventHandler.observe()

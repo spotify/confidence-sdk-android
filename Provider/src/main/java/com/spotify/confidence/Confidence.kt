@@ -10,6 +10,8 @@ import com.spotify.confidence.client.FlagApplierClientImpl
 import com.spotify.confidence.client.SdkMetadata
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import okhttp3.OkHttpClient
 
 class Confidence internal constructor(
@@ -23,7 +25,8 @@ class Confidence internal constructor(
     private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL
 ) : Contextual, EventSender {
     private val removedKeys = mutableListOf<String>()
-    private var contextMap: MutableMap<String, ConfidenceValue> = mutableMapOf()
+    private var contextMap = MutableStateFlow(mapOf<String, ConfidenceValue>())
+    internal val contextChanges: Flow<Map<String, ConfidenceValue>> = contextMap
 
     private val flagApplier = FlagApplierWithRetries(
         client = flagApplierClient,
@@ -48,26 +51,28 @@ class Confidence internal constructor(
     }
 
     override fun putContext(key: String, value: ConfidenceValue) {
-        contextMap[key] = value
+        val map = contextMap.value.toMutableMap()
+        map[key] = value
+        contextMap.value = map
     }
 
     override fun putContext(context: Map<String, ConfidenceValue>) {
-        contextMap += context
-    }
-
-    override fun setContext(context: Map<String, ConfidenceValue>) {
-        contextMap = context.toMutableMap()
+        val map = contextMap.value.toMutableMap()
+        map += context
+        contextMap.value = map
     }
 
     override fun removeContext(key: String) {
+        val map = contextMap.value.toMutableMap()
+        map.remove(key)
+        contextMap.value = map
         removedKeys.add(key)
-        contextMap.remove(key)
     }
 
     override fun getContext(): Map<String, ConfidenceValue> =
         this.parent?.let {
-            it.getContext().filterKeys { key -> !removedKeys.contains(key) } + contextMap
-        } ?: contextMap
+            it.getContext().filterKeys { key -> !removedKeys.contains(key) } + contextMap.value
+        } ?: contextMap.value
 
     override fun withContext(context: Map<String, ConfidenceValue>): Confidence = Confidence(
         clientSecret,
