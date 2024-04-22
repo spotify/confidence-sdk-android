@@ -578,7 +578,7 @@ internal class ConfidenceFeatureProviderTests {
         )
         assertEquals(evalString.reason, Reason.TARGETING_MATCH.name)
         assertEquals(evalString.value, "red")
-        
+
         mockConfidence.putContext("hello", ConfidenceValue.String("new context"))
         val newContextEval = confidenceFeatureProvider.getStringEvaluation(
             "test-kotlin-flag-1.mystring",
