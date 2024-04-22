@@ -21,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
@@ -54,6 +55,7 @@ class ConfidenceFeatureProvider private constructor(
         coroutineScope.launch {
             confidence.contextChanges
                 .drop(1)
+                .distinctUntilChanged()
                 .collect {
                     resolve(InitialisationStrategy.FetchAndActivate)
                 }
