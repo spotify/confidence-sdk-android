@@ -125,6 +125,68 @@ class EventSenderIntegrationTest {
     }
 
     @Test
+    fun handles_message_key_collision() = runTest {
+        val eventStorage = EventStorageImpl(mockContext)
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val batchSize = 1
+        val uploadedEvents: MutableList<Event> = mutableListOf()
+        val flushPolicy = object : FlushPolicy {
+            private var size = 0
+            override fun reset() {
+                size = 0
+            }
+
+            override fun hit(event: Event) {
+                size++
+            }
+
+            override fun shouldFlush(): Boolean {
+                return size >= batchSize
+            }
+        }
+        val uploader = object : EventSenderUploader {
+            override suspend fun upload(events: EventBatchRequest): Boolean {
+                uploadedEvents.addAll(events.events)
+                return false
+            }
+        }
+        val engine = EventSenderEngineImpl(
+            eventStorage,
+            clientSecret,
+            flushPolicies = listOf(flushPolicy),
+            dispatcher = testDispatcher,
+            sdkMetadata = SdkMetadata("kotlin_test", ""),
+            uploader = uploader
+        )
+        engine.emit(
+            eventName = "my_event",
+            message = mapOf(
+                "a" to ConfidenceValue.Integer(0),
+                "message" to ConfidenceValue.Integer(1)
+            ),
+            context = mapOf(
+                "a" to ConfidenceValue.Integer(2),
+                "message" to ConfidenceValue.Integer(3)
+            )
+        )
+        advanceUntilIdle()
+        Assert.assertEquals("eventDefinitions/my_event", uploadedEvents[0].eventDefinition)
+        Assert.assertEquals(
+            mapOf(
+                "message" to ConfidenceValue.Struct(
+                    mapOf(
+                        "a" to ConfidenceValue.Integer(0),
+                        "message" to ConfidenceValue.Integer(1)
+                    )
+                ),
+                "a" to ConfidenceValue.Integer(2)
+            ),
+            uploadedEvents[0].payload
+        )
+        print(uploadedEvents)
+    }
+
+    @Test
     fun emitting_an_event_batches_all_batches_sent_cleaned_up() = runTest {
         val eventStorage = EventStorageImpl(mockContext)
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)

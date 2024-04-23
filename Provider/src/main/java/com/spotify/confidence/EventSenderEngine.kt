@@ -17,7 +17,7 @@ import java.io.File
 
 internal interface EventSenderEngine {
     fun onLowMemoryChannel(): Channel<List<File>>
-    fun emit(definition: String, payload: ConfidenceFieldsType, context: Map<String, ConfidenceValue>)
+    fun emit(eventName: String, message: ConfidenceFieldsType, context: Map<String, ConfidenceValue>)
 
     fun stop()
 }
@@ -65,9 +65,17 @@ internal class EventSenderEngineImpl(
                 eventStorage.rollover()
                 val readyFiles = eventStorage.batchReadyFiles()
                 for (readyFile in readyFiles) {
+                    val events = eventStorage.eventsFor(readyFile)
+                        .map { e ->
+                            Event(
+                                "eventDefinitions/${e.eventDefinition}",
+                                e.eventTime,
+                                e.payload
+                            )
+                        }
                     val batch = EventBatchRequest(
                         clientSecret = clientSecret,
-                        events = eventStorage.eventsFor(readyFile),
+                        events = events,
                         sendTime = clock.currentTime(),
                         sdk = Sdk(sdkMetadata.sdkId, sdkMetadata.sdkVersion)
                     )
@@ -85,12 +93,14 @@ internal class EventSenderEngineImpl(
     override fun onLowMemoryChannel(): Channel<List<File>> {
         return eventStorage.onLowMemoryChannel()
     }
-    override fun emit(definition: String, payload: ConfidenceFieldsType, context: Map<String, ConfidenceValue>) {
+    override fun emit(eventName: String, message: ConfidenceFieldsType, context: Map<String, ConfidenceValue>) {
+        val mutablePayload = context.toMutableMap()
+        mutablePayload["message"] = ConfidenceValue.Struct(message)
         coroutineScope.launch {
             val event = Event(
-                eventDefinition = "eventDefinitions/$definition",
+                eventDefinition = eventName,
                 eventTime = clock.currentTime(),
-                payload = payload + context
+                payload = mutablePayload
             )
             writeReqChannel.send(event)
         }
