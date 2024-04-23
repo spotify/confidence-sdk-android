@@ -125,7 +125,7 @@ class EventSenderIntegrationTest {
     }
 
     @Test
-    fun payload_on_emit() = runTest {
+    fun handles_message_key_collision() = runTest {
         val eventStorage = EventStorageImpl(mockContext)
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val batchSize = 1
