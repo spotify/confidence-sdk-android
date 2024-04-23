@@ -83,10 +83,10 @@ class Confidence internal constructor(
     }
 
     override fun send(
-        definition: String,
-        payload: ConfidenceFieldsType
+        eventName: String,
+        message: ConfidenceFieldsType
     ) {
-        eventSenderEngine.emit(definition, payload, getContext())
+        eventSenderEngine.emit(eventName, message, getContext())
     }
 }
 

@@ -2,8 +2,8 @@ package com.spotify.confidence
 
 interface EventSender : Contextual {
     fun send(
-        definition: String,
-        payload: ConfidenceFieldsType = mapOf()
+        eventName: String,
+        message: ConfidenceFieldsType = mapOf()
     )
 
     override fun withContext(context: Map<String, ConfidenceValue>): EventSender
