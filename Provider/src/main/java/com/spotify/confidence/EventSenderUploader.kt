@@ -57,6 +57,7 @@ internal class EventSenderUploaderImpl(
                 contextual(NetworkConfidenceValueSerializer)
             }
         }
+
         val httpRequest = Request.Builder()
             .url(BASE_URL)
             .headers(headers)
