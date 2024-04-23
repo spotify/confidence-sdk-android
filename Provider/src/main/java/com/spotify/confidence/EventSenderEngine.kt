@@ -86,11 +86,13 @@ internal class EventSenderEngineImpl(
         return eventStorage.onLowMemoryChannel()
     }
     override fun emit(eventName: String, message: ConfidenceFieldsType, context: Map<String, ConfidenceValue>) {
+        val mutablePayload = context.toMutableMap()
+        mutablePayload["message"] = ConfidenceValue.Struct(message)
         coroutineScope.launch {
             val event = Event(
                 eventDefinition = "eventDefinitions/$eventName",
                 eventTime = clock.currentTime(),
-                payload = message + context
+                payload = mutablePayload
             )
             writeReqChannel.send(event)
         }
