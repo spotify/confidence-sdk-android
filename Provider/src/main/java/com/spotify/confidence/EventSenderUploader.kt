@@ -52,6 +52,7 @@ internal class EventSenderUploaderImpl(
     }
 
     override suspend fun upload(events: EventBatchRequest): Boolean = withContext(dispatcher) {
+        Event
         val networkJson = Json {
             serializersModule = SerializersModule {
                 contextual(NetworkConfidenceValueSerializer)

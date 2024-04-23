@@ -65,9 +65,17 @@ internal class EventSenderEngineImpl(
                 eventStorage.rollover()
                 val readyFiles = eventStorage.batchReadyFiles()
                 for (readyFile in readyFiles) {
+                    val events = eventStorage.eventsFor(readyFile)
+                        .map { e ->
+                            Event(
+                                "eventDefinitions/${e.eventDefinition}",
+                                e.eventTime,
+                                e.payload
+                            )
+                        }
                     val batch = EventBatchRequest(
                         clientSecret = clientSecret,
-                        events = eventStorage.eventsFor(readyFile),
+                        events = events,
                         sendTime = clock.currentTime(),
                         sdk = Sdk(sdkMetadata.sdkId, sdkMetadata.sdkVersion)
                     )
@@ -90,7 +98,7 @@ internal class EventSenderEngineImpl(
         mutablePayload["message"] = ConfidenceValue.Struct(message)
         coroutineScope.launch {
             val event = Event(
-                eventDefinition = "eventDefinitions/$eventName",
+                eventDefinition = eventName,
                 eventTime = clock.currentTime(),
                 payload = mutablePayload
             )
