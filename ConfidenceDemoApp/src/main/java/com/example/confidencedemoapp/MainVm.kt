@@ -96,7 +96,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         _message.postValue(messageValue)
         _color.postValue(colorFlag)
 
-        eventSender.send("navigate", mapOf("my_date" to ConfidenceValue.Date(Date()), "my_time" to ConfidenceValue.Timestamp(Date())))
+        eventSender.track("navigate", mapOf("my_date" to ConfidenceValue.Date(Date()), "my_time" to ConfidenceValue.Timestamp(Date())))
     }
 
     fun updateContext() {
