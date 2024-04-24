@@ -46,7 +46,7 @@ class EventSenderIntegrationTest {
         val eventCount = 4
         requireNotNull(eventSender)
         repeat(eventCount) {
-            eventSender.send("navigate")
+            eventSender.track("navigate")
         }
         val list = mutableListOf<File>()
         for (file in directory.walkFiles()) {
@@ -104,7 +104,7 @@ class EventSenderIntegrationTest {
         val eventCount = 4 * batchSize + 2
         requireNotNull(eventSender)
         repeat(eventCount) {
-            eventSender.send("navigate")
+            eventSender.track("navigate")
         }
         advanceUntilIdle()
         runBlocking {
@@ -232,7 +232,7 @@ class EventSenderIntegrationTest {
         val eventCount = 4 * batchSize + 2
         requireNotNull(eventSender)
         repeat(eventCount) {
-            eventSender.send("navigate")
+            eventSender.track("navigate")
         }
         advanceUntilIdle()
         Assert.assertEquals(uploadRequestCount, eventCount / batchSize)

@@ -94,7 +94,7 @@ class Confidence internal constructor(
         it.putContext(context)
     }
 
-    override fun send(
+    override fun track(
         eventName: String,
         message: ConfidenceFieldsType
     ) {

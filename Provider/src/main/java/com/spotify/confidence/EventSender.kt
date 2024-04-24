@@ -1,7 +1,7 @@
 package com.spotify.confidence
 
 interface EventSender : Contextual {
-    fun send(
+    fun track(
         eventName: String,
         message: ConfidenceFieldsType = mapOf()
     )
