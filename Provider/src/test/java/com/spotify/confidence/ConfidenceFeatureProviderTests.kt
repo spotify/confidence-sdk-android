@@ -556,16 +556,6 @@ internal class ConfidenceFeatureProviderTests {
         )
         val evaluationContext = ImmutableContext("foo", mapOf("hello" to Value.String("world")))
         val context = evaluationContext.toConfidenceContext().map
-        whenever(flagResolverClient.resolve(eq(listOf()), eq(context))).thenReturn(
-            Result.Success(
-                FlagResolution(
-                    context,
-                    resolvedFlags.list,
-                    "token1"
-                )
-            )
-        )
-
         confidenceFeatureProvider.initialize(evaluationContext)
         advanceUntilIdle()
         assertEquals(mockConfidence.getContext(), context)
