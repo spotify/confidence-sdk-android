@@ -69,11 +69,21 @@ class Confidence internal constructor(
         contextMap.value = map
     }
 
+    internal fun putContext(context: Map<String, ConfidenceValue>, removedKeys: List<String>) {
+        val map = contextMap.value.toMutableMap()
+        map += context
+        for (key in removedKeys) {
+            map.remove(key)
+        }
+        this.removedKeys.addAll(removedKeys)
+        contextMap.value = map
+    }
+
     override fun removeContext(key: String) {
         val map = contextMap.value.toMutableMap()
         map.remove(key)
-        contextMap.value = map
         removedKeys.add(key)
+        contextMap.value = map
     }
 
     override fun getContext(): Map<String, ConfidenceValue> =

@@ -68,9 +68,7 @@ class ConfidenceFeatureProvider private constructor(
 
             coroutineScope.launch(networkExceptionHandler) {
                 val context = initialContext.toConfidenceContext()
-                for (entry in context.map) {
-                    confidence.putContext(entry.key, entry.value)
-                }
+                confidence.putContext(context.map)
                 resolve(initialisationStrategy)
                 startListeningForContext()
             }
@@ -114,15 +112,8 @@ class ConfidenceFeatureProvider private constructor(
         newContext: EvaluationContext
     ) {
         val context = newContext.toConfidenceContext()
-        for (entry in context.map) {
-            confidence.putContext(entry.key, entry.value)
-        }
-
-        oldContext?.let { old ->
-            old.asMap().keys.minus(newContext.asMap().keys).forEach {
-                confidence.removeContext(it)
-            }
-        }
+        val removedKeys = oldContext?.asMap()?.keys?.minus(newContext.asMap().keys) ?: emptySet()
+        confidence.putContext(context.map, removedKeys.toList())
     }
 
     override fun observe(): Flow<OpenFeatureEvents> = eventHandler.observe()

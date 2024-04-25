@@ -544,6 +544,40 @@ internal class ConfidenceFeatureProviderTests {
     }
 
     @Test
+    fun confidenceContextRemovedWorks() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val mockConfidence = getConfidence(testDispatcher)
+        val eventHandler = EventHandler(testDispatcher)
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            eventHandler = eventHandler,
+            confidence = mockConfidence,
+            dispatcher = testDispatcher
+        )
+        val evaluationContext = ImmutableContext("foo", mapOf("hello" to Value.String("world")))
+        val context = evaluationContext.toConfidenceContext().map
+        whenever(flagResolverClient.resolve(eq(listOf()), eq(context))).thenReturn(
+            Result.Success(
+                FlagResolution(
+                    context,
+                    resolvedFlags.list,
+                    "token1"
+                )
+            )
+        )
+
+        confidenceFeatureProvider.initialize(evaluationContext)
+        advanceUntilIdle()
+        assertEquals(mockConfidence.getContext(), context)
+        verify(flagResolverClient, times(1)).resolve(any(), eq(context))
+        val newContext = ImmutableContext("foo").toConfidenceContext().map
+        confidenceFeatureProvider.onContextSet(evaluationContext, ImmutableContext("foo"))
+        advanceUntilIdle()
+        assertEquals(mockConfidence.getContext(), newContext)
+        verify(flagResolverClient, times(1)).resolve(any(), eq(newContext))
+    }
+
+    @Test
     fun testStaleValueReturnValueAndStaleReason() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val mockConfidence = getConfidence(testDispatcher)
