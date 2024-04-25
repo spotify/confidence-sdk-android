@@ -57,18 +57,21 @@ class Confidence internal constructor(
         flagApplier.apply(flagName, resolveToken)
     }
 
+    @Synchronized
     override fun putContext(key: String, value: ConfidenceValue) {
         val map = contextMap.value.toMutableMap()
         map[key] = value
         contextMap.value = map
     }
 
+    @Synchronized
     override fun putContext(context: Map<String, ConfidenceValue>) {
         val map = contextMap.value.toMutableMap()
         map += context
         contextMap.value = map
     }
 
+    @Synchronized
     internal fun putContext(context: Map<String, ConfidenceValue>, removedKeys: List<String>) {
         val map = contextMap.value.toMutableMap()
         map += context
@@ -79,6 +82,7 @@ class Confidence internal constructor(
         contextMap.value = map
     }
 
+    @Synchronized
     override fun removeContext(key: String) {
         val map = contextMap.value.toMutableMap()
         map.remove(key)
