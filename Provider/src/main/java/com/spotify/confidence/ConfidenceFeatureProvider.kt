@@ -177,7 +177,7 @@ class ConfidenceFeatureProvider private constructor(
             return providerCache.get().getEvaluation(
                 key,
                 defaultValue,
-                confidence.getContext().openFeatureFlatten()
+                confidence.getContext()
             ) { flagName, resolveToken ->
                 // this lambda will be invoked inside the evaluation process
                 // and only if the resolve reason is not targeting key error.

@@ -50,7 +50,7 @@ class Confidence internal constructor(
     }
 
     internal suspend fun resolve(flags: List<String>): Result<FlagResolution> {
-        return flagResolver.resolve(flags, getContext().openFeatureFlatten())
+        return flagResolver.resolve(flags, getContext())
     }
 
     internal fun apply(flagName: String, resolveToken: String) {
@@ -111,18 +111,6 @@ class Confidence internal constructor(
         eventSenderEngine.emit(eventName, message, getContext())
     }
 }
-
-internal fun Map<String, ConfidenceValue>.openFeatureFlatten(): Map<String, ConfidenceValue> {
-    val context = this.toMutableMap()
-    val openFeatureContext = context[OPEN_FEATURE_CONTEXT_KEY]?.let { it as ConfidenceValue.Struct }
-    openFeatureContext?.let {
-        context += it.map
-    }
-    context.remove(OPEN_FEATURE_CONTEXT_KEY)
-    return context
-}
-
-internal const val OPEN_FEATURE_CONTEXT_KEY = "open_feature"
 
 object ConfidenceFactory {
     fun create(
