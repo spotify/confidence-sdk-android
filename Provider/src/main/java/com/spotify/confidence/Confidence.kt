@@ -27,7 +27,7 @@ class Confidence internal constructor(
     private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL
 ) : Contextual, EventSender {
     private val removedKeys = mutableListOf<String>()
-    private var contextMap = MutableStateFlow(mapOf<String, ConfidenceValue>())
+    private val contextMap = MutableStateFlow(mapOf<String, ConfidenceValue>())
 
     // only return changes not the initial value
     // only return distinct value
