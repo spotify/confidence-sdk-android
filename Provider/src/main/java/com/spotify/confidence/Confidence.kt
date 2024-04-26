@@ -10,6 +10,10 @@ import com.spotify.confidence.client.FlagApplierClientImpl
 import com.spotify.confidence.client.SdkMetadata
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import okhttp3.OkHttpClient
 
 class Confidence internal constructor(
@@ -23,7 +27,13 @@ class Confidence internal constructor(
     private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL
 ) : Contextual, EventSender {
     private val removedKeys = mutableListOf<String>()
-    private var contextMap: MutableMap<String, ConfidenceValue> = mutableMapOf()
+    private val contextMap = MutableStateFlow(mapOf<String, ConfidenceValue>())
+
+    // only return changes not the initial value
+    // only return distinct value
+    internal val contextChanges: Flow<Map<String, ConfidenceValue>> = contextMap
+        .drop(1)
+        .distinctUntilChanged()
 
     private val flagApplier = FlagApplierWithRetries(
         client = flagApplierClient,
@@ -40,34 +50,50 @@ class Confidence internal constructor(
     }
 
     internal suspend fun resolve(flags: List<String>): Result<FlagResolution> {
-        return flagResolver.resolve(flags, getContext().openFeatureFlatten())
+        return flagResolver.resolve(flags, getContext())
     }
 
     internal fun apply(flagName: String, resolveToken: String) {
         flagApplier.apply(flagName, resolveToken)
     }
 
+    @Synchronized
     override fun putContext(key: String, value: ConfidenceValue) {
-        contextMap[key] = value
+        val map = contextMap.value.toMutableMap()
+        map[key] = value
+        contextMap.value = map
     }
 
+    @Synchronized
     override fun putContext(context: Map<String, ConfidenceValue>) {
-        contextMap += context
+        val map = contextMap.value.toMutableMap()
+        map += context
+        contextMap.value = map
     }
 
-    override fun setContext(context: Map<String, ConfidenceValue>) {
-        contextMap = context.toMutableMap()
+    @Synchronized
+    internal fun putContext(context: Map<String, ConfidenceValue>, removedKeys: List<String>) {
+        val map = contextMap.value.toMutableMap()
+        map += context
+        for (key in removedKeys) {
+            map.remove(key)
+        }
+        this.removedKeys.addAll(removedKeys)
+        contextMap.value = map
     }
 
+    @Synchronized
     override fun removeContext(key: String) {
+        val map = contextMap.value.toMutableMap()
+        map.remove(key)
         removedKeys.add(key)
-        contextMap.remove(key)
+        contextMap.value = map
     }
 
     override fun getContext(): Map<String, ConfidenceValue> =
         this.parent?.let {
-            it.getContext().filterKeys { key -> !removedKeys.contains(key) } + contextMap
-        } ?: contextMap
+            it.getContext().filterKeys { key -> !removedKeys.contains(key) } + contextMap.value
+        } ?: contextMap.value
 
     override fun withContext(context: Map<String, ConfidenceValue>): Confidence = Confidence(
         clientSecret,
@@ -89,18 +115,6 @@ class Confidence internal constructor(
         eventSenderEngine.emit(eventName, message, getContext())
     }
 }
-
-internal fun Map<String, ConfidenceValue>.openFeatureFlatten(): Map<String, ConfidenceValue> {
-    val context = this.toMutableMap()
-    val openFeatureContext = context[OPEN_FEATURE_CONTEXT_KEY]?.let { it as ConfidenceValue.Struct }
-    openFeatureContext?.let {
-        context += it.map
-    }
-    context.remove(OPEN_FEATURE_CONTEXT_KEY)
-    return context
-}
-
-internal const val OPEN_FEATURE_CONTEXT_KEY = "open_feature"
 
 object ConfidenceFactory {
     fun create(
