@@ -18,9 +18,12 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 
 const val SDK_ID = "SDK_ID_KOTLIN_PROVIDER"
@@ -49,12 +52,12 @@ class ConfidenceFeatureProvider private constructor(
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun startListeningForContext() {
         coroutineScope.launch {
             confidence.contextChanges
-                .collect {
-                    resolve(InitialisationStrategy.FetchAndActivate)
-                }
+                .suspendingSwitchMap { resolve(InitialisationStrategy.FetchAndActivate) }
+                .collect {}
         }
     }
 
@@ -224,6 +227,13 @@ class ConfidenceFeatureProvider private constructor(
                 dispatcher = dispatcher
             )
         }
+    }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+private fun <T, U> Flow<T>.suspendingSwitchMap(function: suspend () -> U): Flow<U> = flatMapLatest {
+    flow {
+        emit(function())
     }
 }
 
