@@ -30,6 +30,7 @@ import dev.openfeature.sdk.exceptions.OpenFeatureError
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -113,11 +114,11 @@ internal class ConfidenceFeatureProviderTests {
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
     }
 
-    private fun getConfidence(dispatcher: CoroutineDispatcher): Confidence = Confidence(
+    private fun getConfidence(dispatcher: CoroutineDispatcher, flagResolver: FlagResolver? = null): Confidence = Confidence(
         clientSecret = "",
         dispatcher = dispatcher,
         eventSenderEngine = mock(),
-        flagResolver = flagResolverClient,
+        flagResolver = flagResolver ?: flagResolverClient,
         flagApplierClient = flagApplierClient,
         diskStorage = FileDiskStorage.create(mockContext),
         region = ConfidenceRegion.EUROPE
@@ -565,6 +566,58 @@ internal class ConfidenceFeatureProviderTests {
         advanceUntilIdle()
         assertEquals(mockConfidence.getContext(), newContext)
         verify(flagResolverClient, times(1)).resolve(any(), eq(newContext))
+    }
+
+    @Test
+    fun testWithSlowResolvesWeCancelTheFirstResolveOnNewContextChangesOfConfidence() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val flagResolver = object : FlagResolver {
+            var callCount = 0
+            var returnCount = 0
+            var latestCalledContext = mapOf<String, ConfidenceValue>()
+            override suspend fun resolve(
+                flags: List<String>,
+                context: Map<String, ConfidenceValue>
+            ): Result<FlagResolution> {
+                latestCalledContext = context
+                if (callCount++ == 0) {
+                    delay(2000)
+                }
+                returnCount++
+                return Result.Success(
+                    FlagResolution(
+                        context,
+                        resolvedFlags.list,
+                        "token1"
+                    )
+                )
+            }
+        }
+        val mockConfidence = getConfidence(testDispatcher, flagResolver)
+        val eventHandler = EventHandler(testDispatcher)
+
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            context = mockContext,
+            eventHandler = eventHandler,
+            confidence = mockConfidence,
+            dispatcher = testDispatcher
+        )
+        val evaluationContext = ImmutableContext("foo", mapOf("hello" to Value.String("world")))
+        val context = evaluationContext.toConfidenceContext().map
+        confidenceFeatureProvider.initialize(evaluationContext)
+        advanceUntilIdle()
+        // reset the fake flag resolver to count only changes
+        flagResolver.callCount = 0
+        flagResolver.returnCount = 0
+        assertEquals(mockConfidence.getContext(), context)
+        assertEquals(context, flagResolver.latestCalledContext)
+        confidenceFeatureProvider.onContextSet(evaluationContext, ImmutableContext("foo"))
+        val newContext2 = ImmutableContext("foo2").toConfidenceContext().map
+        confidenceFeatureProvider.onContextSet(evaluationContext, ImmutableContext("foo2"))
+        advanceUntilIdle()
+        assertEquals(mockConfidence.getContext(), newContext2)
+        assertEquals(newContext2, flagResolver.latestCalledContext)
+        assertEquals(1, flagResolver.returnCount)
     }
 
     @Test
