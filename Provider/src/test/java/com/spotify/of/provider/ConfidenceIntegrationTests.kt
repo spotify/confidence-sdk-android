@@ -1,6 +1,7 @@
 package com.spotify.of.provider
 
 import android.content.Context
+import com.spotify.confidence.Confidence
 import com.spotify.confidence.ConfidenceFactory
 import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.OpenFeatureAPI
@@ -8,8 +9,14 @@ import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.events.EventHandler
 import dev.openfeature.sdk.events.OpenFeatureEvents
+import junit.framework.TestCase.assertEquals
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
@@ -37,22 +44,27 @@ class ConfidenceIntegrationTests {
         whenever(mockContext.getDir(any(), any())).thenReturn(Files.createTempDirectory("events").toFile())
     }
 
-//    @Test
-//    fun confidenceContextRemovedWorks() = runTest {
-//        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-//        val mockConfidence = getConfidence(testDispatcher)
-//        val evaluationContext = ImmutableContext("foo", mapOf("hello" to Value.String("world")))
-//        val context = evaluationContext.toConfidenceContext().map
-//        confidenceFeatureProvider.initialize(evaluationContext)
-//        advanceUntilIdle()
-//        TestCase.assertEquals(mockConfidence.getContext(), context)
-//        verify(flagResolverClient, times(1)).resolve(any(), eq(context))
-//        val newContext = ImmutableContext("foo").toConfidenceContext().map
-//        confidenceFeatureProvider.onContextSet(evaluationContext, ImmutableContext("foo"))
-//        advanceUntilIdle()
-//        TestCase.assertEquals(mockConfidence.getContext(), newContext)
-//        verify(flagResolverClient, times(1)).resolve(any(), eq(newContext))
-//    }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun confidenceContextRemovedWorks() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val mockConfidence = getConfidence(testDispatcher)
+        val eventHandler = EventHandler(testDispatcher)
+        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
+            eventHandler = eventHandler,
+            confidence = mockConfidence,
+            dispatcher = testDispatcher
+        )
+        val evaluationContext = ImmutableContext("foo", mapOf("hello" to Value.String("world")))
+        val context = evaluationContext.toConfidenceContext().map
+        confidenceFeatureProvider.initialize(evaluationContext)
+        advanceUntilIdle()
+        assertEquals(mockConfidence.getContext(), context)
+        val newContext = ImmutableContext("foo").toConfidenceContext().map
+        confidenceFeatureProvider.onContextSet(evaluationContext, ImmutableContext("foo"))
+        advanceUntilIdle()
+        assertEquals(mockConfidence.getContext(), newContext)
+    }
 
     @Test
     fun testSimpleResolveInMemoryCache() {
@@ -133,5 +145,11 @@ class ConfidenceIntegrationTests {
         Assert.assertNotNull(intDetails.variant)
     }
 }
+
+private fun getConfidence(dispatcher: CoroutineDispatcher): Confidence = ConfidenceFactory.create(
+    context = mockContext,
+    clientSecret = clientSecret,
+    dispatcher = dispatcher
+)
 
 internal const val FLAGS_FILE_NAME = "confidence_flags_cache.json"
