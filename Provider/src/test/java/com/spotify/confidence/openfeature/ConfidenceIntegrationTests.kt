@@ -1,4 +1,4 @@
-package com.spotify.of.provider
+package com.spotify.confidence.openfeature
 
 import android.content.Context
 import com.spotify.confidence.Confidence
@@ -24,7 +24,6 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.times
 import org.mockito.kotlin.whenever
 import java.io.File
 import java.nio.file.Files

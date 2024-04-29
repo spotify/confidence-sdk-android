@@ -21,7 +21,7 @@ object Versions {
 val providerVersion = project.extra["version"].toString()
 
 android {
-    namespace = "com.spotify.of.provider"
+    namespace = "com.spotify.confidence.openfeature"
     compileSdk = 33
 
     defaultConfig {

@@ -1,4 +1,4 @@
-package com.spotify.of.provider
+package com.spotify.confidence.openfeature
 
 import com.spotify.confidence.Confidence
 import com.spotify.confidence.ConfidenceValue

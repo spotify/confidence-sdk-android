@@ -1,4 +1,4 @@
-package com.spotify.of.provider
+package com.spotify.confidence.openfeature
 
 import dev.openfeature.sdk.events.EventHandler
 import dev.openfeature.sdk.events.OpenFeatureEvents
