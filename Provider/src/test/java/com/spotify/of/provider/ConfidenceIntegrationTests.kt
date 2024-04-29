@@ -17,6 +17,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
 import org.mockito.kotlin.whenever
 import java.io.File
 import java.nio.file.Files
@@ -35,6 +36,23 @@ class ConfidenceIntegrationTests {
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
         whenever(mockContext.getDir(any(), any())).thenReturn(Files.createTempDirectory("events").toFile())
     }
+
+//    @Test
+//    fun confidenceContextRemovedWorks() = runTest {
+//        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+//        val mockConfidence = getConfidence(testDispatcher)
+//        val evaluationContext = ImmutableContext("foo", mapOf("hello" to Value.String("world")))
+//        val context = evaluationContext.toConfidenceContext().map
+//        confidenceFeatureProvider.initialize(evaluationContext)
+//        advanceUntilIdle()
+//        TestCase.assertEquals(mockConfidence.getContext(), context)
+//        verify(flagResolverClient, times(1)).resolve(any(), eq(context))
+//        val newContext = ImmutableContext("foo").toConfidenceContext().map
+//        confidenceFeatureProvider.onContextSet(evaluationContext, ImmutableContext("foo"))
+//        advanceUntilIdle()
+//        TestCase.assertEquals(mockConfidence.getContext(), newContext)
+//        verify(flagResolverClient, times(1)).resolve(any(), eq(newContext))
+//    }
 
     @Test
     fun testSimpleResolveInMemoryCache() {

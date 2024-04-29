@@ -49,6 +49,7 @@ class Confidence internal constructor(
                 .collect {
                     currentFetchJob?.cancel()
                     currentFetchJob = fetch()
+                    currentFetchJob?.join()
                     activate()
                 }
         }
