@@ -1,5 +1,7 @@
 import org.gradle.api.initialization.resolve.RepositoriesMode
 
+include(":confidence")
+
 pluginManagement {
     repositories {
         google()

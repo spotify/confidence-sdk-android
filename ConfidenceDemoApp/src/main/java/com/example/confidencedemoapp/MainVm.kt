@@ -7,19 +7,12 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.spotify.confidence.Confidence
 import com.spotify.confidence.ConfidenceFactory
-import com.spotify.confidence.ConfidenceFeatureProvider
+import com.spotify.confidence.ConfidenceRegion
 import com.spotify.confidence.ConfidenceValue
+import com.spotify.confidence.Evaluation
 import com.spotify.confidence.EventSender
-import com.spotify.confidence.InitialisationStrategy
-import com.spotify.confidence.client.ConfidenceRegion
-import dev.openfeature.sdk.Client
-import dev.openfeature.sdk.EvaluationContext
-import dev.openfeature.sdk.FlagEvaluationDetails
-import dev.openfeature.sdk.ImmutableContext
-import dev.openfeature.sdk.OpenFeatureAPI
-import dev.openfeature.sdk.Value
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.Date
 import java.util.UUID
@@ -30,28 +23,16 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         private val TAG = MainVm::class.java.simpleName
     }
 
-    private var client: Client
-    private var ctx: EvaluationContext = ImmutableContext(targetingKey = "a98a4291-53b0-49d9-bae8-73d3f5da2070")
     private val _message: MutableLiveData<String> = MutableLiveData("initial")
     private val _color: MutableLiveData<Color> = MutableLiveData(Color.Gray)
     val message: LiveData<String> = _message
     val color: LiveData<Color> = _color
     private var eventSender: EventSender
+    private var confidence: Confidence
 
     init {
         val start = System.currentTimeMillis()
         val clientSecret = ClientSecretProvider.clientSecret()
-
-        val strategy = if (ConfidenceFeatureProvider.isStorageEmpty(app.applicationContext)) {
-            InitialisationStrategy.FetchAndActivate
-        } else {
-            InitialisationStrategy.ActivateAndFetchAsync
-        }
-
-        client = OpenFeatureAPI.getClient()
-
-        val values = Value.List(listOf(Value.String(""), Value.Double(2.0)))
-
 
         val mutableMap = mutableMapOf<String, ConfidenceValue>()
         mutableMap["screen"] = ConfidenceValue.String("value")
@@ -60,21 +41,21 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         mutableMap["list"] = ConfidenceValue.stringList(listOf(""))
         mutableMap["my_struct"] = ConfidenceValue.Struct(mapOf("x" to ConfidenceValue.Double(2.0)))
 
-        val confidence = ConfidenceFactory.create(
+        confidence = ConfidenceFactory.create(
             app.applicationContext,
             clientSecret,
+            initialContext = mapOf("targeting_key" to ConfidenceValue.String("a98a4291-53b0-49d9-bae8-73d3f5da2070")),
             ConfidenceRegion.EUROPE
         )
         eventSender = confidence.withContext(mutableMap)
 
         viewModelScope.launch {
-            OpenFeatureAPI.setEvaluationContext(ctx)
-            val provider = ConfidenceFeatureProvider.create(
-                confidence,
-                context = app.applicationContext,
-                initialisationStrategy = strategy
-            )
-            OpenFeatureAPI.setProviderAndWait(provider, Dispatchers.IO)
+            if(confidence.isStorageEmpty()) {
+                confidence.fetchAndActivate()
+            } else {
+                confidence.activate()
+                confidence.asyncFetch()
+            }
 
             Log.d(TAG, "client secret is $clientSecret")
             Log.d(TAG, "init took ${System.currentTimeMillis() - start} ms")
@@ -86,10 +67,10 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         Log.d(TAG, "refreshing UI")
         val flagMessageKey = "hawkflag.message"
         val flagMessageDefault = "default"
-        val messageValue = client.getStringValue(flagMessageKey, flagMessageDefault)
+        val messageValue = confidence.getValue(flagMessageKey, flagMessageDefault)
         val flagColorKey = "hawkflag.color"
         val flagColorDefault = "Gray"
-        val colorFlag = client.getStringDetails(flagColorKey, flagColorDefault).apply {
+        val colorFlag = confidence.getFlag(flagColorKey, flagColorDefault).apply {
             Log.d(TAG, "reason=$reason")
             Log.d(TAG, "variant=$variant")
         }.toComposeColor()
@@ -101,16 +82,14 @@ class MainVm(app: Application) : AndroidViewModel(app) {
 
     fun updateContext() {
         val start = System.currentTimeMillis()
-        ctx = ImmutableContext(
-            attributes = mutableMapOf(
-                "user_id" to Value.String(UUID.randomUUID().toString()),
-                "picture" to Value.String("hej"),
-                "region" to Value.String("eu")
-            )
+        val ctx = mapOf(
+                "user_id" to ConfidenceValue.String(UUID.randomUUID().toString()),
+                "picture" to ConfidenceValue.String("hej"),
+                "region" to ConfidenceValue.String("eu")
         )
         viewModelScope.launch {
             Log.d(TAG, "set new EvaluationContext")
-            OpenFeatureAPI.setEvaluationContext(ctx)
+            confidence.putContext(ctx)
         }.runCatching {
             invokeOnCompletion {
                 Log.d(
@@ -123,7 +102,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
     }
 }
 
-private fun <T> FlagEvaluationDetails<T>.toComposeColor(): Color {
+private fun <T> Evaluation<T>.toComposeColor(): Color {
     if (errorCode != null) return Color.Red
     return when (value) {
         "green" -> Color.Green

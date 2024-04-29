@@ -83,7 +83,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":Provider"))
+    implementation(project(":confidence"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
     implementation( "androidx.compose.runtime:runtime-livedata:${Versions.liveData}")
     implementation( "androidx.core:core-ktx:${Versions.core}")

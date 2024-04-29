@@ -21,7 +21,7 @@ object Versions {
 val providerVersion = project.extra["version"].toString()
 
 android {
-    namespace = "com.spotify.confidence"
+    namespace = "com.spotify.of.provider"
     compileSdk = 33
 
     defaultConfig {
@@ -56,6 +56,8 @@ dependencies {
         "org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}"
     )
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
+    api(project(":confidence"))
+    testImplementation(project(":confidence"))
     testImplementation("junit:junit:${Versions.junit}")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.coroutines}")
     testImplementation("org.mockito.kotlin:mockito-kotlin:${Versions.kotlinMockito}")
