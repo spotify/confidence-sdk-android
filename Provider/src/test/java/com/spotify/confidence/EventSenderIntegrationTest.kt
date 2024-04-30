@@ -195,13 +195,8 @@ class EventSenderIntegrationTest {
         Assert.assertEquals("eventDefinitions/my_event", uploadedEvents[0].eventDefinition)
         Assert.assertEquals(
             mapOf(
-                "message" to ConfidenceValue.Struct(
-                    mapOf(
-                        "a" to ConfidenceValue.Integer(0),
-                        "message" to ConfidenceValue.Integer(1)
-                    )
-                ),
-                "a" to ConfidenceValue.Integer(2)
+                "a" to ConfidenceValue.Integer(0),
+                "message" to ConfidenceValue.Integer(1)
             ),
             uploadedEvents[0].payload
         )
