@@ -61,6 +61,7 @@ class ConfidenceIntegrationTests {
             )
         )
 
+        // we do create a confidence object to have the visitor id injected into the context
         val oldConfidence = ConfidenceFactory.create(mockContext, clientSecret)
         oldConfidence.putContext(evalMap.toConfidenceContext().map)
         val context = oldConfidence.getContext()
