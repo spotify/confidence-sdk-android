@@ -40,6 +40,7 @@ class ConfidenceIntegrationTests {
     fun setup() {
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
         whenever(mockContext.getDir(any(), any())).thenReturn(Files.createTempDirectory("events").toFile())
+        whenever(mockContext.getSharedPreferences(SHARED_PREFS_NAME, Context.MODE_PRIVATE)).thenReturn(InMemorySharedPreferences())
     }
 
     @Test
@@ -49,7 +50,7 @@ class ConfidenceIntegrationTests {
 
         val storedValue = 10
 
-        val context = ImmutableContext(
+        val evalMap = ImmutableContext(
             targetingKey = UUID.randomUUID().toString(),
             attributes = mutableMapOf(
                 "user" to Value.Structure(
@@ -59,6 +60,11 @@ class ConfidenceIntegrationTests {
                 )
             )
         )
+
+        // we do create a confidence object to have the visitor id injected into the context
+        val oldConfidence = ConfidenceFactory.create(mockContext, clientSecret)
+        oldConfidence.putContext(evalMap.toConfidenceContext().map)
+        val context = oldConfidence.getContext()
 
         val storage = FileDiskStorage.create(mockContext).apply {
             val flags = listOf(
@@ -70,13 +76,14 @@ class ConfidenceIntegrationTests {
                 )
             )
 
-            store(FlagResolution(context.toConfidenceContext().map, flags, resolveToken))
+            store(FlagResolution(context, flags, resolveToken))
         }
 
         val eventsHandler = EventHandler(Dispatchers.IO).apply {
             publish(OpenFeatureEvents.ProviderStale)
         }
         val mockConfidence = ConfidenceFactory.create(mockContext, clientSecret)
+        mockConfidence.getContext()
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
                 context = mockContext,
@@ -85,7 +92,7 @@ class ConfidenceIntegrationTests {
                 initialisationStrategy = InitialisationStrategy.ActivateAndFetchAsync,
                 eventHandler = eventsHandler
             ),
-            context
+            evalMap
         )
         runBlocking {
             awaitProviderReady(eventsHandler = eventsHandler)
