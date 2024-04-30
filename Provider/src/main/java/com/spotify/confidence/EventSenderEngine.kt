@@ -33,6 +33,7 @@ internal class EventSenderEngineImpl(
 ) : EventSenderEngine {
     private val writeReqChannel: Channel<Event> = Channel()
     private val sendChannel: Channel<String> = Channel()
+    private val payloadMerger: PayloadMerger = PayloadMergerImpl()
     private val coroutineScope by lazy {
         CoroutineScope(SupervisorJob() + dispatcher)
     }
@@ -93,14 +94,16 @@ internal class EventSenderEngineImpl(
     override fun onLowMemoryChannel(): Channel<List<File>> {
         return eventStorage.onLowMemoryChannel()
     }
-    override fun emit(eventName: String, message: ConfidenceFieldsType, context: Map<String, ConfidenceValue>) {
-        val mutablePayload = context.toMutableMap()
-        mutablePayload["message"] = ConfidenceValue.Struct(message)
+    override fun emit(
+        eventName: String,
+        message: ConfidenceFieldsType,
+        context: Map<String, ConfidenceValue>
+    ) {
         coroutineScope.launch {
             val event = Event(
                 eventDefinition = eventName,
                 eventTime = clock.currentTime(),
-                payload = mutablePayload
+                payload = payloadMerger(context, message)
             )
             writeReqChannel.send(event)
         }

@@ -50,9 +50,6 @@ class MainVm(app: Application) : AndroidViewModel(app) {
 
         client = OpenFeatureAPI.getClient()
 
-        val values = Value.List(listOf(Value.String(""), Value.Double(2.0)))
-
-
         val mutableMap = mutableMapOf<String, ConfidenceValue>()
         mutableMap["screen"] = ConfidenceValue.String("value")
         mutableMap["hello"] = ConfidenceValue.Boolean(false)
