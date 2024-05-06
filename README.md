@@ -1,4 +1,4 @@
-[![](https://jitpack.io/v/spotify/confidence-openfeature-provider-kotlin.svg)](https://jitpack.io/#spotify/confidence-openfeature-provider-kotlin)
+[![](https://jitpack.io/v/spotify/confidence-sdk-android.svg)](https://jitpack.io/#spotify/confidence-sdk-android)
 <a href="https://maven-badges.herokuapp.com/maven-central/com.spotify.confidence/openfeature-provider-android">
 <img alt="Maven Central" src="https://maven-badges.herokuapp.com/maven-central/com.spotify.confidence/openfeature-provider-android/badge.svg" />
 </a>
@@ -18,11 +18,11 @@ implementation("com.spotify.confidence:openfeature-provider-android:0.1.7")
 ```
 It can also be consumed from jitpack for using any branch or build:
 ```
-implementation("com.github.spotify:confidence-openfeature-provider-kotlin:[BRANCH]-[SNAPSHOT/Version]")
+implementation("com.github.spotify:confidence-sdk-android:[BRANCH]-[SNAPSHOT/Version]")
 ```
 for using specific commit:
 ```
-implementation("com.github.spotify:confidence-openfeature-provider-kotlin:[COMMIT SHA]")
+implementation("com.github.spotify:confidence-sdk-android:[COMMIT SHA]")
 ```
 
 Where `0.1.7` is the most recent version of this SDK. Released versions can be found under "Releases" within this repository.
