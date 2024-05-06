@@ -63,7 +63,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
             clientSecret,
             ConfidenceRegion.EUROPE
         )
-        confidence.track(AndroidLifecycleEventProducer(getApplication()))
+        confidence.track(AndroidLifecycleEventProducer(getApplication(), false))
         eventSender = confidence.withContext(mutableMap)
 
         viewModelScope.launch {

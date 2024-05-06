@@ -22,7 +22,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 class AndroidLifecycleEventProducer(
-    private val application: Application
+    private val application: Application,
+    private val trackActivities: Boolean
 ) : Application.ActivityLifecycleCallbacks, DefaultLifecycleObserver, EventProducer {
     private val eventsFlow = MutableSharedFlow<Event>()
     private val contextFlow = MutableStateFlow<Map<String, ConfidenceValue>>(mapOf())
@@ -40,7 +41,9 @@ class AndroidLifecycleEventProducer(
 
     init {
         // setup lifecycle listeners
-        application.registerActivityLifecycleCallbacks(this)
+        if (trackActivities) {
+            application.registerActivityLifecycleCallbacks(this)
+        }
         lifecycle = ProcessLifecycleOwner.get().lifecycle
         coroutineScope.launch(Dispatchers.Main) {
             lifecycle.addObserver(this@AndroidLifecycleEventProducer)
@@ -165,7 +168,9 @@ class AndroidLifecycleEventProducer(
 
     override fun contextChanges(): Flow<Map<String, ConfidenceValue>> = contextFlow
     override fun stop() {
-        application.unregisterActivityLifecycleCallbacks(this)
+        if (trackActivities) {
+            application.unregisterActivityLifecycleCallbacks(this)
+        }
         coroutineScope.launch(Dispatchers.Main) {
             lifecycle.removeObserver(this@AndroidLifecycleEventProducer)
         }
