@@ -93,7 +93,7 @@ class EventSenderIntegrationTest {
                 size = 0
             }
 
-            override fun hit(event: Event) {
+            override fun hit(event: EngineEvent) {
                 size++
             }
 
@@ -151,14 +151,14 @@ class EventSenderIntegrationTest {
         val eventStorage = EventStorageImpl(mockContext)
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val batchSize = 1
-        val uploadedEvents: MutableList<Event> = mutableListOf()
+        val uploadedEvents: MutableList<EngineEvent> = mutableListOf()
         val flushPolicy = object : FlushPolicy {
             private var size = 0
             override fun reset() {
                 size = 0
             }
 
-            override fun hit(event: Event) {
+            override fun hit(event: EngineEvent) {
                 size++
             }
 
@@ -214,7 +214,7 @@ class EventSenderIntegrationTest {
                 size = 0
             }
 
-            override fun hit(event: Event) {
+            override fun hit(event: EngineEvent) {
                 size++
             }
 

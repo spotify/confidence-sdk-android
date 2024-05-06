@@ -25,13 +25,13 @@ internal interface EventSenderUploader {
 internal data class EventBatchRequest(
     val clientSecret: String,
     val sdk: Sdk,
-    val events: List<Event>,
+    val events: List<EngineEvent>,
     @Serializable(DateTimeSerializer::class)
     val sendTime: Date
 )
 
 @Serializable
-data class Event(
+internal data class EngineEvent(
     val eventDefinition: String,
     @Serializable(DateTimeSerializer::class)
     val eventTime: Date,
@@ -72,7 +72,7 @@ internal class EventSenderUploaderImpl(
             // TODO("return retry-after")
             429 -> false
             // if batch couldn't be processed, we should clean it up
-            in 401..499 -> true
+            in 400..499 -> true
             else -> false
         }
     }

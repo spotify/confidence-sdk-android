@@ -31,7 +31,7 @@ internal class EventSenderEngineImpl(
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val sdkMetadata: SdkMetadata
 ) : EventSenderEngine {
-    private val writeReqChannel: Channel<Event> = Channel()
+    private val writeReqChannel: Channel<EngineEvent> = Channel()
     private val sendChannel: Channel<String> = Channel()
     private val payloadMerger: PayloadMerger = PayloadMergerImpl()
     private val coroutineScope by lazy {
@@ -68,7 +68,7 @@ internal class EventSenderEngineImpl(
                 for (readyFile in readyFiles) {
                     val events = eventStorage.eventsFor(readyFile)
                         .map { e ->
-                            Event(
+                            EngineEvent(
                                 "eventDefinitions/${e.eventDefinition}",
                                 e.eventTime,
                                 e.payload
@@ -100,7 +100,7 @@ internal class EventSenderEngineImpl(
         context: Map<String, ConfidenceValue>
     ) {
         coroutineScope.launch {
-            val event = Event(
+            val event = EngineEvent(
                 eventDefinition = eventName,
                 eventTime = clock.currentTime(),
                 payload = payloadMerger(context, message)

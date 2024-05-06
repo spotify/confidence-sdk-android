@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.spotify.confidence.AndroidLifecycleEventProducer
 import com.spotify.confidence.ConfidenceFactory
 import com.spotify.confidence.ConfidenceFeatureProvider
 import com.spotify.confidence.ConfidenceValue
@@ -62,6 +63,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
             clientSecret,
             ConfidenceRegion.EUROPE
         )
+        confidence.track(AndroidLifecycleEventProducer(getApplication(), false))
         eventSender = confidence.withContext(mutableMap)
 
         viewModelScope.launch {

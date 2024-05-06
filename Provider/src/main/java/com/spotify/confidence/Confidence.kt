@@ -9,11 +9,14 @@ import com.spotify.confidence.client.FlagApplierClient
 import com.spotify.confidence.client.FlagApplierClientImpl
 import com.spotify.confidence.client.SdkMetadata
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 
 class Confidence internal constructor(
@@ -34,20 +37,14 @@ class Confidence internal constructor(
     internal val contextChanges: Flow<Map<String, ConfidenceValue>> = contextMap
         .drop(1)
         .distinctUntilChanged()
+    private val coroutineScope = CoroutineScope(dispatcher)
+    private val eventProducers: MutableList<EventProducer> = mutableListOf()
 
     private val flagApplier = FlagApplierWithRetries(
         client = flagApplierClient,
         dispatcher = dispatcher,
         diskStorage = diskStorage
     )
-
-    fun shutdown() {
-        if (parent == null) {
-            eventSenderEngine.stop()
-        } else {
-            // no-op for child confidence
-        }
-    }
 
     internal suspend fun resolve(flags: List<String>): Result<FlagResolution> {
         return flagResolver.resolve(flags, getContext())
@@ -113,6 +110,36 @@ class Confidence internal constructor(
         message: ConfidenceFieldsType
     ) {
         eventSenderEngine.emit(eventName, message, getContext())
+    }
+
+    override fun track(eventProducer: EventProducer) {
+        coroutineScope.launch {
+            eventProducer
+                .events()
+                .collect { event ->
+                    eventSenderEngine.emit(
+                        event.name,
+                        event.message,
+                        getContext()
+                    )
+                }
+        }
+
+        coroutineScope.launch {
+            eventProducer.contextChanges()
+                .collect(this@Confidence::putContext)
+        }
+        eventProducers.add(eventProducer)
+    }
+
+    override fun stop() {
+        for (producer in eventProducers) {
+            producer.stop()
+        }
+        if (parent == null) {
+            eventSenderEngine.stop()
+        }
+        coroutineScope.cancel()
     }
 }
 
