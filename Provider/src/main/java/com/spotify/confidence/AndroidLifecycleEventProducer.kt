@@ -29,19 +29,16 @@ class AndroidLifecycleEventProducer(
     private val sharedPreferences by lazy {
         application.getSharedPreferences("CONFIDENCE_EVENTS", Context.MODE_PRIVATE)
     }
-    private val packageInfo: PackageInfo?
+    private val packageInfo: PackageInfo? = try {
+        @Suppress("DEPRECATION")
+        application.packageManager.getPackageInfo(application.packageName, 0)
+    } catch (e: PackageManager.NameNotFoundException) {
+        null
+    }
     private val lifecycle: Lifecycle
-
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     init {
-        val packageManager: PackageManager = application.packageManager
-        packageInfo = try {
-            packageManager.getPackageInfo(application.packageName, 0)
-        } catch (e: PackageManager.NameNotFoundException) {
-            null
-        }
-
         // setup lifecycle listeners
         application.registerActivityLifecycleCallbacks(this)
         lifecycle = ProcessLifecycleOwner.get().lifecycle
@@ -160,7 +157,7 @@ class AndroidLifecycleEventProducer(
 
         coroutineScope.launch {
             val message = mapOf("version" to currentVersion, "build" to currentBuild)
-            eventsFlow.emit(Event(APP_LAUNCHED, message))
+            eventsFlow.emit(Event(APP_LAUNCHED_EVENT, message))
         }
     }
 
@@ -175,13 +172,18 @@ class AndroidLifecycleEventProducer(
     }
 
     companion object {
-        private const val IS_FOREGROUND_KEY = "is_foreground"
-        private const val APP_VERSION = "AppVersion"
+        // SharedPreferences keys
+        private const val APP_VERSION = "APP_VERSION"
         private const val APP_BUILD = "APP_BUILD"
         private const val LEGACY_APP_BUILD = "LEGACY_APP_BUILD"
+
+        // Context keys
+        private const val IS_FOREGROUND_KEY = "is_foreground"
+
+        // Event keys
         private const val APP_INSTALLED_EVENT = "app-installed"
         private const val APP_UPDATED_EVENT = "app-updated"
-        private const val APP_LAUNCHED = "app-launched"
+        private const val APP_LAUNCHED_EVENT = "app-launched"
     }
 }
 
