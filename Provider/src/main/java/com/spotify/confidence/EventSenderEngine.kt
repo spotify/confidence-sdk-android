@@ -101,7 +101,7 @@ internal class EventSenderEngineImpl(
     ) {
         coroutineScope.launch {
             val event = EngineEvent(
-                eventDefinition = "eventDefinitions/$eventName",
+                eventDefinition = eventName,
                 eventTime = clock.currentTime(),
                 payload = payloadMerger(context, message)
             )
