@@ -16,14 +16,6 @@ Add the following dependency to your gradle file:
 ```
 implementation("com.spotify.confidence:openfeature-provider-android:0.1.7")
 ```
-It can also be consumed from jitpack for using any branch or build:
-```
-implementation("com.github.spotify:confidence-sdk-android:[BRANCH]-[SNAPSHOT/Version]")
-```
-for using specific commit:
-```
-implementation("com.github.spotify:confidence-sdk-android:[COMMIT SHA]")
-```
 
 Where `0.1.7` is the most recent version of this SDK. Released versions can be found under "Releases" within this repository.
 <!---x-release-please-end-->
