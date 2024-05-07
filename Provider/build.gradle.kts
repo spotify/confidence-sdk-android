@@ -55,6 +55,7 @@ dependencies {
     implementation(
         "org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}"
     )
+    implementation("androidx.lifecycle:lifecycle-process:2.6.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
     api(project(":confidence"))
     testImplementation(project(":confidence"))
@@ -74,7 +75,7 @@ publishing {
             pom {
                 name.set("Confidence Openfeature Provider Android")
                 description.set("An Openfeature Provider for Confidence, made for the Android SDK")
-                url.set("https://github.com/spotify/confidence-openfeature-provider-kotlin")
+                url.set("https://github.com/spotify/confidence-sdk-android")
                 licenses {
                     license {
                         name.set("The Apache License, Version 2.0")
@@ -105,12 +106,12 @@ publishing {
                 }
                 scm {
                     connection.set(
-                        "scm:git:git://spotify/confidence-openfeature-provider-kotlin.git"
+                        "scm:git:git://spotify/confidence-sdk-android.git"
                     )
                     developerConnection.set(
-                        "scm:git:ssh://spotify/confidence-openfeature-provider-kotlin.git"
+                        "scm:git:ssh://spotify/confidence-sdk-android.git"
                     )
-                    url.set("https://github.com/spotify/confidence-openfeature-provider-kotlin")
+                    url.set("https://github.com/spotify/confidence-sdk-android")
                 }
             }
             afterEvaluate {

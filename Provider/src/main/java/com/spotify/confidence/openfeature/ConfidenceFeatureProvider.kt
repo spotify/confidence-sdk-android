@@ -1,3 +1,4 @@
+
 package com.spotify.confidence.openfeature
 
 import com.spotify.confidence.Confidence

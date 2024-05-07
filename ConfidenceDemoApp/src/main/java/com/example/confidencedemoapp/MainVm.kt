@@ -1,3 +1,4 @@
+
 package com.example.confidencedemoapp
 
 import android.app.Application
@@ -83,9 +84,9 @@ class MainVm(app: Application) : AndroidViewModel(app) {
     fun updateContext() {
         val start = System.currentTimeMillis()
         val ctx = mapOf(
-                "user_id" to ConfidenceValue.String(UUID.randomUUID().toString()),
-                "picture" to ConfidenceValue.String("hej"),
-                "region" to ConfidenceValue.String("eu")
+            "user_id" to ConfidenceValue.String(UUID.randomUUID().toString()),
+            "picture" to ConfidenceValue.String("hej"),
+            "region" to ConfidenceValue.String("eu")
         )
         viewModelScope.launch {
             Log.d(TAG, "set new EvaluationContext")

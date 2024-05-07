@@ -1,23 +1,24 @@
 package com.spotify.confidence.openfeature
 
 import android.content.Context
-import com.spotify.confidence.Confidence
 import com.spotify.confidence.ConfidenceFactory
+import com.spotify.confidence.ConfidenceValue
+import com.spotify.confidence.FlagResolution
+import com.spotify.confidence.ResolveReason
+import com.spotify.confidence.cache.FileDiskStorage
+import com.spotify.confidence.client.ResolvedFlag
 import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.events.EventHandler
 import dev.openfeature.sdk.events.OpenFeatureEvents
-import junit.framework.TestCase.assertEquals
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runTest
-import org.junit.Assert
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -41,28 +42,73 @@ class ConfidenceIntegrationTests {
     fun setup() {
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
         whenever(mockContext.getDir(any(), any())).thenReturn(Files.createTempDirectory("events").toFile())
+        whenever(mockContext.getSharedPreferences(SHARED_PREFS_NAME, Context.MODE_PRIVATE)).thenReturn(InMemorySharedPreferences())
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun confidenceContextRemovedWorks() = runTest {
-        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val mockConfidence = getConfidence(testDispatcher)
-        val eventHandler = EventHandler(testDispatcher)
-        val confidenceFeatureProvider = ConfidenceFeatureProvider.create(
-            eventHandler = eventHandler,
-            confidence = mockConfidence,
-            dispatcher = testDispatcher
+    fun testActivateAndFetchReadsTheLastValue() {
+        val resolveToken =
+            "AUi7izywlL0AEMyOVefLST+kYqzuO1PRJzXEEKNHTZCySkmuuEgg5J3rvZhwO+8/f/aOrWjTmVbby3lz2AWEQJjHqbmnvIo7OurF3buyxC7xWp7Ivn7N5+oZC/NoLF7mVEIHGo+dRWN/b0z1rTBXasMwV3HzPc03aRHb47WNG0A2asYsVERWBC9veXi8OSOPnx/aJrbBz7ROwdrr87Lp3C60GgO3P2RxVADZrI5BJzSlLv3jAyWFh563cdaqTCmjUp/iaWilYRqlXSGLkvUqdh40KlUpmIfdLvZ8gxbgq7muzzZuegTq6FMxMhxIvErO6quPN4MSPaoVX2cJ7601s5OZ0idsHvBH4TJPzOWOrn9BYJ9JXrdoblbyUfyXBOS0UsLh6O0ftD02TVd8VgWYNO8RrVDmtfsXkPhcSGIB3SuzgXgLhMZaGfy1Yd7U6EwQMx+Q0AY8fPfM9cGC9bz7N4/JvRJx2mRl+3I8ellH0VFzIhdMkzeRzE1T5Zo0NYvLPuf1n54FES10pEenrcjr2YJwm5uPzxNf+5sb0juD40jzzdVrSu5/CFP3i5orGyLWr0WOuCuQ1IbYl/lwWnjHLOuJfaOJJkcD6On2UpZkDrrt6Lis6I1Lt0QLOtxFugNHOTanRziexdtSqevehXC7JXNeCvdfAxNGbZd2AlH14rU+KMVMIvz77RbTS0t2FyHVufgb/nN6SAHfj7tC9TzRIQnlYLSzM3MMkK2VNtSpL8TW9OM4RG0Xuby0AU6KvBY4Wz++f+iC6pRI/1GKh4XzcUPFXnyh2hYz97A2t3WCnN+tWHdit2ozL+KNm/Ac3dfBkuonZhyTXpSV0Q=="
+
+        val storedValue = 10
+
+        val evalMap = ImmutableContext(
+            targetingKey = UUID.randomUUID().toString(),
+            attributes = mutableMapOf(
+                "user" to Value.Structure(
+                    mapOf(
+                        "country" to Value.String("SE")
+                    )
+                )
+            )
         )
-        val evaluationContext = ImmutableContext("foo", mapOf("hello" to Value.String("world")))
-        val context = evaluationContext.toConfidenceContext().map
-        confidenceFeatureProvider.initialize(evaluationContext)
-        advanceUntilIdle()
-        assertEquals(mockConfidence.getContext(), context)
-        val newContext = ImmutableContext("foo").toConfidenceContext().map
-        confidenceFeatureProvider.onContextSet(evaluationContext, ImmutableContext("foo"))
-        advanceUntilIdle()
-        assertEquals(mockConfidence.getContext(), newContext)
+
+        // we do create a confidence object to have the visitor id injected into the context
+        val oldConfidence = ConfidenceFactory.create(mockContext, clientSecret)
+        oldConfidence.putContext(evalMap.toConfidenceContext().map)
+        val context = oldConfidence.getContext()
+
+        val storage = FileDiskStorage.create(mockContext).apply {
+            val flags = listOf(
+                ResolvedFlag(
+                    "kotlin-test-flag",
+                    variant = "flags/kotlin-test-flag/off",
+                    reason = ResolveReason.RESOLVE_REASON_MATCH,
+                    value = mapOf("my-integer" to ConfidenceValue.Integer(storedValue))
+                )
+            )
+
+            store(FlagResolution(context, flags, resolveToken))
+        }
+
+        val eventsHandler = EventHandler(Dispatchers.IO).apply {
+            publish(OpenFeatureEvents.ProviderStale)
+        }
+        val mockConfidence = ConfidenceFactory.create(mockContext, clientSecret)
+        mockConfidence.getContext()
+        OpenFeatureAPI.setProvider(
+            ConfidenceFeatureProvider.create(
+                confidence = mockConfidence,
+                initialisationStrategy = InitialisationStrategy.ActivateAndFetchAsync,
+                eventHandler = eventsHandler
+            ),
+            evalMap
+        )
+        runBlocking {
+            awaitProviderReady(eventsHandler = eventsHandler)
+        }
+
+        val intDetails = OpenFeatureAPI.getClient()
+            .getIntegerDetails(
+                "kotlin-test-flag.my-integer",
+                0
+            )
+        assertNull(intDetails.errorCode)
+        assertNull(intDetails.errorMessage)
+        assertNotNull(intDetails.value)
+        assertEquals(storedValue, intDetails.value)
+        assertEquals(Reason.TARGETING_MATCH.name, intDetails.reason)
+        assertNotNull(intDetails.variant)
     }
 
     @Test
@@ -97,12 +143,12 @@ class ConfidenceIntegrationTests {
                 "kotlin-test-flag.my-integer",
                 0
             )
-        Assert.assertNull(intDetails.errorCode)
-        Assert.assertNull(intDetails.errorMessage)
-        Assert.assertNotNull(intDetails.value)
-        Assert.assertNotEquals(0, intDetails.value)
-        Assert.assertEquals(Reason.TARGETING_MATCH.name, intDetails.reason)
-        Assert.assertNotNull(intDetails.variant)
+        assertNull(intDetails.errorCode)
+        assertNull(intDetails.errorMessage)
+        assertNotNull(intDetails.value)
+        assertNotEquals(0, intDetails.value)
+        assertEquals(Reason.TARGETING_MATCH.name, intDetails.reason)
+        assertNotNull(intDetails.variant)
     }
 
     @Test
@@ -111,7 +157,7 @@ class ConfidenceIntegrationTests {
             publish(OpenFeatureEvents.ProviderStale)
         }
         val cacheFile = File(mockContext.filesDir, FLAGS_FILE_NAME)
-        Assert.assertEquals(0L, cacheFile.length())
+        assertEquals(0L, cacheFile.length())
         val mockConfidence = ConfidenceFactory.create(mockContext, clientSecret)
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
@@ -134,21 +180,14 @@ class ConfidenceIntegrationTests {
             awaitProviderReady(eventsHandler = eventsHandler)
         }
 
-        Assert.assertNotEquals(0L, cacheFile.length())
+        assertNotEquals(0L, cacheFile.length())
         val intDetails = OpenFeatureAPI.getClient().getIntegerDetails("kotlin-test-flag.my-integer", 0)
-        Assert.assertNull(intDetails.errorCode)
-        Assert.assertNull(intDetails.errorMessage)
-        Assert.assertNotNull(intDetails.value)
-        Assert.assertNotEquals(0, intDetails.value)
-        Assert.assertEquals(Reason.TARGETING_MATCH.name, intDetails.reason)
-        Assert.assertNotNull(intDetails.variant)
+        assertNull(intDetails.errorCode)
+        assertNull(intDetails.errorMessage)
+        assertNotNull(intDetails.value)
+        assertNotEquals(0, intDetails.value)
+        assertEquals(Reason.TARGETING_MATCH.name, intDetails.reason)
+        assertNotNull(intDetails.variant)
     }
 }
-
-private fun getConfidence(dispatcher: CoroutineDispatcher): Confidence = ConfidenceFactory.create(
-    context = mockContext,
-    clientSecret = clientSecret,
-    dispatcher = dispatcher
-)
-
 internal const val FLAGS_FILE_NAME = "confidence_flags_cache.json"

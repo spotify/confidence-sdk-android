@@ -12,6 +12,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -35,22 +36,20 @@ class Confidence internal constructor(
 ) : Contextual, EventSender {
     private val removedKeys = mutableListOf<String>()
     private val contextMap = MutableStateFlow(initialContext)
-    private val coroutineScope = CoroutineScope(dispatcher)
     private var currentFetchJob: Job? = null
     // only return changes not the initial value
     // only return distinct value
     private val contextChanges: Flow<Map<String, ConfidenceValue>> = contextMap
         .drop(1)
         .distinctUntilChanged()
+    private val coroutineScope = CoroutineScope(dispatcher)
+    private val eventProducers: MutableList<EventProducer> = mutableListOf()
 
     init {
         coroutineScope.launch {
             contextChanges
                 .collect {
-                    currentFetchJob?.cancel()
-                    currentFetchJob = fetch()
-                    currentFetchJob?.join()
-                    activate()
+                    fetchAndActivate()
                 }
         }
     }
@@ -60,14 +59,6 @@ class Confidence internal constructor(
         dispatcher = dispatcher,
         diskStorage = diskStorage
     )
-
-    fun shutdown() {
-        if (parent == null) {
-            eventSenderEngine.stop()
-        } else {
-            // no-op for child confidence
-        }
-    }
 
     private suspend fun resolve(flags: List<String>): Result<FlagResolution> {
         return flagResolver.resolve(flags, getContext())
@@ -157,6 +148,7 @@ class Confidence internal constructor(
     private val networkExceptionHandler by lazy {
         CoroutineExceptionHandler { _, _ ->
             // network failed, provider is ready but with default/cache values
+            print("")
         }
     }
 
@@ -190,7 +182,38 @@ class Confidence internal constructor(
         currentFetchJob?.join()
         activate()
     }
+    override fun track(eventProducer: EventProducer) {
+        coroutineScope.launch {
+            eventProducer
+                .events()
+                .collect { event ->
+                    eventSenderEngine.emit(
+                        event.name,
+                        event.message,
+                        getContext()
+                    )
+                }
+        }
+
+        coroutineScope.launch {
+            eventProducer.contextChanges()
+                .collect(this@Confidence::putContext)
+        }
+        eventProducers.add(eventProducer)
+    }
+
+    override fun stop() {
+        for (producer in eventProducers) {
+            producer.stop()
+        }
+        if (parent == null) {
+            eventSenderEngine.stop()
+        }
+        coroutineScope.cancel()
+    }
 }
+
+internal const val VISITOR_ID_CONTEXT_KEY = "visitorId"
 
 object ConfidenceFactory {
     fun create(
@@ -209,7 +232,7 @@ object ConfidenceFactory {
         )
         val flagApplierClient = FlagApplierClientImpl(
             clientSecret,
-            SdkMetadata(SDK_ID, "BuildConfig.SDK_VERSION"),
+            SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
             region,
             dispatcher
         )
@@ -219,13 +242,17 @@ object ConfidenceFactory {
             region = region,
             httpClient = OkHttpClient(),
             dispatcher = dispatcher,
-            sdkMetadata = SdkMetadata(SDK_ID, "BuildConfig.SDK_VERSION")
+            sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION)
         )
+        val visitorId = ConfidenceValue.String(VisitorUtil.getId(context))
+        val initContext = initialContext.toMutableMap()
+        initContext[VISITOR_ID_CONTEXT_KEY] = visitorId
+
         return Confidence(
             clientSecret,
             dispatcher,
             engine,
-            initialContext = initialContext,
+            initialContext = initContext,
             region = region,
             flagResolver = flagResolver,
             diskStorage = FileDiskStorage.create(context),
