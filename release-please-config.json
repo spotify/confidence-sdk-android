@@ -11,7 +11,7 @@
                 "README.md",
                 "build.gradle.kts",
                 "Provider/build.gradle.kts",
-                "confidence/build.gradle.kts"
+                "Confidence/build.gradle.kts"
             ]
         }
     },
