@@ -92,7 +92,9 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         )
         viewModelScope.launch {
             Log.d(TAG, "set new EvaluationContext")
+            // or confidence.awaitPutContext(ctx)
             confidence.putContext(ctx)
+            confidence.awaitReconciliation()
         }.runCatching {
             invokeOnCompletion {
                 Log.d(

@@ -64,6 +64,12 @@ class Confidence internal constructor(
     private suspend fun resolve(flags: List<String>): Result<FlagResolution> {
         return flagResolver.resolve(flags, getContext())
     }
+    suspend fun awaitReconciliation() {
+        if (currentFetchJob != null) {
+            currentFetchJob?.join()
+            activate()
+        }
+    }
 
     fun apply(flagName: String, resolveToken: String) {
         flagApplier.apply(flagName, resolveToken)
@@ -259,4 +265,9 @@ object ConfidenceFactory {
             flagApplierClient = flagApplierClient
         )
     }
+}
+
+suspend fun Confidence.awaitPutContext(context: Map<String, ConfidenceValue>) {
+    putContext(context)
+    awaitReconciliation()
 }
