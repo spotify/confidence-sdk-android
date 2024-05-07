@@ -11,17 +11,28 @@ jobs:
     # Release-please creates a PR that tracks all changes
     steps:
       - uses: google-github-actions/release-please-action@v3
-        id: release
+        id: release-provider
         with:
           release-type: simple
           command: manifest
+          path: Provider
+          default-branch: main
+
+      - uses: google-github-actions/release-please-action@v3
+        id: release-confidence
+        with:
+          release-type: simple
+          command: manifest
+          path: Confidence
           default-branch: main
 
       - name: Dump Release Please Output
         env:
-          RELEASE_PLEASE_OUTPUT: ${{ toJson(steps.release.outputs) }}
+          RELEASE_PLEASE_OUTPUT_PROVIDER: ${{ toJson(steps.release-provider.outputs) }}
+          RELEASE_PLEASE_OUTPUT_CONFIDENCE: ${{ toJson(steps.release-confidence.outputs) }}
         run: |
-          echo "$RELEASE_PLEASE_OUTPUT"
+          echo "$RELEASE_PLEASE_OUTPUT_PROVIDER"
+          echo "$RELEASE_PLEASE_OUTPUT_CONFIDENCE"
 
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
