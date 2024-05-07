@@ -10,7 +10,7 @@ import java.io.File
 internal const val FLAGS_FILE_NAME = "confidence_flags_cache.json"
 internal const val APPLY_FILE_NAME = "confidence_apply_cache.json"
 
-class FileDiskStorage private constructor(
+internal class FileDiskStorage private constructor(
     private val flagsFile: File,
     private val applyFile: File
 ) : DiskStorage {

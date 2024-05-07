@@ -149,7 +149,6 @@ class Confidence internal constructor(
     private val networkExceptionHandler by lazy {
         CoroutineExceptionHandler { _, _ ->
             // network failed, provider is ready but with default/cache values
-            print("")
         }
     }
 
