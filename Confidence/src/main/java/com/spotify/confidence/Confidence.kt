@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 
-internal const val SDK_ID = "SDK_ID_KOTLIN_PROVIDER"
+internal const val SDK_ID = "SDK_ID_KOTLIN_CONFIDENCE"
 
 class Confidence internal constructor(
     private val clientSecret: String,
