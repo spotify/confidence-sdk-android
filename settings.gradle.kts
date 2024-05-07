@@ -21,5 +21,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Provider"
+rootProject.name = "Confidence"
 include(":Provider", ":ConfidenceDemoApp")
