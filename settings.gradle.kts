@@ -1,6 +1,6 @@
 import org.gradle.api.initialization.resolve.RepositoriesMode
 
-include(":confidence")
+include(":Confidence")
 
 pluginManagement {
     repositories {

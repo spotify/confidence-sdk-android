@@ -57,7 +57,7 @@ dependencies {
     )
     implementation("androidx.lifecycle:lifecycle-process:2.6.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
-    api(project(":confidence"))
+    api(project(":Confidence"))
     testImplementation("junit:junit:${Versions.junit}")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.coroutines}")
     testImplementation("org.mockito.kotlin:mockito-kotlin:${Versions.kotlinMockito}")
