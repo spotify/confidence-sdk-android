@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.2.0](https://github.com/spotify/confidence-sdk-android/compare/0.1.7...0.2.0) (2024-05-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* split the confidence module to a new module ([#136](https://github.com/spotify/confidence-sdk-android/issues/136))
+* Total Confidence - Eventsender ([#124](https://github.com/spotify/confidence-sdk-android/issues/124))
+
+### 🐛 Bug Fixes
+
+* change STALE reason in case of context change ([#123](https://github.com/spotify/confidence-sdk-android/issues/123)) ([fae882f](https://github.com/spotify/confidence-sdk-android/commit/fae882f433fd451ba889ea0e570c449d7c60fb67))
+* ConfidenceValue.List can only contain single type [#129](https://github.com/spotify/confidence-sdk-android/issues/129) ([c532f9f](https://github.com/spotify/confidence-sdk-android/commit/c532f9f0ce6dac00d224e91c44b22ccec43e8c9d))
+* Merge context and message together ([#137](https://github.com/spotify/confidence-sdk-android/issues/137)) ([2fc83b2](https://github.com/spotify/confidence-sdk-android/commit/2fc83b2852c4f7a6f6bd89cab5df4c08f6b39e75))
+* Release please increase depth ([#141](https://github.com/spotify/confidence-sdk-android/issues/141)) ([e0e1676](https://github.com/spotify/confidence-sdk-android/commit/e0e1676bee2a2d01918a0f9f33f1bed27a8e55f3))
+* Remove extra files in rel-pls ([#140](https://github.com/spotify/confidence-sdk-android/issues/140)) ([d2d54e8](https://github.com/spotify/confidence-sdk-android/commit/d2d54e808f52b305eba05b89f76386fa6fba39ff))
+* Remove STALE event ([#122](https://github.com/spotify/confidence-sdk-android/issues/122)) ([019dbfc](https://github.com/spotify/confidence-sdk-android/commit/019dbfc57a09dcd98134ce54247409a3e7b8127d))
+* Update release-please-config.json ([#139](https://github.com/spotify/confidence-sdk-android/issues/139)) ([9da8d7e](https://github.com/spotify/confidence-sdk-android/commit/9da8d7e3c3e9e35c3672ad2ca1d2d2726a29e542))
+* use the local DateSerializer ([#127](https://github.com/spotify/confidence-sdk-android/issues/127)) ([d300b98](https://github.com/spotify/confidence-sdk-android/commit/d300b98c84cb11c1b0b7139a48bd7adb61f3ed40))
+
+
+### ✨ New Features
+
+* include persistent visitor id in context ([#130](https://github.com/spotify/confidence-sdk-android/issues/130)) ([5d4ff21](https://github.com/spotify/confidence-sdk-android/commit/5d4ff2114c84c21f9a7096217bf2ebce096c7061))
+* listen for changes in the provider for the context changes ([#133](https://github.com/spotify/confidence-sdk-android/issues/133)) ([2fca516](https://github.com/spotify/confidence-sdk-android/commit/2fca5161d39cb75cdc4489e77812f6e5e4c04368))
+* Stale return value instead of default ([#132](https://github.com/spotify/confidence-sdk-android/issues/132)) ([611200c](https://github.com/spotify/confidence-sdk-android/commit/611200c33b4d7f701a19d509d26c4cd0668e56e0))
+* Total Confidence - Eventsender ([#124](https://github.com/spotify/confidence-sdk-android/issues/124)) ([5f1164c](https://github.com/spotify/confidence-sdk-android/commit/5f1164c85b20737453b0d893812105e3d29e447e))
+* Track app lifecycle, track activities lifecycle, track deeplink, track install/update ([#131](https://github.com/spotify/confidence-sdk-android/issues/131)) ([8de5d54](https://github.com/spotify/confidence-sdk-android/commit/8de5d54135aad33158a212011956148ba8b94202))
+
+
+### 📚 Documentation
+
+* Add apply note to readme ([#125](https://github.com/spotify/confidence-sdk-android/issues/125)) ([2bc0bae](https://github.com/spotify/confidence-sdk-android/commit/2bc0bae4c2b6b1919a8029e9f60235a3dd382461))
+* Add documentation about `apply` ([#119](https://github.com/spotify/confidence-sdk-android/issues/119)) ([5973467](https://github.com/spotify/confidence-sdk-android/commit/597346777b7534986c7c99ccb669d08688117397))
+* Add documentation about apply ([5973467](https://github.com/spotify/confidence-sdk-android/commit/597346777b7534986c7c99ccb669d08688117397))
+
+
+### 🔄 Refactoring
+
+* Add `message` container to `payload` ([#134](https://github.com/spotify/confidence-sdk-android/issues/134)) ([7ba3954](https://github.com/spotify/confidence-sdk-android/commit/7ba39541d003dd985209a35908351d074adbf4ea))
+* rename repository ([#138](https://github.com/spotify/confidence-sdk-android/issues/138)) ([f9cd491](https://github.com/spotify/confidence-sdk-android/commit/f9cd491a74360e41719148d5c65f39dd3c6ff2dc))
+* send to track rename ([#135](https://github.com/spotify/confidence-sdk-android/issues/135)) ([a90639d](https://github.com/spotify/confidence-sdk-android/commit/a90639d8d7f7718c1329dbb4489986df9895efcd))
+* split the confidence module to a new module ([#136](https://github.com/spotify/confidence-sdk-android/issues/136)) ([ebe2733](https://github.com/spotify/confidence-sdk-android/commit/ebe27338366c56878ffced17d59b2e74360e0873))
+
 ## [0.1.7](https://github.com/spotify/confidence-openfeature-provider-kotlin/compare/0.1.6...0.1.7) (2024-01-16)
 
 
