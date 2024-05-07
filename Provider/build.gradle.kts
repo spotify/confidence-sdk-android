@@ -68,7 +68,7 @@ publishing {
     publications {
         register<MavenPublication>("release") {
             groupId = project.extra["groupId"].toString()
-            artifactId = "openfeature-provider-android"
+            artifactId = "android"
             version = providerVersion
 
             pom {
