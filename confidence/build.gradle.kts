@@ -64,7 +64,7 @@ publishing {
     publications {
         register<MavenPublication>("release") {
             groupId = project.extra["groupId"].toString()
-            artifactId = "android"
+            artifactId = "confidence-android"
             version = providerVersion
 
             pom {
