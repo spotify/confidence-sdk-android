@@ -1,12 +1,13 @@
-// ktlint-disable max-line-length
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
     id("maven-publish")
     id("org.jlleitschuh.gradle.ktlint")
-    kotlin("plugin.serialization")
     id("signing")
+    kotlin("plugin.serialization").version("1.8.10").apply(true)
 }
+
+val providerVersion = project.extra["version"].toString()
 
 object Versions {
     const val openFeatureSDK = "0.2.3"
@@ -18,27 +19,24 @@ object Versions {
     const val mockWebServer = "4.9.1"
 }
 
-val providerVersion = project.extra["version"].toString()
-
 android {
-    namespace = "com.spotify.confidence.openfeature"
+    namespace = "com.spotify.confidence"
     compileSdk = 33
 
     defaultConfig {
         minSdk = 21
-        version = providerVersion
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
+        consumerProguardFiles("consumer-rules.pro")
         buildConfigField("String", "SDK_VERSION", "\"" + providerVersion + "\"")
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = "1.8"
     }
 
     publishing {
@@ -50,14 +48,12 @@ android {
 }
 
 dependencies {
-    api("dev.openfeature:android-sdk:${Versions.openFeatureSDK}")
     implementation("com.squareup.okhttp3:okhttp:${Versions.okHttp}")
     implementation(
         "org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}"
     )
     implementation("androidx.lifecycle:lifecycle-process:2.6.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
-    api(project(":Confidence"))
     testImplementation("junit:junit:${Versions.junit}")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.coroutines}")
     testImplementation("org.mockito.kotlin:mockito-kotlin:${Versions.kotlinMockito}")
@@ -68,13 +64,13 @@ publishing {
     publications {
         register<MavenPublication>("release") {
             groupId = project.extra["groupId"].toString()
-            artifactId = "openfeature-provider-android"
+            artifactId = "confidence-sdk-android"
             version = providerVersion
 
             pom {
-                name.set("Confidence Openfeature Provider Android")
-                description.set("An Openfeature Provider for Confidence, made for the Android SDK")
-                url.set("https://github.com/spotify/confidence-sdk-android")
+                name.set("Confidence SDK Android")
+                description.set("Android SDK for Confidence")
+                url.set("https://github.com/spotify/confidence-openfeature-provider-kotlin")
                 licenses {
                     license {
                         name.set("The Apache License, Version 2.0")
@@ -105,12 +101,12 @@ publishing {
                 }
                 scm {
                     connection.set(
-                        "scm:git:git://spotify/confidence-sdk-android.git"
+                        "scm:git:git://spotify/confidence-openfeature-provider-kotlin.git"
                     )
                     developerConnection.set(
-                        "scm:git:ssh://spotify/confidence-sdk-android.git"
+                        "scm:git:ssh://spotify/confidence-openfeature-provider-kotlin.git"
                     )
-                    url.set("https://github.com/spotify/confidence-sdk-android")
+                    url.set("https://github.com/spotify/confidence-openfeature-provider-kotlin")
                 }
             }
             afterEvaluate {

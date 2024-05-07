@@ -1,5 +1,7 @@
 import org.gradle.api.initialization.resolve.RepositoriesMode
 
+include(":Confidence")
+
 pluginManagement {
     repositories {
         google()
@@ -19,5 +21,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Provider"
+rootProject.name = "Confidence"
 include(":Provider", ":ConfidenceDemoApp")
