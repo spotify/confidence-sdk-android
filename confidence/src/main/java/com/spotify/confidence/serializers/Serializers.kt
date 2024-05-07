@@ -3,8 +3,8 @@ package com.spotify.confidence.serializers
 import android.annotation.SuppressLint
 import com.spotify.confidence.ConfidenceValue
 import com.spotify.confidence.ParseError
-import com.spotify.confidence.client.Flags
 import com.spotify.confidence.ResolveReason
+import com.spotify.confidence.client.Flags
 import com.spotify.confidence.client.ResolvedFlag
 import com.spotify.confidence.client.SchemaType
 import kotlinx.serialization.KSerializer
@@ -29,7 +29,8 @@ import java.util.Date
 import java.util.TimeZone
 
 object ConfidenceValueSerializer : JsonContentPolymorphicSerializer<ConfidenceValue>(
-    ConfidenceValue::class) {
+    ConfidenceValue::class
+) {
     override fun selectDeserializer(element: JsonElement) = when (element.jsonObject.keys) {
         emptySet<String>() -> ConfidenceValue.Null.serializer()
         setOf("string") -> ConfidenceValue.String.serializer()

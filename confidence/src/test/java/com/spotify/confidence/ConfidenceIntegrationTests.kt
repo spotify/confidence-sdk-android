@@ -29,6 +29,7 @@ class ConfidenceIntegrationTests {
         whenever(mockContext.getDir(any(), any())).thenReturn(Files.createTempDirectory("events").toFile())
         whenever(mockContext.getSharedPreferences(SHARED_PREFS_NAME, Context.MODE_PRIVATE)).thenReturn(InMemorySharedPreferences())
     }
+
     @Test
     fun testActivateAndFetchReadsTheLastValue() {
         val resolveToken =
@@ -45,25 +46,25 @@ class ConfidenceIntegrationTests {
 
         val storage = FileDiskStorage.create(mockContext)
         val flags = listOf(
-                ResolvedFlag(
-                    "kotlin-test-flag",
-                    variant = "flags/kotlin-test-flag/off",
-                    reason = ResolveReason.RESOLVE_REASON_MATCH,
-                    value = mapOf(
-                        "my-integer" to ConfidenceValue.Integer(
-                            storedValue
-                        )
+            ResolvedFlag(
+                "kotlin-test-flag",
+                variant = "flags/kotlin-test-flag/off",
+                reason = ResolveReason.RESOLVE_REASON_MATCH,
+                value = mapOf(
+                    "my-integer" to ConfidenceValue.Integer(
+                        storedValue
                     )
                 )
             )
+        )
 
-            storage.store(
-                FlagResolution(
-                    context,
-                    flags,
-                    resolveToken
-                )
+        storage.store(
+            FlagResolution(
+                context,
+                flags,
+                resolveToken
             )
+        )
 
         val mockConfidence = ConfidenceFactory.create(
             mockContext,

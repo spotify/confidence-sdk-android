@@ -18,7 +18,6 @@ import org.mockito.kotlin.whenever
 import java.io.File
 import java.nio.file.Files
 
-
 private const val clientSecret = "WciJVLIEiNnRxV8gaYPZNCFF8vbAXOu6"
 private val mockContext: Context = mock()
 private val mockSharedPrefs: SharedPreferences = mock()

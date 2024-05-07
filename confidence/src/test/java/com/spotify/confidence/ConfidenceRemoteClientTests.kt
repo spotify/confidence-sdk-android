@@ -484,21 +484,21 @@ internal class ConfidenceRemoteClientTests {
                 listOf("flag1", "flag2"),
                 mapOf(
                     "targeting_key" to ConfidenceValue.String("user1"),
-                        "myboolean" to ConfidenceValue.Boolean(true),
-                        "mystring" to ConfidenceValue.String("test"),
-                        "myinteger" to ConfidenceValue.Integer(7),
-                        "mydouble" to ConfidenceValue.Double(3.14),
-                        "mydate" to ConfidenceValue.Timestamp(date),
-                        "mynull" to ConfidenceValue.Null,
-                        "mylist" to ConfidenceValue.List(
-                            listOf(
-                                ConfidenceValue.String("innerList"),
-                                ConfidenceValue.String("innerList_Second_Item")
-                            )
-                        ),
-                        "mystructure" to ConfidenceValue.Struct(mapOf("myinnerString" to ConfidenceValue.String("value")))
-                    )
+                    "myboolean" to ConfidenceValue.Boolean(true),
+                    "mystring" to ConfidenceValue.String("test"),
+                    "myinteger" to ConfidenceValue.Integer(7),
+                    "mydouble" to ConfidenceValue.Double(3.14),
+                    "mydate" to ConfidenceValue.Timestamp(date),
+                    "mynull" to ConfidenceValue.Null,
+                    "mylist" to ConfidenceValue.List(
+                        listOf(
+                            ConfidenceValue.String("innerList"),
+                            ConfidenceValue.String("innerList_Second_Item")
+                        )
+                    ),
+                    "mystructure" to ConfidenceValue.Struct(mapOf("myinnerString" to ConfidenceValue.String("value")))
                 )
+            )
     }
 
     @Test

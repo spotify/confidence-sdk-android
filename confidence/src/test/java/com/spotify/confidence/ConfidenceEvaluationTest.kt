@@ -115,7 +115,7 @@ internal class ConfidenceEvaluationTest {
             )
         val evalString = mockConfidence.getFlag(
             "test-kotlin-flag-1.mystring",
-            "default",
+            "default"
         )
         val evalBool = mockConfidence.getFlag(
             "test-kotlin-flag-1.myboolean",
@@ -488,7 +488,6 @@ internal class ConfidenceEvaluationTest {
             initialContext = context1
         )
 
-
         mockConfidence.fetchAndActivate()
         advanceUntilIdle()
         // reset the fake flag resolver to count only changes
@@ -730,7 +729,7 @@ internal class ConfidenceEvaluationTest {
         val mockConfidence = getConfidence(
             testDispatcher,
             initialContext = context,
-            cache =  InMemoryCache()
+            cache = InMemoryCache()
         )
 
         mockConfidence.fetchAndActivate()
@@ -759,9 +758,9 @@ internal class ConfidenceEvaluationTest {
         mockConfidence.fetchAndActivate()
         advanceUntilIdle()
         val evalRootObject = mockConfidence.getFlag(
-                "test-kotlin-flag-1",
-                ConfidenceValue.Struct(mapOf())
-            )
+            "test-kotlin-flag-1",
+            ConfidenceValue.Struct(mapOf())
+        )
 
         TestCase.assertEquals(
             ConfidenceValue.Struct(resolvedValueAsMap),
@@ -947,8 +946,8 @@ internal class ConfidenceEvaluationTest {
 
         val evalString = mockConfidence.getFlag(
             "test-kotlin-flag-1.mystring",
-                "default",
-            )
+            "default"
+        )
 
         Assert.assertNull(evalString.errorMessage)
         Assert.assertNull(evalString.errorCode)
@@ -1057,7 +1056,7 @@ internal class ConfidenceEvaluationTest {
                 )
             )
         )
-    mockConfidence.fetchAndActivate()
+        mockConfidence.fetchAndActivate()
         advanceUntilIdle()
         val ex = Assert.assertThrows(ParseError::class.java) {
             mockConfidence.getFlag(
@@ -1068,7 +1067,6 @@ internal class ConfidenceEvaluationTest {
         TestCase.assertEquals("Unable to parse flag value: [mystring, extrapath]", ex.message)
     }
 }
-
 
 private const val cacheFileData = "{\n" +
     "  \"token1\": {\n" +
@@ -1094,4 +1092,3 @@ private const val cacheFileData = "{\n" +
     "    }\n" +
     "  }\n" +
     "}\n"
-

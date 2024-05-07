@@ -37,6 +37,7 @@ class Confidence internal constructor(
     private val removedKeys = mutableListOf<String>()
     private val contextMap = MutableStateFlow(initialContext)
     private var currentFetchJob: Job? = null
+
     // only return changes not the initial value
     // only return distinct value
     private val contextChanges: Flow<Map<String, ConfidenceValue>> = contextMap
@@ -74,14 +75,14 @@ class Confidence internal constructor(
         key: String,
         defaultValue: T
     ): Evaluation<T> = cache.get().getEvaluation(
-                key,
-                defaultValue,
-                getContext()
-            ) { flagName, resolveToken ->
-                // this lambda will be invoked inside the evaluation process
-                // and only if the resolve reason is not targeting key error.
-                apply(flagName, resolveToken)
-            }
+        key,
+        defaultValue,
+        getContext()
+    ) { flagName, resolveToken ->
+        // this lambda will be invoked inside the evaluation process
+        // and only if the resolve reason is not targeting key error.
+        apply(flagName, resolveToken)
+    }
 
     @Synchronized
     override fun putContext(key: String, value: ConfidenceValue) {
@@ -153,18 +154,18 @@ class Confidence internal constructor(
     }
 
     private fun fetch(): Job = coroutineScope.launch(networkExceptionHandler) {
-            try {
-                val resolveResponse = resolve(listOf())
-                if (resolveResponse is Result.Success) {
-                    // we store the flag anyways except when the response was not modified
-                    if (resolveResponse.data != FlagResolution.EMPTY) {
-                        diskStorage.store(resolveResponse.data)
-                    }
+        try {
+            val resolveResponse = resolve(listOf())
+            if (resolveResponse is Result.Success) {
+                // we store the flag anyways except when the response was not modified
+                if (resolveResponse.data != FlagResolution.EMPTY) {
+                    diskStorage.store(resolveResponse.data)
                 }
-            } catch (e: ParseError) {
-                throw ParseError(e.message)
             }
+        } catch (e: ParseError) {
+            throw ParseError(e.message)
         }
+    }
 
     fun activate() {
         val resolveResponse = diskStorage.read()
