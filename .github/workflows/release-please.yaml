@@ -11,17 +11,28 @@ jobs:
     # Release-please creates a PR that tracks all changes
     steps:
       - uses: google-github-actions/release-please-action@v3
-        id: release
+        id: release-provider
         with:
           release-type: simple
           command: manifest
+          path: Provider
+          default-branch: main
+
+      - uses: google-github-actions/release-please-action@v3
+        id: release-confidence
+        with:
+          release-type: simple
+          command: manifest
+          path: Confidence
           default-branch: main
 
       - name: Dump Release Please Output
         env:
-          RELEASE_PLEASE_OUTPUT: ${{ toJson(steps.release.outputs) }}
+          RELEASE_PLEASE_OUTPUT_PROVIDER: ${{ toJson(steps.release-provider.outputs) }}
+          RELEASE_PLEASE_OUTPUT_CONFIDENCE: ${{ toJson(steps.release-confidence.outputs) }}
         run: |
-          echo "$RELEASE_PLEASE_OUTPUT"
+          echo "$RELEASE_PLEASE_OUTPUT_PROVIDER"
+          echo "$RELEASE_PLEASE_OUTPUT_CONFIDENCE"
 
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
@@ -44,25 +55,25 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-            ref: ${{ needs.release-please.outputs.release_tag_name }}
+          ref: ${{ needs.release-please.outputs.release_tag_name }}
 
       - name: Configure GPG Key
         run: |
-            echo -n "$GPG_SIGNING_KEY" | base64 --decode | gpg --import --no-tty --batch --yes
-            gpg --pinentry-mode=loopback --passphrase $GPG_SIGNING_KEY_PASSWORD --export-secret-key $GPG_SIGNING_KEY_ID > ~/.gnupg/secring.gpg
+          echo -n "$GPG_SIGNING_KEY" | base64 --decode | gpg --import --no-tty --batch --yes
+          gpg --pinentry-mode=loopback --passphrase $GPG_SIGNING_KEY_PASSWORD --export-secret-key $GPG_SIGNING_KEY_ID > ~/.gnupg/secring.gpg
         env:
-            GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
-            GPG_SIGNING_KEY_PASSWORD: ${{ secrets.GPG_SIGNING_KEY_PASSWORD }}
+          GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
+          GPG_SIGNING_KEY_PASSWORD: ${{ secrets.GPG_SIGNING_KEY_PASSWORD }}
 
       - name: Add signing secrets to gradle.properties
         run: |
-            mkdir -p ~/.gradle/
-            echo "signing.keyId=$GPG_SIGNING_KEY_ID" >> ~/.gradle/gradle.properties
-            echo "signing.password=$GPG_SIGNING_KEY_PASSWORD" >> ~/.gradle/gradle.properties
-            echo "signing.secretKeyRingFile=/home/runner/.gnupg/secring.gpg" >> ~/.gradle/gradle.properties
+          mkdir -p ~/.gradle/
+          echo "signing.keyId=$GPG_SIGNING_KEY_ID" >> ~/.gradle/gradle.properties
+          echo "signing.password=$GPG_SIGNING_KEY_PASSWORD" >> ~/.gradle/gradle.properties
+          echo "signing.secretKeyRingFile=/home/runner/.gnupg/secring.gpg" >> ~/.gradle/gradle.properties
         env:
-            GPG_SIGNING_KEY_ID: ${{ secrets.GPG_SIGNING_KEY_ID }}
-            GPG_SIGNING_KEY_PASSWORD: ${{ secrets.GPG_SIGNING_KEY_PASSWORD }}
+          GPG_SIGNING_KEY_ID: ${{ secrets.GPG_SIGNING_KEY_ID }}
+          GPG_SIGNING_KEY_PASSWORD: ${{ secrets.GPG_SIGNING_KEY_PASSWORD }}
 
       - name: Set up JDK 11
         uses: actions/setup-java@v3
@@ -81,4 +92,3 @@ jobs:
 
       - name: Clean up signing secrets
         run: rm ~/.gradle/gradle.properties
-

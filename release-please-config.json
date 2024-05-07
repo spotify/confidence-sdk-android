@@ -9,7 +9,9 @@
             "include-v-in-tag": false,
             "extra-files": [
                 "README.md",
-                "build.gradle.kts"
+                "build.gradle.kts",
+                "Provider/build.gradle.kts",
+                "Confidence/build.gradle.kts"
             ]
         }
     },
