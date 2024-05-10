@@ -219,7 +219,7 @@ class Confidence internal constructor(
     }
 }
 
-internal const val VISITOR_ID_CONTEXT_KEY = "visitorId"
+internal const val VISITOR_ID_CONTEXT_KEY = "visitor_id"
 
 object ConfidenceFactory {
     fun create(
