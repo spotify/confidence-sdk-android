@@ -522,7 +522,7 @@ internal class ConfidenceRemoteClientTests {
                     "  \"clientSecret\": \"secret1\",\n" +
                     "  \"resolveToken\": \"token1\",\n" +
                     "  \"sdk\": {\n" +
-                    "    \"id\": \"SDK_ID_KOTLIN_PROVIDER_TEST\",\n" +
+                    "    \"id\": \"SDK_ID_KOTLIN_CONFIDENCE_TEST\",\n" +
                     "    \"version\": \"\"\n" +
                     "  }\n" +
                     "}"

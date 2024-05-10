@@ -3,7 +3,7 @@ package com.spotify.confidence.openfeature
 import android.content.SharedPreferences
 
 internal const val SHARED_PREFS_NAME = "confidence-visitor"
-internal const val VISITOR_ID_SHARED_PREFS_KEY = "visitorId"
+internal const val VISITOR_ID_SHARED_PREFS_KEY = "visitor_id"
 
 internal class InMemorySharedPreferences : SharedPreferences {
     private var visitorId: String = ""
