@@ -79,10 +79,10 @@ class Confidence internal constructor(
 
     fun <T> getFlag(
         key: String,
-        defaultValue: T
+        default: T
     ): Evaluation<T> = cache.get().getEvaluation(
         key,
-        defaultValue,
+        default,
         getContext()
     ) { flagName, resolveToken ->
         // this lambda will be invoked inside the evaluation process
