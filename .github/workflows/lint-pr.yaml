@@ -17,6 +17,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Configure GPG Key
+        run: |
+            echo -n "$GPG_SIGNING_KEY" | base64 --decode | gpg --import --no-tty --batch --yes
+            gpg --pinentry-mode=loopback --passphrase $GPG_SIGNING_KEY_PASSWORD --export-secret-key $GPG_SIGNING_KEY_ID > ~/.gnupg/secring.gpg
+        env:
+            GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
+            GPG_SIGNING_KEY_PASSWORD: ${{ secrets.GPG_SIGNING_KEY_PASSWORD }}
+
       - uses: marocchino/sticky-pull-request-comment@v2
         # When the previous steps fails, the workflow would stop. By adding this
         # condition you can continue the execution with the populated error message.
