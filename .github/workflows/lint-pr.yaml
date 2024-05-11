@@ -12,11 +12,6 @@ jobs:
     name: Validate PR title
     runs-on: ubuntu-latest
     steps:
-      - uses: amannn/action-semantic-pull-request@v5
-        id: lint_pr_title
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Configure GPG Key
         run: |
             echo -n "$GPG_SIGNING_KEY" | base64 --decode | gpg --import --no-tty --batch --yes
@@ -24,7 +19,10 @@ jobs:
         env:
             GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
             GPG_SIGNING_KEY_PASSWORD: ${{ secrets.GPG_SIGNING_KEY_PASSWORD }}
-
+      - uses: amannn/action-semantic-pull-request@v5
+        id: lint_pr_title
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: marocchino/sticky-pull-request-comment@v2
         # When the previous steps fails, the workflow would stop. By adding this
         # condition you can continue the execution with the populated error message.
