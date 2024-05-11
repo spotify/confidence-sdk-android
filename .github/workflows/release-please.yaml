@@ -13,7 +13,7 @@ jobs:
       - uses: google-github-actions/release-please-action@v3
         id: release
         with:
-          release-type: simple
+          release-type: simple2
           command: manifest
           default-branch: main
 
