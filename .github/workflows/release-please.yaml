@@ -2,6 +2,7 @@ on:
   push:
     branches:
       - main
+      - bugbounty
 
 name: Run Release Please
 jobs:
