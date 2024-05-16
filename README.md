@@ -14,10 +14,10 @@ The latest release of the Provider is available on Maven central.
 <!---x-release-please-start-version-->
 Add the following dependency to your gradle file:
 ```
-implementation("com.spotify.confidence:openfeature-provider-android:0.2.0")
+implementation("com.spotify.confidence:openfeature-provider-android:0.2.1")
 ```
 
-Where `0.2.0` is the most recent version of this SDK. Released versions can be found under "Releases" within this repository.
+Where `0.2.1` is the most recent version of this SDK. Released versions can be found under "Releases" within this repository.
 <!---x-release-please-end-->
 
 ### Enabling the provider, setting the evaluation context and resolving flags

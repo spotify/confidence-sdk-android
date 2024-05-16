@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.1](https://github.com/spotify/confidence-sdk-android/compare/0.2.0...0.2.1) (2024-05-16)
+
+
+### 🐛 Bug Fixes
+
+* do not throw while evaluating flag, return proper error ([#147](https://github.com/spotify/confidence-sdk-android/issues/147)) ([d26d8e0](https://github.com/spotify/confidence-sdk-android/commit/d26d8e025dd72365d8bd28d07f71eba27d7287ef))
+* update visitorId context key to visitor_id ([#145](https://github.com/spotify/confidence-sdk-android/issues/145)) ([e960451](https://github.com/spotify/confidence-sdk-android/commit/e960451f916fd5614cdc676e983c7e93badcd8bd))
+
+
+### 🧹 Chore
+
+* update openfeature sdk version to 0.3.0 ([#128](https://github.com/spotify/confidence-sdk-android/issues/128)) ([0a4be58](https://github.com/spotify/confidence-sdk-android/commit/0a4be5872f49527aff6310addadfd66a2e83dfd6))
+
 ## [0.2.0](https://github.com/spotify/confidence-sdk-android/compare/0.1.7...0.2.0) (2024-05-07)
 
 
