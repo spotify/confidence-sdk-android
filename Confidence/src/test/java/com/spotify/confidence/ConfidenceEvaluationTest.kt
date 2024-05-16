@@ -920,13 +920,15 @@ internal class ConfidenceEvaluationTest {
         val context = mapOf("key" to ConfidenceValue.String("foo"))
         val mockConfidence = getConfidence(testDispatcher, initialContext = context)
 
+        val reason = ResolveReason.RESOLVE_REASON_NO_TREATMENT_MATCH
+
         val resolvedNonMatchingFlags = Flags(
             listOf(
                 ResolvedFlag(
                     flag = "test-kotlin-flag-1",
                     variant = "",
                     mapOf(),
-                    ResolveReason.RESOLVE_REASON_NO_TREATMENT_MATCH
+                    reason
                 )
             )
         )
@@ -953,7 +955,7 @@ internal class ConfidenceEvaluationTest {
         Assert.assertNull(evalString.errorCode)
         Assert.assertNull(evalString.variant)
         TestCase.assertEquals("default", evalString.value)
-        TestCase.assertEquals(ResolveReason.DEFAULT, evalString.reason)
+        TestCase.assertEquals(reason, evalString.reason)
     }
 
     @Test
@@ -982,13 +984,11 @@ internal class ConfidenceEvaluationTest {
             "token2"
         )
         cache.refresh(cacheData)
-        val ex = Assert.assertThrows(FlagNotFoundError::class.java) {
-            mockConfidence.getFlag(
-                "test-kotlin-flag-2.mystring",
-                "default"
-            )
-        }
-        TestCase.assertEquals("Could not find flag named: test-kotlin-flag-2", ex.message)
+        val ex = mockConfidence.getFlag(
+            "test-kotlin-flag-2.mystring",
+            "default"
+        )
+        TestCase.assertEquals(ErrorCode.FLAG_NOT_FOUND, ex.errorCode)
     }
 
     @Test
@@ -1001,13 +1001,11 @@ internal class ConfidenceEvaluationTest {
         whenever(flagResolverClient.resolve(eq(listOf()), any())).thenThrow(Error(""))
         mockConfidence.fetchAndActivate()
         advanceUntilIdle()
-        val ex = Assert.assertThrows(FlagNotFoundError::class.java) {
-            mockConfidence.getFlag(
-                "test-kotlin-flag-2.mystring",
-                "default"
-            )
-        }
-        TestCase.assertEquals("Could not find flag named: test-kotlin-flag-2", ex.message)
+        val ex = mockConfidence.getFlag(
+            "test-kotlin-flag-2.mystring",
+            "default"
+        )
+        TestCase.assertEquals(ErrorCode.FLAG_NOT_FOUND, ex.errorCode)
     }
 
     @Test
@@ -1032,13 +1030,11 @@ internal class ConfidenceEvaluationTest {
         )
         mockConfidence.fetchAndActivate()
         advanceUntilIdle()
-        val ex = Assert.assertThrows(ParseError::class.java) {
-            mockConfidence.getFlag(
-                "test-kotlin-flag-1.wrongid",
-                "default"
-            )
-        }
-        TestCase.assertEquals("Unable to parse flag value: [wrongid]", ex.message)
+        val ex = mockConfidence.getFlag(
+            "test-kotlin-flag-1.wrongid",
+            "default"
+        )
+        TestCase.assertEquals(ErrorCode.PARSE_ERROR, ex.errorCode)
     }
 
     @Test
@@ -1058,13 +1054,11 @@ internal class ConfidenceEvaluationTest {
         )
         mockConfidence.fetchAndActivate()
         advanceUntilIdle()
-        val ex = Assert.assertThrows(ParseError::class.java) {
-            mockConfidence.getFlag(
-                "test-kotlin-flag-1.mystring.extrapath",
-                "default"
-            )
-        }
-        TestCase.assertEquals("Unable to parse flag value: [mystring, extrapath]", ex.message)
+        val ex = mockConfidence.getFlag(
+            "test-kotlin-flag-1.mystring.extrapath",
+            "default"
+        )
+        TestCase.assertEquals(ErrorCode.PARSE_ERROR, ex.errorCode)
     }
 }
 

@@ -1,8 +1,5 @@
 package com.spotify.confidence
 
-import kotlin.jvm.Throws
-
-@Throws(FlagNotFoundError::class, ParseError::class)
 fun <T> FlagResolution?.getEvaluation(
     flag: String,
     defaultValue: T,
@@ -19,9 +16,10 @@ fun <T> FlagResolution?.getEvaluation(
     }
     requireNotNull(this)
     val resolvedFlag = this.flags.firstOrNull { it.flag == parsedKey.flagName }
-        ?: throw FlagNotFoundError(
-            "Could not find flag named: ${parsedKey.flagName}",
-            parsedKey.flagName
+        ?: return Evaluation(
+            value = defaultValue,
+            reason = ResolveReason.ERROR,
+            errorCode = ErrorCode.FLAG_NOT_FOUND
         )
 
     if (resolvedFlag.reason != ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR) {
@@ -40,12 +38,13 @@ fun <T> FlagResolution?.getEvaluation(
     val resolvedValue: ConfidenceValue =
         findValueFromValuePath(ConfidenceValue.Struct(flagValue), parsedKey.valuePath)
             ?: if (resolvedFlag.reason == ResolveReason.RESOLVE_REASON_MATCH) {
-                throw ParseError(
-                    "Unable to parse flag value: ${parsedKey.valuePath}",
-                    parsedKey.valuePath
+                return Evaluation(
+                    value = defaultValue,
+                    reason = resolvedFlag.reason,
+                    errorCode = ErrorCode.PARSE_ERROR
                 )
             } else {
-                return Evaluation(value = defaultValue, reason = ResolveReason.DEFAULT)
+                return Evaluation(value = defaultValue, reason = resolvedFlag.reason)
             }
 
     return when (resolvedFlag.reason) {
@@ -117,7 +116,8 @@ enum class ErrorCode {
     // The flag could not be found.
     FLAG_NOT_FOUND,
     INVALID_CONTEXT,
-    PROVIDER_NOT_READY
+    PROVIDER_NOT_READY,
+    PARSE_ERROR
 }
 
 data class ParseError(
