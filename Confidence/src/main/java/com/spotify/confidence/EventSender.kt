@@ -10,6 +10,8 @@ interface EventSender : Contextual {
 
     fun stop()
 
+    fun flush()
+
     override fun withContext(context: Map<String, ConfidenceValue>): EventSender
 }
 

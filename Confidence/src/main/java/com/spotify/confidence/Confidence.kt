@@ -152,6 +152,10 @@ class Confidence internal constructor(
         eventSenderEngine.emit(eventName, message, getContext())
     }
 
+    override fun flush() {
+        eventSenderEngine.flush()
+    }
+
     private val networkExceptionHandler by lazy {
         CoroutineExceptionHandler { _, _ ->
             // network failed, provider is ready but with default/cache values

@@ -109,7 +109,7 @@ class EventSenderIntegrationTest {
         val engine = EventSenderEngineImpl(
             eventStorage,
             clientSecret,
-            flushPolicies = listOf(flushPolicy),
+            flushPolicies = mutableListOf(flushPolicy),
             dispatcher = testDispatcher,
             sdkMetadata = SdkMetadata("kotlin_test", ""),
             uploader = uploader
@@ -175,7 +175,7 @@ class EventSenderIntegrationTest {
         val engine = EventSenderEngineImpl(
             eventStorage,
             clientSecret,
-            flushPolicies = listOf(flushPolicy),
+            flushPolicies = mutableListOf(flushPolicy),
             dispatcher = testDispatcher,
             sdkMetadata = SdkMetadata("kotlin_test", ""),
             uploader = uploader
@@ -232,7 +232,7 @@ class EventSenderIntegrationTest {
         val engine = EventSenderEngineImpl(
             eventStorage,
             clientSecret,
-            flushPolicies = listOf(flushPolicy),
+            flushPolicies = mutableListOf(flushPolicy),
             dispatcher = testDispatcher,
             sdkMetadata = SdkMetadata("kotlin_test", ""),
             uploader = uploader
@@ -267,5 +267,50 @@ class EventSenderIntegrationTest {
                 .first()
             Assert.assertEquals(eventStorage.eventsFor(currentFile).size, 2)
         }
+    }
+
+    @Test
+    fun running_flush_will_batch_and_upload() = runTest {
+        val eventStorage = EventStorageImpl(mockContext)
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val batchSize = 4
+        val flushPolicy = object : FlushPolicy {
+            private var size = 0
+            override fun reset() {
+                size = 0
+            }
+
+            override fun hit(event: EngineEvent) {
+                size++
+            }
+
+            override fun shouldFlush(): Boolean {
+                return size >= batchSize
+            }
+        }
+        val uploader = object : EventSenderUploader {
+            val requests: MutableList<EventBatchRequest> = mutableListOf()
+
+            override suspend fun upload(events: EventBatchRequest): Boolean {
+                requests.add(events)
+                return true
+            }
+        }
+        val engine = EventSenderEngineImpl(
+            eventStorage,
+            clientSecret,
+            flushPolicies = mutableListOf(flushPolicy),
+            dispatcher = testDispatcher,
+            sdkMetadata = SdkMetadata("kotlin_test", ""),
+            uploader = uploader
+        )
+
+        engine.emit("my_event", mapOf("a" to ConfidenceValue.Integer(0)), mapOf("a" to ConfidenceValue.Integer(1)))
+        engine.emit("my_event", mapOf("a" to ConfidenceValue.Integer(0)), mapOf("a" to ConfidenceValue.Integer(1)))
+        Assert.assertEquals(uploader.requests.size, 0)
+        engine.flush()
+        advanceUntilIdle()
+        Assert.assertEquals(1, uploader.requests.size)
+        Assert.assertEquals(2, uploader.requests[0].events.size)
     }
 }
