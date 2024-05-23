@@ -101,21 +101,8 @@ confidence.track(
 )
 ```
 
-## Apply events
-This SDK automatically emits `apply` events to the Confidence backend once a flag is accessed. This allows Confidence to track who was exposed to what variant and when.
-
-_Note: the `apply` event is only generated for flags that are successfully evaluated (i.e. default values returned due to errors don't generate `apply` events)._
-_Note: the `apply` event reports which flag and variant was read by the application, but not which property the application has read from such variant's value._
-
-To avoid generating redundant data, as long as the flags' data returned from the backend for a user remains unchanged, only the first time a flag's property is read will generate an `apply` event. This is true also across restarts of the application.
-
-The SDK stores `apply` events on disk until they are emitted correctly, thus ensuring the apply data reaches the backend even if generated when there is no network available (assuming the device will ever re-connect to the network before the application is deleted by the user).
-
-<!-- Add link to the more detailed documentation on apply events in the Confidence portal once it's ready -->
-
-
 ## OpenFeature Kotlin Confidence Provider
-A [Confidence](https://confidence.spotify.com/) Provider for the [OpenFeature SDK](https://github.com/open-feature/kotlin-sdk).
+If you want to use OpenFeature, an OpenFeature Provider for the [OpenFeature SDK](https://github.com/open-feature/kotlin-sdk) is also available.
 
 ### Adding the package dependency
 
@@ -131,32 +118,3 @@ Where `0.2.1` is the most recent version of the Provider. Released versions can 
 <!---x-release-please-end-->
 
 
-### Enabling the provider, setting the evaluation context and resolving flags
-
-The Provider is created using a confidence instance. The Provider is then set in the OpenFeature API using the `setProvider` or `setProviderAndWait` methods.
-Please refer to the OpenFeature Kotlin SDK [documentation](https://github.com/open-feature/kotlin-sdk) for more information on OpenFeature specific APIs mentioned throughout this README (e.g. `setProvider`, `setProviderAndWait`, OpenFeature Events).
-
-Basic usage:
-```kotlin
-val confidence = ConfidenceFactory.create(
-    context = app.applicationContext,
-    clientSecret = "<MY_SECRET>"
-)
-coroutineScope.launch {
-    OpenFeatureAPI.setProviderAndWait(
-        ConfidenceFeatureProvider.create(
-            confidence = confidence
-        )
-    )
-    val result = client.getBooleanValue("flag.my-boolean", false)
-}
-```
-
-#### Changing context after the provider initialization 
-The evaluation context can be changed during the app session using `OpenFeatureApi.setEvaluationContext(...)`.
-After calling this method the new context is set for the provider, the flags will be fetched again and the cache and storage will be updated accordingly. 
-The event `ProviderReady` will be emitted once the new flags are ready to be consumed by the application (note that the selected initialization strategy property doesn't play a role in this case).
-
-Notes:
-- If a flag can't be resolved from cache, the provider does NOT automatically resort to calling remote: refreshing the cache from remote only happens when setting a new provider and/or evaluation context in the global OpenFeatureAPI
-- It's advised not to access flags while `setProvider` and `setEvaluationContext` are running: flag access might return the default value with reason `STALE` during such operations. The event `ProviderReady` can be used to guarantee correctness.
