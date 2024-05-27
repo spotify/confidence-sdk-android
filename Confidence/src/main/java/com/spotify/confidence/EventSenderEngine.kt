@@ -18,7 +18,7 @@ import java.io.File
 internal interface EventSenderEngine {
     fun onLowMemoryChannel(): Channel<List<File>>
     fun emit(eventName: String, message: ConfidenceFieldsType, context: Map<String, ConfidenceValue>)
-
+    fun flush()
     fun stop()
 }
 
@@ -26,7 +26,7 @@ internal class EventSenderEngineImpl(
     private val eventStorage: EventStorage,
     private val clientSecret: String,
     private val uploader: EventSenderUploader,
-    private val flushPolicies: List<FlushPolicy> = listOf(),
+    private val flushPolicies: MutableList<FlushPolicy> = mutableListOf(),
     private val clock: Clock = Clock.CalendarBacked.systemUTC(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val sdkMetadata: SdkMetadata
@@ -44,9 +44,13 @@ internal class EventSenderEngineImpl(
     }
 
     init {
+        flushPolicies.add(ManualFlushPolicy)
         coroutineScope.launch(exceptionHandler) {
             for (event in writeReqChannel) {
-                eventStorage.writeEvent(event)
+                if (event.eventDefinition != manualFlushEvent.eventDefinition) {
+                    // skip storing manual flush event
+                    eventStorage.writeEvent(event)
+                }
                 for (policy in flushPolicies) {
                     policy.hit(event)
                 }
@@ -109,6 +113,12 @@ internal class EventSenderEngineImpl(
         }
     }
 
+    override fun flush() {
+        coroutineScope.launch {
+            writeReqChannel.send(manualFlushEvent)
+        }
+    }
+
     override fun stop() {
         coroutineScope.cancel()
         eventStorage.stop()
@@ -129,7 +139,7 @@ internal class EventSenderEngineImpl(
                     EventStorageImpl(context),
                     clientSecret,
                     uploader = EventSenderUploaderImpl(OkHttpClient(), dispatcher),
-                    flushPolicies = flushPolicies,
+                    flushPolicies = flushPolicies.toMutableList(),
                     dispatcher = dispatcher,
                     sdkMetadata = sdkMetadata
                 )
