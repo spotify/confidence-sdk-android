@@ -8,13 +8,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.spotify.confidence.AndroidLifecycleEventProducer
 import com.spotify.confidence.Confidence
-import com.spotify.confidence.ConfidenceFactory
-import com.spotify.confidence.ConfidenceRegion
 import com.spotify.confidence.ConfidenceValue
 import com.spotify.confidence.Evaluation
-import com.spotify.confidence.EventSender
 import kotlinx.coroutines.launch
 import java.util.Date
 import java.util.UUID
@@ -29,8 +25,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
     private val _color: MutableLiveData<Color> = MutableLiveData(Color.Gray)
     val message: LiveData<String> = _message
     val color: LiveData<Color> = _color
-    private var eventSender: EventSender
-    private var confidence: Confidence
+    var confidence: Confidence? = null
 
     init {
         val start = System.currentTimeMillis()
@@ -42,45 +37,23 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         mutableMap["NN"] = ConfidenceValue.Double(20.0)
         mutableMap["list"] = ConfidenceValue.stringList(listOf(""))
         mutableMap["my_struct"] = ConfidenceValue.Struct(mapOf("x" to ConfidenceValue.Double(2.0)))
-
-        confidence = ConfidenceFactory.create(
-            app.applicationContext,
-            clientSecret,
-            initialContext = mapOf("targeting_key" to ConfidenceValue.String("a98a4291-53b0-49d9-bae8-73d3f5da2070")),
-            ConfidenceRegion.EUROPE
-        )
-        confidence.track(AndroidLifecycleEventProducer(getApplication(), false))
-        eventSender = confidence.withContext(mutableMap)
-
-        viewModelScope.launch {
-            if(confidence.isStorageEmpty()) {
-                confidence.fetchAndActivate()
-            } else {
-                confidence.activate()
-                confidence.asyncFetch()
-            }
-
-            Log.d(TAG, "client secret is $clientSecret")
-            Log.d(TAG, "init took ${System.currentTimeMillis() - start} ms")
-            refreshUi()
-        }
     }
 
     fun refreshUi() {
         Log.d(TAG, "refreshing UI")
         val flagMessageKey = "hawkflag.message"
         val flagMessageDefault = "default"
-        val messageValue = confidence.getValue(flagMessageKey, flagMessageDefault)
+        val messageValue = confidence?.getValue(flagMessageKey, flagMessageDefault)
         val flagColorKey = "hawkflag.color"
         val flagColorDefault = "Gray"
-        val colorFlag = confidence.getFlag(flagColorKey, flagColorDefault).apply {
+        val colorFlag = confidence?.getFlag(flagColorKey, flagColorDefault)?.apply {
             Log.d(TAG, "reason=$reason")
             Log.d(TAG, "variant=$variant")
-        }.toComposeColor()
+        }?.toComposeColor()
         _message.postValue(messageValue)
         _color.postValue(colorFlag)
 
-        eventSender.track("navigate", mapOf("my_date" to ConfidenceValue.Date(Date()), "my_time" to ConfidenceValue.Timestamp(Date())))
+        confidence?.track("navigate", mapOf("my_date" to ConfidenceValue.Date(Date()), "my_time" to ConfidenceValue.Timestamp(Date())))
     }
 
     fun updateContext() {
@@ -92,9 +65,9 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         )
         viewModelScope.launch {
             Log.d(TAG, "set new EvaluationContext")
-            // or confidence.awaitPutContext(ctx)
-            confidence.putContext(ctx)
-            confidence.awaitReconciliation()
+            // or confidence?.awaitPutContext(ctx)
+            confidence?.putContext(ctx)
+            confidence?.awaitReconciliation()
         }.runCatching {
             invokeOnCompletion {
                 Log.d(

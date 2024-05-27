@@ -19,6 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 class AndroidLifecycleEventProducer(
@@ -26,7 +27,7 @@ class AndroidLifecycleEventProducer(
     private val trackActivities: Boolean
 ) : Application.ActivityLifecycleCallbacks, DefaultLifecycleObserver, EventProducer {
     private val eventsFlow = MutableSharedFlow<Event>()
-    private val contextFlow = MutableStateFlow<Map<String, ConfidenceValue>>(mapOf())
+    private val contextFlow = MutableSharedFlow<Map<String, ConfidenceValue>>()
     private val sharedPreferences by lazy {
         application.getSharedPreferences("CONFIDENCE_EVENTS", Context.MODE_PRIVATE)
     }
@@ -59,13 +60,18 @@ class AndroidLifecycleEventProducer(
     }
 
     override fun onStart(owner: LifecycleOwner) {
-        contextFlow.value =
-            mapOf(IS_FOREGROUND_KEY to ConfidenceValue.Boolean(true))
+        coroutineScope.launch {
+            contextFlow.tryEmit(
+                mapOf(IS_FOREGROUND_KEY to ConfidenceValue.Boolean(true)))
+        }
+
     }
 
     override fun onStop(owner: LifecycleOwner) {
-        contextFlow.value =
-            mapOf(IS_FOREGROUND_KEY to ConfidenceValue.Boolean(false))
+        coroutineScope.launch {
+            contextFlow.tryEmit(
+                mapOf(IS_FOREGROUND_KEY to ConfidenceValue.Boolean(false)))
+        }
     }
 
     override fun onActivityStarted(activity: Activity) {
@@ -161,6 +167,13 @@ class AndroidLifecycleEventProducer(
         coroutineScope.launch {
             val message = mapOf("version" to currentVersion, "build" to currentBuild)
             eventsFlow.emit(Event(APP_LAUNCHED_EVENT, message))
+        }
+
+        coroutineScope.launch {
+            contextFlow.emit(
+                mapOf("build" to currentBuild))
+            contextFlow.emit(
+                mapOf("version" to currentVersion))
         }
     }
 

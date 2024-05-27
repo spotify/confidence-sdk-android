@@ -3,6 +3,7 @@ package com.example.confidencedemoapp
 import android.content.Context
 import android.os.Bundle
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -22,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import com.example.confidencedemoapp.ui.theme.MyApplicationTheme
+import com.spotify.confidence.AndroidLifecycleEventProducer
 import com.spotify.confidence.ConfidenceFactory
 import com.spotify.confidence.ConfidenceRegion
 import com.spotify.confidence.ConfidenceValue
@@ -39,13 +41,21 @@ class MainActivity : ComponentActivity() {
                 initialContext = mapOf("targeting_key" to ConfidenceValue.String("a98a4291-53b0-49d9-bae8-73d3f5da2070")),
                 ConfidenceRegion.EUROPE
             )
+            confidence.track(AndroidLifecycleEventProducer(getApplication(), false))
             val state = flow {
-                confidence.fetchAndActivate()
+                if(confidence.isStorageEmpty()) {
+                    confidence.fetchAndActivate()
+                } else {
+                    confidence.activate()
+                    confidence.asyncFetch()
+                }
                 emit("READY")
             }.collectAsState(initial ="LOADING")
             // These are observable states where changed will "update the view"
             val msgState = vm.message.observeAsState()
             val colorState = vm.color.observeAsState()
+            vm.confidence = confidence
+
 
             MyApplicationTheme {
                 Surface(
