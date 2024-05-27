@@ -128,11 +128,6 @@ class AndroidLifecycleEventProducer(
         val currentVersion = ConfidenceValue.String(packageInfo?.versionName ?: "")
         val currentBuild = ConfidenceValue.String(packageInfo?.getVersionCode().toString() ?: "")
 
-        // Get the previous recorded version.
-        val previousVersion = sharedPreferences
-            .getString(APP_VERSION, null)
-            ?.let(ConfidenceValue::String)
-
         val previousBuild: ConfidenceValue.String? = sharedPreferences
             .getString(APP_BUILD, null)
             ?.let(ConfidenceValue::String)
@@ -141,14 +136,12 @@ class AndroidLifecycleEventProducer(
 
         // Check and track Application Installed or Application Updated.
         if (previousBuild == null && legacyPreviousBuild == null) {
-            val message = mapOf("version" to currentVersion, "build" to currentBuild)
+            val message = mapOf(APP_VERSION_KEY to currentVersion, APP_BUILD_KEY to currentBuild)
             coroutineScope.launch { eventsFlow.emit(Event(APP_INSTALLED_EVENT, message)) }
         } else if (currentBuild != previousBuild) {
             val message = mapOf(
-                "version" to currentVersion,
-                "build" to currentBuild,
-                "previous_version" to (previousVersion ?: ConfidenceValue.String("")),
-                "previous_build" to (previousBuild ?: ConfidenceValue.String(""))
+                APP_VERSION_KEY to currentVersion,
+                APP_BUILD_KEY to currentBuild
             )
             coroutineScope.launch { eventsFlow.emit(Event(APP_UPDATED_EVENT, message)) }
         }
@@ -159,7 +152,7 @@ class AndroidLifecycleEventProducer(
         }
 
         coroutineScope.launch {
-            val message = mapOf("version" to currentVersion, "build" to currentBuild)
+            val message = mapOf(APP_VERSION_KEY to currentVersion, APP_BUILD_KEY to currentBuild)
             eventsFlow.emit(Event(APP_LAUNCHED_EVENT, message))
         }
     }
@@ -184,6 +177,8 @@ class AndroidLifecycleEventProducer(
 
         // Context keys
         private const val IS_FOREGROUND_KEY = "is_foreground"
+        private const val APP_VERSION_KEY = "app_version"
+        private const val APP_BUILD_KEY = "app_build"
 
         // Event keys
         private const val APP_INSTALLED_EVENT = "app-installed"
