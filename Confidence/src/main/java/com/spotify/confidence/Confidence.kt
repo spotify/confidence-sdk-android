@@ -12,6 +12,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,7 +44,7 @@ class Confidence internal constructor(
     private val contextChanges: Flow<Map<String, ConfidenceValue>> = contextMap
         .drop(1)
         .distinctUntilChanged()
-    private val coroutineScope = CoroutineScope(dispatcher)
+    private val coroutineScope = CoroutineScope(SupervisorJob() + dispatcher)
     private val eventProducers: MutableList<EventProducer> = mutableListOf()
 
     init {
