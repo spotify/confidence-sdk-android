@@ -72,9 +72,9 @@ class AndroidLifecycleEventProducer(
 
     @Synchronized
     private fun updateContext(map: Map<String, ConfidenceValue>) {
-        val map = contextFlow.value.toMutableMap()
-        map += map
-        contextFlow.value = map
+        val context = contextFlow.value.toMutableMap()
+        context += map
+        contextFlow.value = context
     }
 
     override fun onActivityStarted(activity: Activity) {
