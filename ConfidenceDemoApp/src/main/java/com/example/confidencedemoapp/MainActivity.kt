@@ -33,16 +33,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val confidence = ConfidenceFactory.create(
-                applicationContext,
-                "clientSecret",
-                initialContext = mapOf("targeting_key" to ConfidenceValue.String("a98a4291-53b0-49d9-bae8-73d3f5da2070")),
-                ConfidenceRegion.EUROPE
-            )
-            val state = flow {
-                confidence.fetchAndActivate()
-                emit("READY")
-            }.collectAsState(initial ="LOADING")
             // These are observable states where changed will "update the view"
             val msgState = vm.message.observeAsState()
             val colorState = vm.color.observeAsState()
