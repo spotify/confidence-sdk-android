@@ -70,6 +70,7 @@ class AndroidLifecycleEventProducer(
         updateContext(mapOf(key to value))
     }
 
+    @Synchronized
     private fun updateContext(map: Map<String, ConfidenceValue>) {
         val map = contextFlow.value.toMutableMap()
         map += map
