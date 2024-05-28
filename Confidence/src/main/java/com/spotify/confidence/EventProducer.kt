@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 data class Event(
     val name: String,
     val message: Map<String, ConfidenceValue>,
-    var shouldFlush: Boolean = false
+    val shouldFlush: Boolean = false
 )
 
 interface EventProducer {
