@@ -59,13 +59,21 @@ class AndroidLifecycleEventProducer(
     }
 
     override fun onStart(owner: LifecycleOwner) {
-        contextFlow.value =
-            mapOf(IS_FOREGROUND_KEY to ConfidenceValue.Boolean(true))
+        updateContext(IS_FOREGROUND_KEY, ConfidenceValue.Boolean(true))
     }
 
     override fun onStop(owner: LifecycleOwner) {
-        contextFlow.value =
-            mapOf(IS_FOREGROUND_KEY to ConfidenceValue.Boolean(false))
+        updateContext(IS_FOREGROUND_KEY, ConfidenceValue.Boolean(false))
+    }
+
+    private fun updateContext(key: String, value: ConfidenceValue) {
+        updateContext(mapOf(key to value))
+    }
+
+    private fun updateContext(map: Map<String, ConfidenceValue>) {
+        val map = contextFlow.value.toMutableMap()
+        map += map
+        contextFlow.value = map
     }
 
     override fun onActivityStarted(activity: Activity) {
@@ -128,10 +136,11 @@ class AndroidLifecycleEventProducer(
         val currentVersion = ConfidenceValue.String(packageInfo?.versionName ?: "")
         val currentBuild = ConfidenceValue.String(packageInfo?.getVersionCode().toString() ?: "")
 
-        contextFlow.value =
-            mapOf(APP_VERSION_KEY to currentVersion)
-        contextFlow.value =
-            mapOf(APP_BUILD_KEY to currentBuild)
+        val addedContext = mapOf(
+            APP_VERSION_KEY to currentVersion,
+            APP_BUILD_KEY to currentBuild
+        )
+        updateContext(addedContext)
 
         val previousBuild: ConfidenceValue.String? = sharedPreferences
             .getString(APP_BUILD, null)
