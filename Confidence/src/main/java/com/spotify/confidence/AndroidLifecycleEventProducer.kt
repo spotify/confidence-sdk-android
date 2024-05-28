@@ -151,9 +151,9 @@ class AndroidLifecycleEventProducer(
 
         // Check and track Application Installed or Application Updated.
         if (previousBuild == null && legacyPreviousBuild == null) {
-            coroutineScope.launch { eventsFlow.emit(Event(APP_INSTALLED_EVENT, mapOf())) }
+            coroutineScope.launch { eventsFlow.emit(Event(APP_INSTALLED_EVENT, mapOf(), true)) }
         } else if (currentBuild != previousBuild) {
-            coroutineScope.launch { eventsFlow.emit(Event(APP_UPDATED_EVENT, mapOf())) }
+            coroutineScope.launch { eventsFlow.emit(Event(APP_UPDATED_EVENT, mapOf(), true)) }
         }
 
         coroutineScope.launch {
@@ -162,7 +162,7 @@ class AndroidLifecycleEventProducer(
         }
 
         coroutineScope.launch {
-            eventsFlow.emit(Event(APP_LAUNCHED_EVENT, mapOf()))
+            eventsFlow.emit(Event(APP_LAUNCHED_EVENT, mapOf(), true))
         }
     }
 
