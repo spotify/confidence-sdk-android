@@ -128,6 +128,11 @@ class AndroidLifecycleEventProducer(
         val currentVersion = ConfidenceValue.String(packageInfo?.versionName ?: "")
         val currentBuild = ConfidenceValue.String(packageInfo?.getVersionCode().toString() ?: "")
 
+        contextFlow.value =
+            mapOf(APP_VERSION_KEY to currentVersion)
+        contextFlow.value =
+            mapOf(APP_BUILD_KEY to currentBuild)
+
         val previousBuild: ConfidenceValue.String? = sharedPreferences
             .getString(APP_BUILD, null)
             ?.let(ConfidenceValue::String)
@@ -136,14 +141,9 @@ class AndroidLifecycleEventProducer(
 
         // Check and track Application Installed or Application Updated.
         if (previousBuild == null && legacyPreviousBuild == null) {
-            val message = mapOf(APP_VERSION_KEY to currentVersion, APP_BUILD_KEY to currentBuild)
-            coroutineScope.launch { eventsFlow.emit(Event(APP_INSTALLED_EVENT, message)) }
+            coroutineScope.launch { eventsFlow.emit(Event(APP_INSTALLED_EVENT, mapOf())) }
         } else if (currentBuild != previousBuild) {
-            val message = mapOf(
-                APP_VERSION_KEY to currentVersion,
-                APP_BUILD_KEY to currentBuild
-            )
-            coroutineScope.launch { eventsFlow.emit(Event(APP_UPDATED_EVENT, message)) }
+            coroutineScope.launch { eventsFlow.emit(Event(APP_UPDATED_EVENT, mapOf())) }
         }
 
         coroutineScope.launch {
@@ -152,8 +152,7 @@ class AndroidLifecycleEventProducer(
         }
 
         coroutineScope.launch {
-            val message = mapOf(APP_VERSION_KEY to currentVersion, APP_BUILD_KEY to currentBuild)
-            eventsFlow.emit(Event(APP_LAUNCHED_EVENT, message))
+            eventsFlow.emit(Event(APP_LAUNCHED_EVENT, mapOf()))
         }
     }
 
