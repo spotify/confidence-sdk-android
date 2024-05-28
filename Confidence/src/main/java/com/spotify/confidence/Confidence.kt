@@ -203,6 +203,9 @@ class Confidence internal constructor(
                         event.message,
                         getContext()
                     )
+                    if (event.shouldFlush) {
+                        eventSenderEngine.flush()
+                    }
                 }
         }
 
