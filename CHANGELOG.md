@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.3.0](https://github.com/spotify/confidence-sdk-android/compare/0.2.1...0.3.0) (2024-05-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* context container in payload
+* `context` container in event payload ([#158](https://github.com/spotify/confidence-sdk-android/issues/158))
+
+### 🐛 Bug Fixes
+
+* Add version/build to context ([#154](https://github.com/spotify/confidence-sdk-android/issues/154)) ([1e71fb9](https://github.com/spotify/confidence-sdk-android/commit/1e71fb99a32b90fd4785ec2aeb7782399b959628))
+* Prevent coroutine crashing on errors ([#157](https://github.com/spotify/confidence-sdk-android/issues/157)) ([d75229a](https://github.com/spotify/confidence-sdk-android/commit/d75229a766d9f72c522e0503a8cd34566e7649ae))
+* Remove the duplicate singleton confidence ([#156](https://github.com/spotify/confidence-sdk-android/issues/156)) ([60deb61](https://github.com/spotify/confidence-sdk-android/commit/60deb61cb87029d21b792de9719bf431bb4a26cb))
+
+
+### ✨ New Features
+
+* add manual flush capabilities ([#152](https://github.com/spotify/confidence-sdk-android/issues/152)) ([157eeb9](https://github.com/spotify/confidence-sdk-android/commit/157eeb955df663d163877e1e659e9472dde7d4c6))
+
+
+### 📚 Documentation
+
+* Remove some README parts ([#151](https://github.com/spotify/confidence-sdk-android/issues/151)) ([45b9964](https://github.com/spotify/confidence-sdk-android/commit/45b996432606e0154fe73df847068bb025bf96bc))
+* Smaller README refactoring ([#153](https://github.com/spotify/confidence-sdk-android/issues/153)) ([d4efefc](https://github.com/spotify/confidence-sdk-android/commit/d4efefcabdd4cc2c06694221aab7b57d300db995))
+* update readme to cover Confidence APIs ([#149](https://github.com/spotify/confidence-sdk-android/issues/149)) ([8cfea1c](https://github.com/spotify/confidence-sdk-android/commit/8cfea1caf8dfe4ce89c21546fdc23f413a4cd65a))
+
+
+### 🔄 Refactoring
+
+* `context` container in event payload ([#158](https://github.com/spotify/confidence-sdk-android/issues/158)) ([fd54e21](https://github.com/spotify/confidence-sdk-android/commit/fd54e2186f531f3a4d4f4449eb5b0aeb828c1aed))
+* context container in payload ([fd54e21](https://github.com/spotify/confidence-sdk-android/commit/fd54e2186f531f3a4d4f4449eb5b0aeb828c1aed))
+* from "message" to "data" ([#159](https://github.com/spotify/confidence-sdk-android/issues/159)) ([06b4d5f](https://github.com/spotify/confidence-sdk-android/commit/06b4d5f2a34e64ff9035129c3f0c8b8a784caad2))
+
 ## [0.2.1](https://github.com/spotify/confidence-sdk-android/compare/0.2.0...0.2.1) (2024-05-16)
 
 
