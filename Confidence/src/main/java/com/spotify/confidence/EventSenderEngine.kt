@@ -17,7 +17,7 @@ import java.io.File
 
 internal interface EventSenderEngine {
     fun onLowMemoryChannel(): Channel<List<File>>
-    fun emit(eventName: String, message: ConfidenceFieldsType, context: Map<String, ConfidenceValue>)
+    fun emit(eventName: String, data: ConfidenceFieldsType, context: Map<String, ConfidenceValue>)
     fun flush()
     fun stop()
 }
@@ -100,14 +100,14 @@ internal class EventSenderEngineImpl(
     }
     override fun emit(
         eventName: String,
-        message: ConfidenceFieldsType,
+        data: ConfidenceFieldsType,
         context: Map<String, ConfidenceValue>
     ) {
         coroutineScope.launch {
             val event = EngineEvent(
                 eventDefinition = eventName,
                 eventTime = clock.currentTime(),
-                payload = payloadMerger(context, message)
+                payload = payloadMerger(context, data)
             )
             writeReqChannel.send(event)
         }

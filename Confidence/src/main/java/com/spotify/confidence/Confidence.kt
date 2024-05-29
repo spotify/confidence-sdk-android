@@ -148,9 +148,9 @@ class Confidence internal constructor(
 
     override fun track(
         eventName: String,
-        message: ConfidenceFieldsType
+        data: ConfidenceFieldsType
     ) {
-        eventSenderEngine.emit(eventName, message, getContext())
+        eventSenderEngine.emit(eventName, data, getContext())
     }
 
     override fun flush() {
@@ -200,7 +200,7 @@ class Confidence internal constructor(
                 .collect { event ->
                     eventSenderEngine.emit(
                         event.name,
-                        event.message,
+                        event.data,
                         getContext()
                     )
                     if (event.shouldFlush) {

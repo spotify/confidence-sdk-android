@@ -3,7 +3,7 @@ package com.spotify.confidence
 interface EventSender : Contextual {
     fun track(
         eventName: String,
-        message: ConfidenceFieldsType = mapOf()
+        data: ConfidenceFieldsType = mapOf()
     )
 
     fun track(eventProducer: EventProducer)
