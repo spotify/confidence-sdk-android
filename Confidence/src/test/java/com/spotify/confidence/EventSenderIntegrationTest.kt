@@ -182,7 +182,7 @@ class EventSenderIntegrationTest {
         )
         engine.emit(
             eventName = "my_event",
-            message = mapOf(
+            data = mapOf(
                 "a" to ConfidenceValue.Integer(0),
                 "message" to ConfidenceValue.Integer(1)
             ),
