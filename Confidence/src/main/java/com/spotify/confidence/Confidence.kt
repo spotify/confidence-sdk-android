@@ -1,6 +1,7 @@
 package com.spotify.confidence
 
 import android.content.Context
+import com.spotify.confidence.ConfidenceError.ParseError
 import com.spotify.confidence.apply.FlagApplierWithRetries
 import com.spotify.confidence.cache.DiskStorage
 import com.spotify.confidence.cache.FileDiskStorage

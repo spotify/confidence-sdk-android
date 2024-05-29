@@ -1,8 +1,8 @@
 package com.spotify.confidence.serializers
 
 import android.annotation.SuppressLint
+import com.spotify.confidence.ConfidenceError.ParseError
 import com.spotify.confidence.ConfidenceValue
-import com.spotify.confidence.ParseError
 import com.spotify.confidence.ResolveReason
 import com.spotify.confidence.client.Flags
 import com.spotify.confidence.client.ResolvedFlag

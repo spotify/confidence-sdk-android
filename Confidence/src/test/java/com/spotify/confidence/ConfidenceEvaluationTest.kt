@@ -1,6 +1,7 @@
 package com.spotify.confidence
 
 import android.content.Context
+import com.spotify.confidence.ConfidenceError.ErrorCode
 import com.spotify.confidence.apply.EventStatus
 import com.spotify.confidence.apply.FlagsAppliedMap
 import com.spotify.confidence.cache.FileDiskStorage

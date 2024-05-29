@@ -2,6 +2,7 @@ package com.spotify.confidence
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.spotify.confidence.ConfidenceError.InvalidContextInMessage
 import com.spotify.confidence.client.SdkMetadata
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -40,6 +41,17 @@ class EventSenderIntegrationTest {
         for (file in directory.walkFiles()) {
             file.delete()
         }
+    }
+
+    @Test(expected = InvalidContextInMessage::class)
+    fun context_in_message_throws() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val confidence = ConfidenceFactory.create(
+            mockContext,
+            clientSecret,
+            dispatcher = testDispatcher
+        )
+        confidence.track("test", mapOf("context" to ConfidenceValue.Integer(1)))
     }
 
     @Test
@@ -183,12 +195,11 @@ class EventSenderIntegrationTest {
         engine.emit(
             eventName = "my_event",
             data = mapOf(
-                "a" to ConfidenceValue.Integer(0),
-                "message" to ConfidenceValue.Integer(1)
+                "a" to ConfidenceValue.Integer(0)
             ),
             context = mapOf(
                 "a" to ConfidenceValue.Integer(2),
-                "message" to ConfidenceValue.Integer(3)
+                "b" to ConfidenceValue.Integer(3)
             )
         )
         advanceUntilIdle()
@@ -196,7 +207,12 @@ class EventSenderIntegrationTest {
         Assert.assertEquals(
             mapOf(
                 "a" to ConfidenceValue.Integer(0),
-                "message" to ConfidenceValue.Integer(1)
+                "context" to ConfidenceValue.Struct(
+                    mapOf(
+                        "a" to ConfidenceValue.Integer(2),
+                        "b" to ConfidenceValue.Integer(3)
+                    )
+                )
             ),
             uploadedEvents[0].payload
         )

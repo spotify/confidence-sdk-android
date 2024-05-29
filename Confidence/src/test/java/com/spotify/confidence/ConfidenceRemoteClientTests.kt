@@ -2,6 +2,7 @@
 
 package com.spotify.confidence
 
+import com.spotify.confidence.ConfidenceError.ParseError
 import com.spotify.confidence.client.AppliedFlag
 import com.spotify.confidence.client.Clock
 import com.spotify.confidence.client.FlagApplierClientImpl
