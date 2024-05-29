@@ -11,10 +11,13 @@ class PayloadMergerTest {
         val result = payloadMerger(context, message)
         assert(
             result == mapOf(
-                "a" to ConfidenceValue.Integer(1),
                 "b" to ConfidenceValue.Integer(3),
-                "c" to ConfidenceValue.Integer(
-                    4
+                "c" to ConfidenceValue.Integer(4),
+                "context" to ConfidenceValue.Struct(
+                    mapOf(
+                        "a" to ConfidenceValue.Integer(1),
+                        "b" to ConfidenceValue.Integer(2)
+                    )
                 )
             )
         )

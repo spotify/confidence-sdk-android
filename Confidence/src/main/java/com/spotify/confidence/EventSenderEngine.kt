@@ -104,10 +104,11 @@ internal class EventSenderEngineImpl(
         context: Map<String, ConfidenceValue>
     ) {
         coroutineScope.launch {
+            val payload = payloadMerger(context, data)
             val event = EngineEvent(
                 eventDefinition = eventName,
                 eventTime = clock.currentTime(),
-                payload = payloadMerger(context, data)
+                payload = payload
             )
             writeReqChannel.send(event)
         }

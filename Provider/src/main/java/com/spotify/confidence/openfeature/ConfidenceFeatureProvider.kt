@@ -2,11 +2,11 @@
 package com.spotify.confidence.openfeature
 
 import com.spotify.confidence.Confidence
+import com.spotify.confidence.ConfidenceError.ErrorCode
+import com.spotify.confidence.ConfidenceError.FlagNotFoundError
+import com.spotify.confidence.ConfidenceError.ParseError
 import com.spotify.confidence.ConfidenceValue
-import com.spotify.confidence.ErrorCode
 import com.spotify.confidence.Evaluation
-import com.spotify.confidence.FlagNotFoundError
-import com.spotify.confidence.ParseError
 import com.spotify.confidence.ResolveReason
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FeatureProvider

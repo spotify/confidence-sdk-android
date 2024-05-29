@@ -90,5 +90,5 @@ private fun Response.toResolveFlags(): ResolveResponse {
             }
         }
         return ResolveResponse.Resolved(networkJson.decodeFromString(bodyString))
-    } ?: throw ParseError("Response body is null", listOf())
+    } ?: throw ConfidenceError.ParseError("Response body is null", listOf())
 }

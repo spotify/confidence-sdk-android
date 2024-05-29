@@ -1,5 +1,6 @@
 package com.spotify.confidence
 
+import com.spotify.confidence.ConfidenceError.ErrorCode
 import com.spotify.confidence.client.ConfidenceValueMap
 import com.spotify.confidence.client.ResolvedFlag
 import kotlinx.serialization.Serializable
