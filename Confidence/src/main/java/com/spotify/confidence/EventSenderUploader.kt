@@ -78,6 +78,6 @@ internal class EventSenderUploaderImpl(
     }
 
     companion object {
-        const val BASE_URL = "https://events.eu.confidence.dev/v1/events:publish"
+        const val BASE_URL = "https://events.confidence.dev/v1/events:publish"
     }
 }
