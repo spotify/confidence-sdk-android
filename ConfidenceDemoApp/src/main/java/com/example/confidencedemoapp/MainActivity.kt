@@ -15,17 +15,12 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import com.example.confidencedemoapp.ui.theme.MyApplicationTheme
-import com.spotify.confidence.ConfidenceFactory
-import com.spotify.confidence.ConfidenceRegion
-import com.spotify.confidence.ConfidenceValue
-import kotlinx.coroutines.flow.flow
 
 class MainActivity : ComponentActivity() {
     private lateinit var vm: MainVm

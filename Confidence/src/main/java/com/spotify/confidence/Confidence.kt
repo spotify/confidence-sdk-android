@@ -188,12 +188,13 @@ class Confidence internal constructor(
         currentFetchJob = fetch()
     }
 
-    suspend fun fetchAndActivate() {
+    suspend fun fetchAndActivate() = kotlinx.coroutines.withContext(dispatcher) {
         currentFetchJob?.cancel()
         currentFetchJob = fetch()
         currentFetchJob?.join()
         activate()
     }
+
     override fun track(eventProducer: EventProducer) {
         coroutineScope.launch {
             eventProducer
