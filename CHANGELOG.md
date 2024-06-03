@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/spotify/confidence-sdk-android/compare/0.3.0...0.3.1) (2024-06-03)
+
+
+### 🐛 Bug Fixes
+
+* make the event publish url global ([#160](https://github.com/spotify/confidence-sdk-android/issues/160)) ([564b081](https://github.com/spotify/confidence-sdk-android/commit/564b081513fe6607d150c69bb30fcb56407215ae))
+* wrap around dispatcher in fetch and activate ([#162](https://github.com/spotify/confidence-sdk-android/issues/162)) ([f8456fb](https://github.com/spotify/confidence-sdk-android/commit/f8456fbb42d8eaf1df3855fe864f42f039c3f6c5))
+
 ## [0.3.0](https://github.com/spotify/confidence-sdk-android/compare/0.2.1...0.3.0) (2024-05-29)
 
 
