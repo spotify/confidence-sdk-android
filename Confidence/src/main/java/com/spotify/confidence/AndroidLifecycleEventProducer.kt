@@ -58,18 +58,6 @@ class AndroidLifecycleEventProducer(
         trackApplicationLifecycleEvents()
     }
 
-    override fun onStart(owner: LifecycleOwner) {
-        updateContext(IS_FOREGROUND_KEY, ConfidenceValue.Boolean(true))
-    }
-
-    override fun onStop(owner: LifecycleOwner) {
-        updateContext(IS_FOREGROUND_KEY, ConfidenceValue.Boolean(false))
-    }
-
-    private fun updateContext(key: String, value: ConfidenceValue) {
-        updateContext(mapOf(key to value))
-    }
-
     @Synchronized
     private fun updateContext(map: Map<String, ConfidenceValue>) {
         val context = contextFlow.value.toMutableMap()
@@ -185,7 +173,6 @@ class AndroidLifecycleEventProducer(
         private const val LEGACY_APP_BUILD = "LEGACY_APP_BUILD"
 
         // Context keys
-        private const val IS_FOREGROUND_KEY = "is_foreground"
         private const val APP_VERSION_KEY = "app_version"
         private const val APP_BUILD_KEY = "app_build"
 
