@@ -34,7 +34,8 @@ class Confidence internal constructor(
     initialContext: Map<String, ConfidenceValue> = mapOf(),
     private val flagApplierClient: FlagApplierClient,
     private val parent: ConfidenceContextProvider? = null,
-    private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL
+    private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
+    private val debugLogger: DebugLogger
 ) : Contextual, EventSender {
     private val removedKeys = mutableListOf<String>()
     private val contextMap = MutableStateFlow(initialContext)
@@ -55,6 +56,7 @@ class Confidence internal constructor(
                     fetchAndActivate()
                 }
         }
+        enableDebugLogger(DebugLoggerLevel.VERBOSE)
     }
 
     private val flagApplier = FlagApplierWithRetries(
@@ -66,6 +68,15 @@ class Confidence internal constructor(
     private suspend fun resolve(flags: List<String>): Result<FlagResolution> {
         return flagResolver.resolve(flags, getContext())
     }
+
+    fun enableDebugLogger(level: DebugLoggerLevel) {
+        debugLogger.level = level
+    }
+
+    fun disableDebugLogger() {
+        debugLogger.level = DebugLoggerLevel.NONE
+    }
+
     suspend fun awaitReconciliation() {
         if (currentFetchJob != null) {
             currentFetchJob?.join()
@@ -142,7 +153,8 @@ class Confidence internal constructor(
         mapOf(),
         flagApplierClient,
         this,
-        region
+        region,
+        debugLogger
     ).also {
         it.putContext(context)
     }
@@ -252,7 +264,8 @@ object ConfidenceFactory {
             region,
             dispatcher
         )
-
+        val debugLogger = DebugLogger()
+        debugLogger.level = DebugLoggerLevel.VERBOSE
         val flagResolver = RemoteFlagResolver(
             clientSecret = clientSecret,
             region = region,
@@ -272,7 +285,8 @@ object ConfidenceFactory {
             region = region,
             flagResolver = flagResolver,
             diskStorage = FileDiskStorage.create(context),
-            flagApplierClient = flagApplierClient
+            flagApplierClient = flagApplierClient,
+            debugLogger = debugLogger
         )
     }
 }
