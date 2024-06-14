@@ -1,6 +1,7 @@
 
 package com.spotify.confidence.openfeature
 
+import com.spotify.confidence.BuildConfig
 import com.spotify.confidence.Confidence
 import com.spotify.confidence.ConfidenceError.ErrorCode
 import com.spotify.confidence.ConfidenceError.FlagNotFoundError
@@ -8,6 +9,7 @@ import com.spotify.confidence.ConfidenceError.ParseError
 import com.spotify.confidence.ConfidenceValue
 import com.spotify.confidence.Evaluation
 import com.spotify.confidence.ResolveReason
+import com.spotify.confidence.client.SdkMetadata
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FeatureProvider
 import dev.openfeature.sdk.Hook
@@ -152,6 +154,7 @@ class ConfidenceFeatureProvider private constructor(
             eventHandler: EventHandler = EventHandler(Dispatchers.IO),
             dispatcher: CoroutineDispatcher = Dispatchers.IO
         ): ConfidenceFeatureProvider {
+            confidence.setSdk(SdkMetadata("SDK_ID_KOTLIN_PROVIDER", BuildConfig.SDK_VERSION))
             return ConfidenceFeatureProvider(
                 hooks = hooks,
                 metadata = metadata,

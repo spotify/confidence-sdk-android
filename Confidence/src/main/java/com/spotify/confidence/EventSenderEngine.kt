@@ -29,7 +29,7 @@ internal class EventSenderEngineImpl(
     private val flushPolicies: MutableList<FlushPolicy> = mutableListOf(),
     private val clock: Clock = Clock.CalendarBacked.systemUTC(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
-    private val sdkMetadata: SdkMetadata
+    private var sdkMetadata: SdkMetadata
 ) : EventSenderEngine {
     private val writeReqChannel: Channel<EngineEvent> = Channel()
     private val sendChannel: Channel<String> = Channel()
@@ -93,6 +93,10 @@ internal class EventSenderEngineImpl(
                 }
             }
         }
+    }
+
+    fun setSdk(sdk: SdkMetadata) {
+        sdkMetadata = sdk
     }
 
     override fun onLowMemoryChannel(): Channel<List<File>> {
