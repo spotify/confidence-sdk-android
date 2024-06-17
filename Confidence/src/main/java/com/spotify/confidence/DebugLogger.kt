@@ -27,6 +27,19 @@ internal class DebugLogger {
             Log.w(tag, message)
         }
     }
+
+    internal fun logFlags() {
+
+    }
+
+    internal fun logContext(context: Map<String, ConfidenceValue>) {
+        when (level) {
+            DebugLoggerLevel.VERBOSE, DebugLoggerLevel.DEBUG -> Log.v("CurrentContext", context.toString())
+            DebugLoggerLevel.NONE -> {
+                // do nothing
+            }
+        }
+    }
 }
 
 enum class DebugLoggerLevel {

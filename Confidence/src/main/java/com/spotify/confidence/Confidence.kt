@@ -68,7 +68,7 @@ class Confidence internal constructor(
         return flagResolver.resolve(flags, getContext())
     }
 
-    fun disableDebugLogger() {
+    private fun disableDebugLogger() {
         debugLogger.level = DebugLoggerLevel.NONE
     }
 
@@ -103,6 +103,7 @@ class Confidence internal constructor(
         val map = contextMap.value.toMutableMap()
         map[key] = value
         contextMap.value = map
+        debugLogger.logContext(contextMap.value)
     }
 
     @Synchronized
@@ -110,6 +111,7 @@ class Confidence internal constructor(
         val map = contextMap.value.toMutableMap()
         map += context
         contextMap.value = map
+        debugLogger.logContext(contextMap.value)
     }
 
     fun isStorageEmpty(): Boolean = diskStorage.read() == FlagResolution.EMPTY
@@ -123,6 +125,7 @@ class Confidence internal constructor(
         }
         this.removedKeys.addAll(removedKeys)
         contextMap.value = map
+        debugLogger.logContext(contextMap.value)
     }
 
     @Synchronized
@@ -131,6 +134,7 @@ class Confidence internal constructor(
         map.remove(key)
         removedKeys.add(key)
         contextMap.value = map
+        debugLogger.logContext(contextMap.value)
     }
 
     override fun getContext(): Map<String, ConfidenceValue> =
@@ -273,6 +277,7 @@ object ConfidenceFactory {
         val visitorId = ConfidenceValue.String(VisitorUtil.getId(context))
         val initContext = initialContext.toMutableMap()
         initContext[VISITOR_ID_CONTEXT_KEY] = visitorId
+        debugLogger.logContext(initContext)
 
         return Confidence(
             clientSecret,
