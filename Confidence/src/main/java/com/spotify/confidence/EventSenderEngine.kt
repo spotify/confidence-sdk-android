@@ -32,7 +32,7 @@ internal class EventSenderEngineImpl(
     private val clock: Clock = Clock.CalendarBacked.systemUTC(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val sdkMetadata: SdkMetadata,
-    private val debugLogger: DebugLogger = DebugLogger()
+    private val debugLogger: DebugLogger? = null
 ) : EventSenderEngine {
     private val writeReqChannel: Channel<EngineEvent> = Channel()
     private val sendChannel: Channel<String> = Channel()
@@ -53,11 +53,11 @@ internal class EventSenderEngineImpl(
                 if (event.eventDefinition != manualFlushEvent.eventDefinition) {
                     // skip storing manual flush event
                     eventStorage.writeEvent(event)
-                    debugLogger.logEvent(tag = className, event = event, details = "Event written to disk ")
+                    debugLogger?.logEvent(tag = className, event = event, details = "Event written to disk ")
                 }
                 for (policy in flushPolicies) {
                     policy.hit(event)
-                    debugLogger.logEvent(
+                    debugLogger?.logEvent(
                         tag = className,
                         event = event,
                         details = "Flush policy $policy triggered for event "
@@ -67,7 +67,7 @@ internal class EventSenderEngineImpl(
                 if (shouldFlush) {
                     for (policy in flushPolicies) {
                         policy.reset()
-                        debugLogger.logMessage(
+                        debugLogger?.logMessage(
                             tag = className,
                             message = "Flush policy $policy triggered to flush. Flushing."
                         )
@@ -99,7 +99,7 @@ internal class EventSenderEngineImpl(
                     )
                     runCatching {
                         val shouldCleanup = uploader.upload(batch)
-                        debugLogger.logMessage(tag = className, message = "Uploading batched events")
+                        debugLogger?.logMessage(tag = className, message = "Uploading batched events")
                         if (shouldCleanup) {
                             readyFile.delete()
                         }
@@ -110,7 +110,7 @@ internal class EventSenderEngineImpl(
     }
 
     override fun onLowMemoryChannel(): Channel<List<File>> {
-        debugLogger.logMessage(tag = className, message = "Low memory", isWarning = true)
+        debugLogger?.logMessage(tag = className, message = "Low memory", isWarning = true)
         return eventStorage.onLowMemoryChannel()
     }
 
@@ -127,21 +127,21 @@ internal class EventSenderEngineImpl(
                 payload = payload
             )
             writeReqChannel.send(event)
-            debugLogger.logEvent(tag = className, event = event, details = "Emitting event ")
+            debugLogger?.logEvent(tag = className, event = event, details = "Emitting event ")
         }
     }
 
     override fun flush() {
         coroutineScope.launch {
             writeReqChannel.send(manualFlushEvent)
-            debugLogger.logEvent(tag = className, event = manualFlushEvent, details = "Event flushed ")
+            debugLogger?.logEvent(tag = className, event = manualFlushEvent, details = "Event flushed ")
         }
     }
 
     override fun stop() {
         coroutineScope.cancel()
         eventStorage.stop()
-        debugLogger.logMessage(tag = className, message = "$className closed ")
+        debugLogger?.logMessage(tag = className, message = "$className closed ")
     }
 
     companion object {
@@ -153,7 +153,7 @@ internal class EventSenderEngineImpl(
             sdkMetadata: SdkMetadata,
             flushPolicies: List<FlushPolicy> = listOf(),
             dispatcher: CoroutineDispatcher = Dispatchers.IO,
-            debugLogger: DebugLogger = DebugLogger()
+            debugLogger: DebugLogger?
         ): EventSenderEngine {
             return Instance ?: run {
                 EventSenderEngineImpl(

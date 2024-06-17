@@ -24,7 +24,7 @@ internal class DebugLogger(private val level: DebugLoggerLevel) {
         log("CurrentContext", context.toString())
     }
 
-    private fun log(tag: String,message: String) {
+    private fun log(tag: String, message: String) {
         when (level) {
             DebugLoggerLevel.VERBOSE -> Log.v(tag, message)
             DebugLoggerLevel.DEBUG -> Log.d(tag, message)

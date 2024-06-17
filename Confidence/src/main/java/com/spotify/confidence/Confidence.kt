@@ -253,12 +253,18 @@ object ConfidenceFactory {
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
         debugLoggerLevel: DebugLoggerLevel = DebugLoggerLevel.NONE
     ): Confidence {
+        val debugLogger: DebugLogger? = if (debugLoggerLevel == DebugLoggerLevel.NONE) {
+            null
+        } else {
+            DebugLogger(debugLoggerLevel)
+        }
         val engine = EventSenderEngineImpl.instance(
             context,
             clientSecret,
             flushPolicies = listOf(minBatchSizeFlushPolicy),
             sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
-            dispatcher = dispatcher
+            dispatcher = dispatcher,
+            debugLogger = debugLogger
         )
         val flagApplierClient = FlagApplierClientImpl(
             clientSecret,
@@ -266,11 +272,6 @@ object ConfidenceFactory {
             region,
             dispatcher
         )
-        val debugLogger: DebugLogger? = if (debugLoggerLevel == DebugLoggerLevel.NONE) {
-            null
-        } else {
-            DebugLogger(debugLoggerLevel)
-        }
         val flagResolver = RemoteFlagResolver(
             clientSecret = clientSecret,
             region = region,
