@@ -26,7 +26,7 @@ internal class RemoteFlagResolver(
     private val clientSecret: String,
     private val region: ConfidenceRegion,
     private val httpClient: OkHttpClient,
-    private var sdkMetadata: SdkMetadata,
+    private val sdkMetadata: SdkMetadata,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val baseUrl: HttpUrl? = null
 ) : FlagResolver {
@@ -36,9 +36,6 @@ internal class RemoteFlagResolver(
         "Accept",
         "application/json"
     )
-    internal fun setSdk(sdk: SdkMetadata) {
-        sdkMetadata = sdk
-    }
     override suspend fun resolve(flags: List<String>, context: Map<String, ConfidenceValue>): Result<FlagResolution> {
         val sdk = Sdk(sdkMetadata.sdkId, sdkMetadata.sdkVersion)
         val request = ResolveFlagsRequest(flags.map { "flags/$it" }, context, clientSecret, false, sdk)

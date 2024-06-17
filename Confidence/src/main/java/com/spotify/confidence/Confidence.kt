@@ -57,12 +57,6 @@ class Confidence internal constructor(
         }
     }
 
-    fun setSdk(sdk: SdkMetadata) {
-        (flagResolver as RemoteFlagResolver).setSdk(sdk)
-        (eventSenderEngine as EventSenderEngineImpl).setSdk(sdk)
-        (flagApplierClient as FlagApplierClientImpl).setSdk(sdk)
-    }
-
     private val flagApplier = FlagApplierWithRetries(
         client = flagApplierClient,
         dispatcher = dispatcher,

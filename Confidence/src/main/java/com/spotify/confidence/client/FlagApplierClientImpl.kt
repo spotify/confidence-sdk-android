@@ -13,7 +13,7 @@ import okhttp3.OkHttpClient
 
 internal class FlagApplierClientImpl : FlagApplierClient {
     private val clientSecret: String
-    private var sdkMetadata: SdkMetadata
+    private val sdkMetadata: SdkMetadata
     private val okHttpClient: OkHttpClient
     private val baseUrl: String
     private val headers: Headers
@@ -76,10 +76,6 @@ internal class FlagApplierClientImpl : FlagApplierClient {
             baseUrl = baseUrl.toString(),
             dispatcher = dispatcher
         )
-    }
-
-    internal fun setSdk(sdk: SdkMetadata) {
-        sdkMetadata = sdk
     }
 
     override suspend fun apply(flags: List<AppliedFlag>, resolveToken: String): Result<Unit> {
