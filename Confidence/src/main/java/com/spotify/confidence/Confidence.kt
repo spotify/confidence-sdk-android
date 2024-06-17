@@ -235,6 +235,7 @@ object ConfidenceFactory {
     fun create(
         context: Context,
         clientSecret: String,
+        sdk: SdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
         initialContext: Map<String, ConfidenceValue> = mapOf(),
         region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
         dispatcher: CoroutineDispatcher = Dispatchers.IO
@@ -243,12 +244,12 @@ object ConfidenceFactory {
             context,
             clientSecret,
             flushPolicies = listOf(minBatchSizeFlushPolicy),
-            sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
+            sdkMetadata = sdk,
             dispatcher = dispatcher
         )
         val flagApplierClient = FlagApplierClientImpl(
             clientSecret,
-            SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
+            sdk,
             region,
             dispatcher
         )
@@ -258,7 +259,7 @@ object ConfidenceFactory {
             region = region,
             httpClient = OkHttpClient(),
             dispatcher = dispatcher,
-            sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION)
+            sdkMetadata = sdk
         )
         val visitorId = ConfidenceValue.String(VisitorUtil.getId(context))
         val initContext = initialContext.toMutableMap()
