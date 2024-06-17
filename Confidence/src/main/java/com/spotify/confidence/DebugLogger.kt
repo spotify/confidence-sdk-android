@@ -18,16 +18,15 @@ internal class DebugLogger {
     internal fun logMessage(tag: String, message: String, isWarning: Boolean = false) {
         if (!isWarning) {
             when (level) {
-                DebugLoggerLevel.VERBOSE -> Log.v(tag, message)
-                DebugLoggerLevel.DEBUG -> Log.d(tag, message)
+                DebugLoggerLevel.VERBOSE, DebugLoggerLevel.DEBUG -> Log.v(tag, message)
                 DebugLoggerLevel.NONE -> {
                     // do nothing
                 }
             }
-        } else
+        } else {
             Log.w(tag, message)
+        }
     }
-
 }
 
 enum class DebugLoggerLevel {

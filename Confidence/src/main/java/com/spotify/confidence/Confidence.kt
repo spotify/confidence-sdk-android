@@ -238,6 +238,7 @@ class Confidence internal constructor(
             eventSenderEngine.stop()
         }
         coroutineScope.cancel()
+        disableDebugLogger()
     }
 }
 

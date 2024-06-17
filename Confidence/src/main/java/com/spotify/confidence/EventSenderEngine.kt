@@ -32,7 +32,7 @@ internal class EventSenderEngineImpl(
     private val clock: Clock = Clock.CalendarBacked.systemUTC(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val sdkMetadata: SdkMetadata,
-    private val debugLogger: DebugLogger = DebugLogger(),
+    private val debugLogger: DebugLogger = DebugLogger()
 ) : EventSenderEngine {
     private val writeReqChannel: Channel<EngineEvent> = Channel()
     private val sendChannel: Channel<String> = Channel()
@@ -141,7 +141,7 @@ internal class EventSenderEngineImpl(
     override fun stop() {
         coroutineScope.cancel()
         eventStorage.stop()
-        debugLogger.logMessage(tag = className, message = "${className} closed ")
+        debugLogger.logMessage(tag = className, message = "$className closed ")
     }
 
     companion object {
