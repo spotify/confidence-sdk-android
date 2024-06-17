@@ -1,7 +1,6 @@
 package com.spotify.confidence
 
 import android.content.Context
-import android.os.Debug
 import com.spotify.confidence.ConfidenceError.ParseError
 import com.spotify.confidence.apply.FlagApplierWithRetries
 import com.spotify.confidence.cache.DiskStorage
@@ -66,6 +65,11 @@ class Confidence internal constructor(
     )
 
     private suspend fun resolve(flags: List<String>): Result<FlagResolution> {
+        debugLogger?.let {
+            for (flag in flags) {
+                debugLogger.logFlags("ResolveFlag", flag)
+            }
+        }
         return flagResolver.resolve(flags, getContext())
     }
 
@@ -77,6 +81,7 @@ class Confidence internal constructor(
     }
 
     fun apply(flagName: String, resolveToken: String) {
+        debugLogger?.logFlags("ApplyFlag", flagName)
         flagApplier.apply(flagName, resolveToken)
     }
 
@@ -150,8 +155,8 @@ class Confidence internal constructor(
         flagApplierClient,
         this,
         region,
-        debugLogger
-    ).also {1
+        debugLogger,
+    ).also {
         it.putContext(context)
     }
 
@@ -264,7 +269,7 @@ object ConfidenceFactory {
         val debugLogger: DebugLogger? = if (debugLoggerLevel == DebugLoggerLevel.NONE) {
             null
         } else {
-            DebugLogger()
+            DebugLogger(debugLoggerLevel)
         }
         val flagResolver = RemoteFlagResolver(
             clientSecret = clientSecret,

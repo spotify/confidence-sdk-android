@@ -1,10 +1,8 @@
 package com.spotify.confidence
 
 import android.util.Log
-import com.spotify.confidence.client.Flags
 
-internal class DebugLogger {
-    var level: DebugLoggerLevel = DebugLoggerLevel.NONE
+internal class DebugLogger(private val level: DebugLoggerLevel) {
 
     internal fun logEvent(tag: String, event: EngineEvent, details: String) {
         log(tag, details + event.toString())
@@ -16,6 +14,10 @@ internal class DebugLogger {
         } else {
             Log.w(tag, message)
         }
+    }
+
+    internal fun logFlags(tag: String, flag: String) {
+        log(tag, flag)
     }
 
     internal fun logContext(context: Map<String, ConfidenceValue>) {
