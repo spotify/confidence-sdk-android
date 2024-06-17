@@ -56,7 +56,6 @@ class Confidence internal constructor(
                     fetchAndActivate()
                 }
         }
-        enableDebugLogger(DebugLoggerLevel.VERBOSE)
     }
 
     private val flagApplier = FlagApplierWithRetries(
@@ -67,10 +66,6 @@ class Confidence internal constructor(
 
     private suspend fun resolve(flags: List<String>): Result<FlagResolution> {
         return flagResolver.resolve(flags, getContext())
-    }
-
-    fun enableDebugLogger(level: DebugLoggerLevel) {
-        debugLogger.level = level
     }
 
     fun disableDebugLogger() {
@@ -250,7 +245,8 @@ object ConfidenceFactory {
         clientSecret: String,
         initialContext: Map<String, ConfidenceValue> = mapOf(),
         region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
-        dispatcher: CoroutineDispatcher = Dispatchers.IO
+        dispatcher: CoroutineDispatcher = Dispatchers.IO,
+        debugLoggerLevel: DebugLoggerLevel = DebugLoggerLevel.VERBOSE
     ): Confidence {
         val engine = EventSenderEngineImpl.instance(
             context,
@@ -266,7 +262,7 @@ object ConfidenceFactory {
             dispatcher
         )
         val debugLogger = DebugLogger()
-        debugLogger.level = DebugLoggerLevel.VERBOSE
+        debugLogger.level = debugLoggerLevel
         val flagResolver = RemoteFlagResolver(
             clientSecret = clientSecret,
             region = region,
