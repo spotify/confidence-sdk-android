@@ -1,40 +1,31 @@
 package com.spotify.confidence
 
 import android.util.Log
+import com.spotify.confidence.client.Flags
 
 internal class DebugLogger {
     var level: DebugLoggerLevel = DebugLoggerLevel.NONE
 
     internal fun logEvent(tag: String, event: EngineEvent, details: String) {
-        when (level) {
-            DebugLoggerLevel.VERBOSE -> Log.v(tag, details + event.toString())
-            DebugLoggerLevel.DEBUG -> Log.d(tag, details + event.eventDefinition)
-            DebugLoggerLevel.NONE -> {
-                // do nothing
-            }
-        }
+        log(tag, details + event.toString())
     }
 
     internal fun logMessage(tag: String, message: String, isWarning: Boolean = false) {
         if (!isWarning) {
-            when (level) {
-                DebugLoggerLevel.VERBOSE, DebugLoggerLevel.DEBUG -> Log.v(tag, message)
-                DebugLoggerLevel.NONE -> {
-                    // do nothing
-                }
-            }
+            log(tag, message)
         } else {
             Log.w(tag, message)
         }
     }
 
-    internal fun logFlags() {
-
+    internal fun logContext(context: Map<String, ConfidenceValue>) {
+        log("CurrentContext", context.toString())
     }
 
-    internal fun logContext(context: Map<String, ConfidenceValue>) {
+    private fun log(tag: String,message: String) {
         when (level) {
-            DebugLoggerLevel.VERBOSE, DebugLoggerLevel.DEBUG -> Log.v("CurrentContext", context.toString())
+            DebugLoggerLevel.VERBOSE -> Log.v(tag, message)
+            DebugLoggerLevel.DEBUG -> Log.d(tag, message)
             DebugLoggerLevel.NONE -> {
                 // do nothing
             }

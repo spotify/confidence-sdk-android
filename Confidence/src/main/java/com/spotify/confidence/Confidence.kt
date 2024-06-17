@@ -1,6 +1,7 @@
 package com.spotify.confidence
 
 import android.content.Context
+import android.os.Debug
 import com.spotify.confidence.ConfidenceError.ParseError
 import com.spotify.confidence.apply.FlagApplierWithRetries
 import com.spotify.confidence.cache.DiskStorage
@@ -35,7 +36,7 @@ class Confidence internal constructor(
     private val flagApplierClient: FlagApplierClient,
     private val parent: ConfidenceContextProvider? = null,
     private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
-    private val debugLogger: DebugLogger
+    private val debugLogger: DebugLogger? = null
 ) : Contextual, EventSender {
     private val removedKeys = mutableListOf<String>()
     private val contextMap = MutableStateFlow(initialContext)
@@ -66,10 +67,6 @@ class Confidence internal constructor(
 
     private suspend fun resolve(flags: List<String>): Result<FlagResolution> {
         return flagResolver.resolve(flags, getContext())
-    }
-
-    private fun disableDebugLogger() {
-        debugLogger.level = DebugLoggerLevel.NONE
     }
 
     suspend fun awaitReconciliation() {
@@ -103,7 +100,7 @@ class Confidence internal constructor(
         val map = contextMap.value.toMutableMap()
         map[key] = value
         contextMap.value = map
-        debugLogger.logContext(contextMap.value)
+        debugLogger?.logContext(contextMap.value)
     }
 
     @Synchronized
@@ -111,7 +108,7 @@ class Confidence internal constructor(
         val map = contextMap.value.toMutableMap()
         map += context
         contextMap.value = map
-        debugLogger.logContext(contextMap.value)
+        debugLogger?.logContext(contextMap.value)
     }
 
     fun isStorageEmpty(): Boolean = diskStorage.read() == FlagResolution.EMPTY
@@ -125,7 +122,7 @@ class Confidence internal constructor(
         }
         this.removedKeys.addAll(removedKeys)
         contextMap.value = map
-        debugLogger.logContext(contextMap.value)
+        debugLogger?.logContext(contextMap.value)
     }
 
     @Synchronized
@@ -134,7 +131,7 @@ class Confidence internal constructor(
         map.remove(key)
         removedKeys.add(key)
         contextMap.value = map
-        debugLogger.logContext(contextMap.value)
+        debugLogger?.logContext(contextMap.value)
     }
 
     override fun getContext(): Map<String, ConfidenceValue> =
@@ -154,7 +151,7 @@ class Confidence internal constructor(
         this,
         region,
         debugLogger
-    ).also {
+    ).also {1
         it.putContext(context)
     }
 
@@ -237,7 +234,6 @@ class Confidence internal constructor(
             eventSenderEngine.stop()
         }
         coroutineScope.cancel()
-        disableDebugLogger()
     }
 }
 
@@ -250,7 +246,7 @@ object ConfidenceFactory {
         initialContext: Map<String, ConfidenceValue> = mapOf(),
         region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
-        debugLoggerLevel: DebugLoggerLevel = DebugLoggerLevel.VERBOSE
+        debugLoggerLevel: DebugLoggerLevel = DebugLoggerLevel.NONE
     ): Confidence {
         val engine = EventSenderEngineImpl.instance(
             context,
@@ -265,8 +261,11 @@ object ConfidenceFactory {
             region,
             dispatcher
         )
-        val debugLogger = DebugLogger()
-        debugLogger.level = debugLoggerLevel
+        val debugLogger: DebugLogger? = if (debugLoggerLevel == DebugLoggerLevel.NONE) {
+            null
+        } else {
+            DebugLogger()
+        }
         val flagResolver = RemoteFlagResolver(
             clientSecret = clientSecret,
             region = region,
@@ -277,7 +276,7 @@ object ConfidenceFactory {
         val visitorId = ConfidenceValue.String(VisitorUtil.getId(context))
         val initContext = initialContext.toMutableMap()
         initContext[VISITOR_ID_CONTEXT_KEY] = visitorId
-        debugLogger.logContext(initContext)
+        debugLogger?.let { debugLogger.logContext(initContext) }
 
         return Confidence(
             clientSecret,

@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import java.io.File
 
-const val className = "ConfidenceEventSender"
+private const val className = "ConfidenceEventSender"
 
 internal interface EventSenderEngine {
     fun onLowMemoryChannel(): Channel<List<File>>
