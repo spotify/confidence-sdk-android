@@ -81,8 +81,8 @@ class Confidence internal constructor(
     }
 
     fun apply(flagName: String, resolveToken: String) {
-        debugLogger?.logFlags("ApplyFlag", flagName)
         flagApplier.apply(flagName, resolveToken)
+        debugLogger?.logFlags("ApplyFlag", flagName)
     }
 
     fun <T> getValue(key: String, default: T) = getFlag(key, default).value
@@ -282,7 +282,7 @@ object ConfidenceFactory {
         val visitorId = ConfidenceValue.String(VisitorUtil.getId(context))
         val initContext = initialContext.toMutableMap()
         initContext[VISITOR_ID_CONTEXT_KEY] = visitorId
-        debugLogger?.let { debugLogger.logContext(initContext) }
+        debugLogger?.logContext(initContext)
 
         return Confidence(
             clientSecret,
