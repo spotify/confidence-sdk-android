@@ -111,7 +111,8 @@ class StorageFileCacheTests {
     private fun getConfidence(
         dispatcher: CoroutineDispatcher,
         cache: ProviderCache = mock(),
-        initialContext: Map<String, ConfidenceValue> = mapOf()
+        initialContext: Map<String, ConfidenceValue> = mapOf(),
+        debugLogger: DebugLoggerMock = DebugLoggerMock()
     ) = Confidence(
         clientSecret = "",
         dispatcher = dispatcher,
@@ -121,6 +122,7 @@ class StorageFileCacheTests {
         flagResolver = flagResolverClient,
         flagApplierClient = mock(),
         diskStorage = FileDiskStorage.create(mockContext),
-        region = ConfidenceRegion.EUROPE
+        region = ConfidenceRegion.EUROPE,
+        debugLogger = debugLogger
     )
 }

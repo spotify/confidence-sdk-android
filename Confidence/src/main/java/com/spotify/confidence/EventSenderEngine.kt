@@ -32,7 +32,7 @@ internal class EventSenderEngineImpl(
     private val clock: Clock = Clock.CalendarBacked.systemUTC(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val sdkMetadata: SdkMetadata,
-    private val debugLogger: DebugLogger? = null
+    private val debugLogger: DebugLogger?
 ) : EventSenderEngine {
     private val writeReqChannel: Channel<EngineEvent> = Channel()
     private val sendChannel: Channel<String> = Channel()

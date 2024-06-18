@@ -73,7 +73,8 @@ internal class ConfidenceEvaluationTest {
         dispatcher: CoroutineDispatcher,
         cache: ProviderCache = InMemoryCache(),
         initialContext: Map<String, ConfidenceValue> = mapOf(),
-        flagResolver: FlagResolver? = null
+        flagResolver: FlagResolver? = null,
+        debugLogger: DebugLoggerMock
     ): Confidence =
         Confidence(
             clientSecret = "",
@@ -84,14 +85,20 @@ internal class ConfidenceEvaluationTest {
             flagResolver = flagResolver ?: flagResolverClient,
             flagApplierClient = flagApplierClient,
             diskStorage = FileDiskStorage.create(mockContext),
-            region = ConfidenceRegion.EUROPE
+            region = ConfidenceRegion.EUROPE,
+            debugLogger = debugLogger
         )
 
     @Test
     fun testMatching() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val context = mapOf("targeting_key" to ConfidenceValue.String("foo"))
-        val mockConfidence = getConfidence(testDispatcher, initialContext = context)
+        val debugLogger = DebugLoggerMock()
+        val mockConfidence = getConfidence(
+            testDispatcher,
+            initialContext = context,
+            debugLogger = debugLogger
+        )
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
         whenever(
             flagResolverClient.resolve(
@@ -149,6 +156,7 @@ internal class ConfidenceEvaluationTest {
 
         advanceUntilIdle()
         verify(flagApplierClient, times(1)).apply(any(), eq("token1"))
+        Assert.assertEquals(8, debugLogger.flagsLogged)
 
         TestCase.assertEquals("red", evalString.value)
         TestCase.assertEquals(false, evalBool.value)
@@ -203,7 +211,8 @@ internal class ConfidenceEvaluationTest {
     fun testDelayedApply() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val context = mapOf("targeting_key" to ConfidenceValue.String("foo"))
-        val mockConfidence = getConfidence(testDispatcher, initialContext = context)
+        val debugLogger = DebugLoggerMock()
+        val mockConfidence = getConfidence(testDispatcher, initialContext = context, debugLogger = debugLogger)
         val cacheFile = File(mockContext.filesDir, "confidence_apply_cache.json")
         whenever(flagResolverClient.resolve(eq(listOf()), eq(context))).thenReturn(
             Result.Success(
@@ -256,6 +265,7 @@ internal class ConfidenceEvaluationTest {
 
         advanceUntilIdle()
         verify(flagApplierClient, times(8)).apply(any(), eq("token1"))
+        Assert.assertEquals(8, debugLogger.flagsLogged)
         val expectedStatus = Json.decodeFromString<FlagsAppliedMap>(cacheFile.readText())["token1"]
             ?.get("test-kotlin-flag-1")?.eventStatus
         TestCase.assertEquals(EventStatus.CREATED, expectedStatus)
@@ -266,6 +276,7 @@ internal class ConfidenceEvaluationTest {
             "test-kotlin-flag-1.mystring",
             "empty"
         )
+        Assert.assertEquals(9, debugLogger.flagsLogged)
 
         advanceUntilIdle()
         val captor = argumentCaptor<List<AppliedFlag>>()
@@ -328,7 +339,8 @@ internal class ConfidenceEvaluationTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val context1 = mapOf("key" to ConfidenceValue.String("foo"))
         val context2 = mapOf("key" to ConfidenceValue.String("bar"))
-        val mockConfidence = getConfidence(testDispatcher, initialContext = context1)
+        val debugLogger = DebugLoggerMock()
+        val mockConfidence = getConfidence(testDispatcher, initialContext = context1, debugLogger = debugLogger)
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
         whenever(flagResolverClient.resolve(eq(listOf()), eq(context1))).thenReturn(
             Result.Success(
@@ -367,6 +379,7 @@ internal class ConfidenceEvaluationTest {
             "default"
         )
         TestCase.assertEquals("blue", evalString2.value)
+        Assert.assertEquals(2, debugLogger.flagsLogged)
     }
 
     @Test
@@ -374,7 +387,8 @@ internal class ConfidenceEvaluationTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val context1 = mapOf("key" to ConfidenceValue.String("foo"))
         val context2 = mapOf("key" to ConfidenceValue.String("bar"))
-        val mockConfidence = getConfidence(testDispatcher, initialContext = context1)
+        val debugLogger = DebugLoggerMock()
+        val mockConfidence = getConfidence(testDispatcher, initialContext = context1, debugLogger = debugLogger)
 
         val cacheFile = File(mockContext.filesDir, "confidence_apply_cache.json")
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
@@ -403,6 +417,7 @@ internal class ConfidenceEvaluationTest {
 
         advanceUntilIdle()
         verify(flagApplierClient, times(1)).apply(any(), eq("token1"))
+        Assert.assertEquals(2, debugLogger.flagsLogged)
         TestCase.assertEquals(0, Json.parseToJsonElement(cacheFile.readText()).jsonObject.size)
 
         val captor1 = argumentCaptor<List<AppliedFlag>>()
@@ -454,6 +469,7 @@ internal class ConfidenceEvaluationTest {
         TestCase.assertEquals("flags/test-kotlin-flag-1/variants/variant-1", evalString2.variant)
         Assert.assertNull(evalString2.errorMessage)
         Assert.assertNull(evalString2.errorCode)
+        Assert.assertEquals(3, debugLogger.flagsLogged)
     }
 
     @Test
@@ -483,10 +499,12 @@ internal class ConfidenceEvaluationTest {
         }
         val context1 = mapOf("key" to ConfidenceValue.String("foo"))
         val context2 = mapOf("key" to ConfidenceValue.String("foo2"))
+        val debugLogger = DebugLoggerMock()
         val mockConfidence = getConfidence(
             testDispatcher,
             flagResolver = flagResolver,
-            initialContext = context1
+            initialContext = context1,
+            debugLogger = debugLogger
         )
 
         mockConfidence.fetchAndActivate()
@@ -501,13 +519,15 @@ internal class ConfidenceEvaluationTest {
         TestCase.assertEquals(mockConfidence.getContext(), context2)
         TestCase.assertEquals(context2, flagResolver.latestCalledContext)
         TestCase.assertEquals(1, flagResolver.returnCount)
+        Assert.assertEquals(0, debugLogger.flagsLogged)
     }
 
     @Test
     fun testStaleValueReturnValueAndStaleReason() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val context = mapOf("key" to ConfidenceValue.String("foo"))
-        val mockConfidence = getConfidence(testDispatcher, initialContext = context)
+        val debugLogger = DebugLoggerMock()
+        val mockConfidence = getConfidence(testDispatcher, initialContext = context, debugLogger = debugLogger)
         whenever(flagResolverClient.resolve(eq(listOf()), eq(context))).thenReturn(
             Result.Success(
                 FlagResolution(
@@ -535,6 +555,7 @@ internal class ConfidenceEvaluationTest {
             "test-kotlin-flag-1.mystring",
             "default"
         )
+        Assert.assertEquals(2, debugLogger.flagsLogged)
         TestCase.assertEquals(newContextEval.reason, ResolveReason.RESOLVE_REASON_STALE)
         TestCase.assertEquals(newContextEval.value, "red")
         verify(flagResolverClient, times(2)).resolve(any(), any())
@@ -549,7 +570,8 @@ internal class ConfidenceEvaluationTest {
 
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val context = mapOf("key" to ConfidenceValue.String("foo"))
-        val mockConfidence = getConfidence(testDispatcher, initialContext = context)
+        val debugLogger = DebugLoggerMock()
+        val mockConfidence = getConfidence(testDispatcher, initialContext = context, debugLogger = debugLogger)
 
         whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(
@@ -573,6 +595,7 @@ internal class ConfidenceEvaluationTest {
         )
         advanceUntilIdle()
         verify(flagApplierClient, times(1)).apply(any(), eq("token1"))
+        Assert.assertEquals(1, debugLogger.flagsLogged)
     }
 
     @Test
@@ -584,7 +607,8 @@ internal class ConfidenceEvaluationTest {
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val context = mapOf("key" to ConfidenceValue.String("foo"))
-        val mockConfidence = getConfidence(testDispatcher, initialContext = context)
+        val debugLogger = DebugLoggerMock()
+        val mockConfidence = getConfidence(testDispatcher, initialContext = context, debugLogger = debugLogger)
 
         whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(
@@ -607,6 +631,7 @@ internal class ConfidenceEvaluationTest {
         )
         advanceUntilIdle()
         verify(flagApplierClient, times(1)).apply(any(), eq("token1"))
+        Assert.assertEquals(1, debugLogger.flagsLogged)
     }
 
     @Test
@@ -617,7 +642,8 @@ internal class ConfidenceEvaluationTest {
         )
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val context = mapOf("key" to ConfidenceValue.String("foo"))
-        val mockConfidence = getConfidence(testDispatcher, initialContext = context)
+        val debugLogger = DebugLoggerMock()
+        val mockConfidence = getConfidence(testDispatcher, initialContext = context, debugLogger = debugLogger)
         whenever(flagApplierClient.apply(any(), any())).then { }
 
         whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
@@ -646,6 +672,7 @@ internal class ConfidenceEvaluationTest {
         )
         advanceUntilIdle()
         verify(flagApplierClient, times(1)).apply(any(), eq("token1"))
+        Assert.assertEquals(2, debugLogger.flagsLogged)
     }
 
     @Test
@@ -657,7 +684,8 @@ internal class ConfidenceEvaluationTest {
 
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Failure())
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val mockConfidence = getConfidence(testDispatcher)
+        val debugLogger = DebugLoggerMock()
+        val mockConfidence = getConfidence(testDispatcher, debugLogger = debugLogger)
         val context = mapOf("key" to ConfidenceValue.String("foo"))
 
         whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
@@ -686,6 +714,7 @@ internal class ConfidenceEvaluationTest {
         )
         advanceUntilIdle()
         verify(flagApplierClient, times(3)).apply(any(), eq("token1"))
+        Assert.assertEquals(2, debugLogger.flagsLogged)
     }
 
     @Test
@@ -695,7 +724,8 @@ internal class ConfidenceEvaluationTest {
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val context = mapOf("key" to ConfidenceValue.String("foo"))
-        val mockConfidence = getConfidence(testDispatcher, initialContext = context)
+        val debugLogger = DebugLoggerMock()
+        val mockConfidence = getConfidence(testDispatcher, initialContext = context, debugLogger = debugLogger)
 
         whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(
@@ -718,6 +748,7 @@ internal class ConfidenceEvaluationTest {
         verify(flagApplierClient, times(2)).apply(any(), eq("token2"))
         verify(flagApplierClient, times(1)).apply(any(), eq("token3"))
         TestCase.assertEquals(0, Json.parseToJsonElement(cacheFile.readText()).jsonObject.size)
+        Assert.assertEquals(1, debugLogger.flagsLogged)
     }
 
     @Test
@@ -727,10 +758,12 @@ internal class ConfidenceEvaluationTest {
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val context = mapOf("key" to ConfidenceValue.String("foo"))
+        val debugLogger = DebugLoggerMock()
         val mockConfidence = getConfidence(
             testDispatcher,
             initialContext = context,
-            cache = InMemoryCache()
+            cache = InMemoryCache(),
+            debugLogger = debugLogger
         )
 
         mockConfidence.fetchAndActivate()
@@ -739,13 +772,15 @@ internal class ConfidenceEvaluationTest {
         verify(flagApplierClient, times(1)).apply(any(), eq("token2"))
         verify(flagApplierClient, times(1)).apply(any(), eq("token3"))
         TestCase.assertEquals(0, Json.parseToJsonElement(cacheFile.readText()).jsonObject.size)
+        Assert.assertEquals(0, debugLogger.flagsLogged)
     }
 
     @Test
     fun testMatchingRootObject() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val context = mapOf("key" to ConfidenceValue.String("foo"))
-        val mockConfidence = getConfidence(testDispatcher, initialContext = context)
+        val debugLogger = DebugLoggerMock()
+        val mockConfidence = getConfidence(testDispatcher, initialContext = context, debugLogger = debugLogger)
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
         whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(
@@ -771,6 +806,7 @@ internal class ConfidenceEvaluationTest {
         TestCase.assertEquals("flags/test-kotlin-flag-1/variants/variant-1", evalRootObject.variant)
         Assert.assertNull(evalRootObject.errorMessage)
         Assert.assertNull(evalRootObject.errorCode)
+        Assert.assertEquals(1, debugLogger.flagsLogged)
     }
 
     @Test
@@ -779,7 +815,8 @@ internal class ConfidenceEvaluationTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val context = mapOf("key" to ConfidenceValue.String("foo"))
         val context1 = mapOf("key" to ConfidenceValue.String("bar"))
-        val mockConfidence = getConfidence(testDispatcher, initialContext = context, cache = cache)
+        val debugLogger = DebugLoggerMock()
+        val mockConfidence = getConfidence(testDispatcher, initialContext = context, cache = cache, debugLogger = debugLogger)
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
         whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(
@@ -868,6 +905,8 @@ internal class ConfidenceEvaluationTest {
         TestCase.assertEquals(ErrorCode.PROVIDER_NOT_READY, evalObject.errorCode)
         TestCase.assertEquals(ErrorCode.PROVIDER_NOT_READY, evalNested.errorCode)
         TestCase.assertEquals(ErrorCode.PROVIDER_NOT_READY, evalNull.errorCode)
+
+        Assert.assertEquals(0, debugLogger.flagsLogged)
     }
 
     @Test
@@ -875,7 +914,13 @@ internal class ConfidenceEvaluationTest {
         val cache = InMemoryCache()
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val context = mapOf("key" to ConfidenceValue.String("foo"))
-        val mockConfidence = getConfidence(testDispatcher, cache = cache, initialContext = context)
+        val debugLogger = DebugLoggerMock()
+        val mockConfidence = getConfidence(
+            dispatcher = testDispatcher,
+            cache = cache,
+            initialContext = context,
+            debugLogger = debugLogger
+        )
 
         val resolvedFlagInvalidKey = Flags(
             listOf(
@@ -913,13 +958,15 @@ internal class ConfidenceEvaluationTest {
         TestCase.assertEquals(ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR, evalString.reason)
         TestCase.assertEquals(evalString.errorMessage, "Invalid targeting key")
         TestCase.assertEquals(evalString.errorCode, ErrorCode.INVALID_CONTEXT)
+        Assert.assertEquals(0, debugLogger.flagsLogged)
     }
 
     @Test
     fun testNonMatching() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val context = mapOf("key" to ConfidenceValue.String("foo"))
-        val mockConfidence = getConfidence(testDispatcher, initialContext = context)
+        val debugLogger = DebugLoggerMock()
+        val mockConfidence = getConfidence(testDispatcher, initialContext = context, debugLogger = debugLogger)
 
         val reason = ResolveReason.RESOLVE_REASON_NO_TREATMENT_MATCH
 
@@ -957,6 +1004,7 @@ internal class ConfidenceEvaluationTest {
         Assert.assertNull(evalString.variant)
         TestCase.assertEquals("default", evalString.value)
         TestCase.assertEquals(reason, evalString.reason)
+        Assert.assertEquals(1, debugLogger.flagsLogged)
     }
 
     @Test
@@ -965,7 +1013,8 @@ internal class ConfidenceEvaluationTest {
         val cache = InMemoryCache()
         val context = mapOf("key" to ConfidenceValue.String("foo"))
         val context1 = mapOf("key" to ConfidenceValue.String("bar"))
-        val mockConfidence = getConfidence(testDispatcher, cache = cache, initialContext = context)
+        val debugLogger = DebugLoggerMock()
+        val mockConfidence = getConfidence(testDispatcher, cache = cache, initialContext = context, debugLogger = debugLogger)
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
         whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(
@@ -990,6 +1039,7 @@ internal class ConfidenceEvaluationTest {
             "default"
         )
         TestCase.assertEquals(ErrorCode.FLAG_NOT_FOUND, ex.errorCode)
+        Assert.assertEquals(0, debugLogger.flagsLogged)
     }
 
     @Test
@@ -997,7 +1047,8 @@ internal class ConfidenceEvaluationTest {
         val cache = InMemoryCache()
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val context = mapOf("key" to ConfidenceValue.String("foo"))
-        val mockConfidence = getConfidence(testDispatcher, cache = cache, initialContext = context)
+        val debugLogger = DebugLoggerMock()
+        val mockConfidence = getConfidence(testDispatcher, cache = cache, initialContext = context, debugLogger = debugLogger)
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
         whenever(flagResolverClient.resolve(eq(listOf()), any())).thenThrow(Error(""))
         mockConfidence.fetchAndActivate()
@@ -1007,13 +1058,15 @@ internal class ConfidenceEvaluationTest {
             "default"
         )
         TestCase.assertEquals(ErrorCode.FLAG_NOT_FOUND, ex.errorCode)
+        Assert.assertEquals(0, debugLogger.flagsLogged)
     }
 
     @Test
     fun testValueNotFound() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val context = mapOf("key" to ConfidenceValue.String("foo"))
-        val mockConfidence = getConfidence(testDispatcher, initialContext = context)
+        val debugLogger = DebugLoggerMock()
+        val mockConfidence = getConfidence(testDispatcher, initialContext = context, debugLogger = debugLogger)
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
         whenever(
             flagResolverClient.resolve(
@@ -1036,13 +1089,15 @@ internal class ConfidenceEvaluationTest {
             "default"
         )
         TestCase.assertEquals(ErrorCode.PARSE_ERROR, ex.errorCode)
+        Assert.assertEquals(1, debugLogger.flagsLogged)
     }
 
     @Test
     fun testValueNotFoundLongPath() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val context = mapOf("key" to ConfidenceValue.String("foo"))
-        val mockConfidence = getConfidence(testDispatcher, initialContext = context)
+        val debugLogger = DebugLoggerMock()
+        val mockConfidence = getConfidence(testDispatcher, initialContext = context, debugLogger = debugLogger)
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
         whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(
@@ -1060,6 +1115,7 @@ internal class ConfidenceEvaluationTest {
             "default"
         )
         TestCase.assertEquals(ErrorCode.PARSE_ERROR, ex.errorCode)
+        Assert.assertEquals(1, debugLogger.flagsLogged)
     }
 }
 

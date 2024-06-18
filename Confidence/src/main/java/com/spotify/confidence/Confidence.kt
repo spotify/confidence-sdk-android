@@ -35,7 +35,7 @@ class Confidence internal constructor(
     private val flagApplierClient: FlagApplierClient,
     private val parent: ConfidenceContextProvider? = null,
     private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
-    private val debugLogger: DebugLogger? = null
+    private val debugLogger: DebugLogger?
 ) : Contextual, EventSender {
     private val removedKeys = mutableListOf<String>()
     private val contextMap = MutableStateFlow(initialContext)
@@ -155,7 +155,7 @@ class Confidence internal constructor(
         flagApplierClient,
         this,
         region,
-        debugLogger,
+        debugLogger
     ).also {
         it.putContext(context)
     }
@@ -257,7 +257,7 @@ object ConfidenceFactory {
         val debugLogger: DebugLogger? = if (debugLoggerLevel == DebugLoggerLevel.NONE) {
             null
         } else {
-            DebugLogger(debugLoggerLevel)
+            DebugLoggerImpl(debugLoggerLevel)
         }
         val engine = EventSenderEngineImpl.instance(
             context,
