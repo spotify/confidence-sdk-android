@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.2](https://github.com/spotify/confidence-sdk-android/compare/0.3.1...0.3.2) (2024-06-17)
+
+
+### ✨ New Features
+
+* Expose set sdk metadata ([#166](https://github.com/spotify/confidence-sdk-android/issues/166)) ([10548d9](https://github.com/spotify/confidence-sdk-android/commit/10548d95cf923d3a10d37f3cc9c59394d087bf66))
+
+
+### 🔄 Refactoring
+
+* remove is_foreground from event producer ([#163](https://github.com/spotify/confidence-sdk-android/issues/163)) ([27846fc](https://github.com/spotify/confidence-sdk-android/commit/27846fc60102f7f61ac35cf0885ef09e2a51c806))
+
 ## [0.3.1](https://github.com/spotify/confidence-sdk-android/compare/0.3.0...0.3.1) (2024-06-03)
 
 
