@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/spotify/confidence-sdk-android/compare/0.3.2...0.3.3) (2024-06-18)
+
+
+### 🔄 Refactoring
+
+* Add ConfidenceForOF proxy for safe init ([#167](https://github.com/spotify/confidence-sdk-android/issues/167)) ([e177c5b](https://github.com/spotify/confidence-sdk-android/commit/e177c5b5ada3f48d57014d6f8f3d7b95ea9bdc92))
+
 ## [0.3.2](https://github.com/spotify/confidence-sdk-android/compare/0.3.1...0.3.2) (2024-06-17)
 
 
