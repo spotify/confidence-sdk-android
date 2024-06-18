@@ -4,6 +4,7 @@ import com.spotify.confidence.serializers.ConfidenceValueSerializer
 import com.spotify.confidence.serializers.DateSerializer
 import com.spotify.confidence.serializers.DateTimeSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 @Serializable(ConfidenceValueSerializer::class)
 sealed interface ConfidenceValue {
@@ -52,3 +53,6 @@ sealed interface ConfidenceValue {
             List(list.map(ConfidenceValue::Timestamp))
     }
 }
+
+fun ConfidenceValue.Struct.toNetworkJson() =
+    Json.encodeToString(NetworkConfidenceValueSerializer, this)
