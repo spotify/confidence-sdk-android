@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/spotify/confidence-sdk-android/compare/0.3.3...0.3.4) (2024-06-18)
+
+
+### ✨ New Features
+
+* expose convert value to json ([#168](https://github.com/spotify/confidence-sdk-android/issues/168)) ([ceb8a2e](https://github.com/spotify/confidence-sdk-android/commit/ceb8a2e98f00925366caf40b87c20190f96da078))
+
 ## [0.3.3](https://github.com/spotify/confidence-sdk-android/compare/0.3.2...0.3.3) (2024-06-18)
 
 
