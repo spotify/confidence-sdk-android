@@ -36,7 +36,7 @@ class Confidence internal constructor(
     private val parent: ConfidenceContextProvider? = null,
     private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
     private val debugLogger: DebugLogger?
-) : ConfidenceAPI {
+) : Contextual, EventSender {
     private val removedKeys = mutableListOf<String>()
     private val contextMap = MutableStateFlow(initialContext)
     private var currentFetchJob: Job? = null
@@ -50,13 +50,11 @@ class Confidence internal constructor(
     private val eventProducers: MutableList<EventProducer> = mutableListOf()
 
     init {
-        if (parent == null) {
-            coroutineScope.launch {
-                contextChanges
-                    .collect {
-                        fetchAndActivate()
-                    }
-            }
+        coroutineScope.launch {
+            contextChanges
+                .collect {
+                    fetchAndActivate()
+                }
         }
     }
 
@@ -146,7 +144,7 @@ class Confidence internal constructor(
             it.getContext().filterKeys { key -> !removedKeys.contains(key) } + contextMap.value
         } ?: contextMap.value
 
-    override fun withContext(context: Map<String, ConfidenceValue>): ConfidenceAPI = Confidence(
+    override fun withContext(context: Map<String, ConfidenceValue>): Confidence = Confidence(
         clientSecret,
         dispatcher,
         eventSenderEngine,
