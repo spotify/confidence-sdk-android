@@ -57,11 +57,6 @@ internal class EventSenderEngineImpl(
                 }
                 for (policy in flushPolicies) {
                     policy.hit(event)
-                    debugLogger?.logEvent(
-                        tag = className,
-                        event = event,
-                        details = "Flush policy $policy triggered for event "
-                    )
                 }
                 val shouldFlush = flushPolicies.any { it.shouldFlush() }
                 if (shouldFlush) {

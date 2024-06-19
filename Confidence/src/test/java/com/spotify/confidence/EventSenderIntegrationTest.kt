@@ -143,8 +143,12 @@ class EventSenderIntegrationTest {
         repeat(eventCount) {
             eventSender.track("navigate")
         }
-        Assert.assertEquals(eventCount * 4, debugLogger.eventsLogged)
+        // debugLogger.logEvent is not a unique log. For these events we sent logs:
+        // emit event and emit written to disk
+        Assert.assertEquals(eventCount * 2, debugLogger.eventsLogged)
         advanceUntilIdle()
+        // debugLogger.logMessage is not a unique log. For these events we log:
+        // flush policy triggered log, uploading batch events log
         Assert.assertEquals(18, debugLogger.messagesLogged)
         runBlocking {
             val batchReadyFiles = eventStorage.batchReadyFiles()
@@ -210,7 +214,11 @@ class EventSenderIntegrationTest {
             )
         )
         advanceUntilIdle()
-        Assert.assertEquals(4, debugLogger.eventsLogged)
+        // debugLogger.logEvent is not a unique log. For these events we sent logs:
+        // emit event and emit written to disk
+        Assert.assertEquals(2, debugLogger.eventsLogged)
+        // debugLogger.logMessage is not a unique log. For these events we log:
+        // flush policy triggered log, uploading batch events log
         Assert.assertEquals(3, debugLogger.messagesLogged)
         Assert.assertEquals("eventDefinitions/my_event", uploadedEvents[0].eventDefinition)
         Assert.assertEquals(
@@ -280,7 +288,11 @@ class EventSenderIntegrationTest {
             eventSender.track("navigate")
         }
         advanceUntilIdle()
-        Assert.assertEquals(eventCount * 4, debugLogger.eventsLogged)
+        // debugLogger.logEvent is not a unique log. For these events we sent logs:
+        // emit event and emit written to disk
+        Assert.assertEquals(eventCount * 2, debugLogger.eventsLogged)
+        // debugLogger.logMessage is not a unique log. For these events we log:
+        // flush policy triggered log, uploading batch events log
         Assert.assertEquals(12, debugLogger.messagesLogged)
         Assert.assertEquals(uploadRequestCount, eventCount / batchSize)
         runBlocking {
@@ -339,11 +351,15 @@ class EventSenderIntegrationTest {
 
         engine.emit("my_event", mapOf("a" to ConfidenceValue.Integer(0)), mapOf("a" to ConfidenceValue.Integer(1)))
         engine.emit("my_event", mapOf("a" to ConfidenceValue.Integer(0)), mapOf("a" to ConfidenceValue.Integer(1)))
-        Assert.assertEquals(8, debugLogger.eventsLogged)
-        Assert.assertEquals(0, debugLogger.messagesLogged)
+        // debugLogger.logEvent is not a unique log. For these events we sent logs:
+        // emit event and emit written to disk
+        Assert.assertEquals(4, debugLogger.eventsLogged)
         Assert.assertEquals(uploader.requests.size, 0)
         engine.flush()
         advanceUntilIdle()
+        // debugLogger.logMessage is not a unique log. For these events we log:
+        // flush policy triggered log, uploading batch events log
+        Assert.assertEquals(3, debugLogger.messagesLogged)
         Assert.assertEquals(1, uploader.requests.size)
         Assert.assertEquals(2, uploader.requests[0].events.size)
     }
