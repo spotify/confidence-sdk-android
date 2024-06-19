@@ -15,6 +15,8 @@ import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import java.io.File
 
+private const val className = "ConfidenceEventSender"
+
 internal interface EventSenderEngine {
     fun onLowMemoryChannel(): Channel<List<File>>
     fun emit(eventName: String, data: ConfidenceFieldsType, context: Map<String, ConfidenceValue>)
@@ -29,7 +31,8 @@ internal class EventSenderEngineImpl(
     private val flushPolicies: MutableList<FlushPolicy> = mutableListOf(),
     private val clock: Clock = Clock.CalendarBacked.systemUTC(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
-    private val sdkMetadata: SdkMetadata
+    private val sdkMetadata: SdkMetadata,
+    private val debugLogger: DebugLogger?
 ) : EventSenderEngine {
     private val writeReqChannel: Channel<EngineEvent> = Channel()
     private val sendChannel: Channel<String> = Channel()
@@ -50,6 +53,7 @@ internal class EventSenderEngineImpl(
                 if (event.eventDefinition != manualFlushEvent.eventDefinition) {
                     // skip storing manual flush event
                     eventStorage.writeEvent(event)
+                    debugLogger?.logEvent(tag = className, event = event, details = "Event written to disk ")
                 }
                 for (policy in flushPolicies) {
                     policy.hit(event)
@@ -58,6 +62,10 @@ internal class EventSenderEngineImpl(
                 if (shouldFlush) {
                     for (policy in flushPolicies) {
                         policy.reset()
+                        debugLogger?.logMessage(
+                            tag = className,
+                            message = "Flush policy $policy triggered to flush. Flushing."
+                        )
                     }
                     sendChannel.send(SEND_SIG)
                 }
@@ -86,6 +94,7 @@ internal class EventSenderEngineImpl(
                     )
                     runCatching {
                         val shouldCleanup = uploader.upload(batch)
+                        debugLogger?.logMessage(tag = className, message = "Uploading batched events")
                         if (shouldCleanup) {
                             readyFile.delete()
                         }
@@ -96,8 +105,10 @@ internal class EventSenderEngineImpl(
     }
 
     override fun onLowMemoryChannel(): Channel<List<File>> {
+        debugLogger?.logMessage(tag = className, message = "Low memory", isWarning = true)
         return eventStorage.onLowMemoryChannel()
     }
+
     override fun emit(
         eventName: String,
         data: ConfidenceFieldsType,
@@ -111,18 +122,21 @@ internal class EventSenderEngineImpl(
                 payload = payload
             )
             writeReqChannel.send(event)
+            debugLogger?.logEvent(tag = className, event = event, details = "Emitting event ")
         }
     }
 
     override fun flush() {
         coroutineScope.launch {
             writeReqChannel.send(manualFlushEvent)
+            debugLogger?.logEvent(tag = className, event = manualFlushEvent, details = "Event flushed ")
         }
     }
 
     override fun stop() {
         coroutineScope.cancel()
         eventStorage.stop()
+        debugLogger?.logMessage(tag = className, message = "$className closed ")
     }
 
     companion object {
@@ -133,7 +147,8 @@ internal class EventSenderEngineImpl(
             clientSecret: String,
             sdkMetadata: SdkMetadata,
             flushPolicies: List<FlushPolicy> = listOf(),
-            dispatcher: CoroutineDispatcher = Dispatchers.IO
+            dispatcher: CoroutineDispatcher = Dispatchers.IO,
+            debugLogger: DebugLogger?
         ): EventSenderEngine {
             return Instance ?: run {
                 EventSenderEngineImpl(
@@ -142,7 +157,8 @@ internal class EventSenderEngineImpl(
                     uploader = EventSenderUploaderImpl(OkHttpClient(), dispatcher),
                     flushPolicies = flushPolicies.toMutableList(),
                     dispatcher = dispatcher,
-                    sdkMetadata = sdkMetadata
+                    sdkMetadata = sdkMetadata,
+                    debugLogger = debugLogger
                 )
             }
         }

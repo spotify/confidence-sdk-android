@@ -34,7 +34,8 @@ class Confidence internal constructor(
     initialContext: Map<String, ConfidenceValue> = mapOf(),
     private val flagApplierClient: FlagApplierClient,
     private val parent: ConfidenceContextProvider? = null,
-    private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL
+    private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
+    private val debugLogger: DebugLogger?
 ) : Contextual, EventSender {
     private val removedKeys = mutableListOf<String>()
     private val contextMap = MutableStateFlow(initialContext)
@@ -64,8 +65,14 @@ class Confidence internal constructor(
     )
 
     private suspend fun resolve(flags: List<String>): Result<FlagResolution> {
+        debugLogger?.let {
+            for (flag in flags) {
+                debugLogger.logFlags("ResolveFlag", flag)
+            }
+        }
         return flagResolver.resolve(flags, getContext())
     }
+
     suspend fun awaitReconciliation() {
         if (currentFetchJob != null) {
             currentFetchJob?.join()
@@ -75,6 +82,7 @@ class Confidence internal constructor(
 
     fun apply(flagName: String, resolveToken: String) {
         flagApplier.apply(flagName, resolveToken)
+        debugLogger?.logFlags("ApplyFlag", flagName)
     }
 
     fun <T> getValue(key: String, default: T) = getFlag(key, default).value
@@ -97,6 +105,7 @@ class Confidence internal constructor(
         val map = contextMap.value.toMutableMap()
         map[key] = value
         contextMap.value = map
+        debugLogger?.logContext(contextMap.value)
     }
 
     @Synchronized
@@ -104,6 +113,7 @@ class Confidence internal constructor(
         val map = contextMap.value.toMutableMap()
         map += context
         contextMap.value = map
+        debugLogger?.logContext(contextMap.value)
     }
 
     fun isStorageEmpty(): Boolean = diskStorage.read() == FlagResolution.EMPTY
@@ -117,6 +127,7 @@ class Confidence internal constructor(
         }
         this.removedKeys.addAll(removedKeys)
         contextMap.value = map
+        debugLogger?.logContext(contextMap.value)
     }
 
     @Synchronized
@@ -125,6 +136,7 @@ class Confidence internal constructor(
         map.remove(key)
         removedKeys.add(key)
         contextMap.value = map
+        debugLogger?.logContext(contextMap.value)
     }
 
     override fun getContext(): Map<String, ConfidenceValue> =
@@ -142,7 +154,8 @@ class Confidence internal constructor(
         mapOf(),
         flagApplierClient,
         this,
-        region
+        region,
+        debugLogger
     ).also {
         it.putContext(context)
     }
@@ -238,14 +251,21 @@ object ConfidenceFactory {
         sdk: SdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
         initialContext: Map<String, ConfidenceValue> = mapOf(),
         region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
-        dispatcher: CoroutineDispatcher = Dispatchers.IO
+        dispatcher: CoroutineDispatcher = Dispatchers.IO,
+        debugLoggerLevel: DebugLoggerLevel = DebugLoggerLevel.NONE
     ): Confidence {
+        val debugLogger: DebugLogger? = if (debugLoggerLevel == DebugLoggerLevel.NONE) {
+            null
+        } else {
+            DebugLoggerImpl(debugLoggerLevel)
+        }
         val engine = EventSenderEngineImpl.instance(
             context,
             clientSecret,
             flushPolicies = listOf(minBatchSizeFlushPolicy),
-            sdkMetadata = sdk,
-            dispatcher = dispatcher
+            sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
+            dispatcher = dispatcher,
+            debugLogger = debugLogger
         )
         val flagApplierClient = FlagApplierClientImpl(
             clientSecret,
@@ -253,7 +273,6 @@ object ConfidenceFactory {
             region,
             dispatcher
         )
-
         val flagResolver = RemoteFlagResolver(
             clientSecret = clientSecret,
             region = region,
@@ -264,6 +283,7 @@ object ConfidenceFactory {
         val visitorId = ConfidenceValue.String(VisitorUtil.getId(context))
         val initContext = initialContext.toMutableMap()
         initContext[VISITOR_ID_CONTEXT_KEY] = visitorId
+        debugLogger?.logContext(initContext)
 
         return Confidence(
             clientSecret,
@@ -273,7 +293,8 @@ object ConfidenceFactory {
             region = region,
             flagResolver = flagResolver,
             diskStorage = FileDiskStorage.create(context),
-            flagApplierClient = flagApplierClient
+            flagApplierClient = flagApplierClient,
+            debugLogger = debugLogger
         )
     }
 }

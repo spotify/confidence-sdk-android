@@ -118,13 +118,15 @@ class EventSenderIntegrationTest {
                 return false
             }
         }
+        val debugLogger = DebugLoggerMock()
         val engine = EventSenderEngineImpl(
             eventStorage,
             clientSecret,
             flushPolicies = mutableListOf(flushPolicy),
             dispatcher = testDispatcher,
             sdkMetadata = SdkMetadata("kotlin_test", ""),
-            uploader = uploader
+            uploader = uploader,
+            debugLogger = debugLogger
         )
         eventSender = Confidence(
             eventSenderEngine = engine,
@@ -132,7 +134,8 @@ class EventSenderIntegrationTest {
             diskStorage = mock(),
             clientSecret = "",
             flagApplierClient = mock(),
-            flagResolver = mock()
+            flagResolver = mock(),
+            debugLogger = debugLogger
         )
         val eventSender = this@EventSenderIntegrationTest.eventSender
         val eventCount = 4 * batchSize + 2
@@ -140,7 +143,13 @@ class EventSenderIntegrationTest {
         repeat(eventCount) {
             eventSender.track("navigate")
         }
+        // debugLogger.logEvent is not a unique log. For these events we sent logs:
+        // emit event and emit written to disk
+        Assert.assertEquals(eventCount * 2, debugLogger.eventsLogged)
         advanceUntilIdle()
+        // debugLogger.logMessage is not a unique log. For these events we log:
+        // flush policy triggered log, uploading batch events log
+        Assert.assertEquals(18, debugLogger.messagesLogged)
         runBlocking {
             val batchReadyFiles = eventStorage.batchReadyFiles()
             val totalFiles = directory.walkFiles()
@@ -184,13 +193,15 @@ class EventSenderIntegrationTest {
                 return false
             }
         }
+        val debugLogger = DebugLoggerMock()
         val engine = EventSenderEngineImpl(
             eventStorage,
             clientSecret,
             flushPolicies = mutableListOf(flushPolicy),
             dispatcher = testDispatcher,
             sdkMetadata = SdkMetadata("kotlin_test", ""),
-            uploader = uploader
+            uploader = uploader,
+            debugLogger = debugLogger
         )
         engine.emit(
             eventName = "my_event",
@@ -203,6 +214,12 @@ class EventSenderIntegrationTest {
             )
         )
         advanceUntilIdle()
+        // debugLogger.logEvent is not a unique log. For these events we sent logs:
+        // emit event and emit written to disk
+        Assert.assertEquals(2, debugLogger.eventsLogged)
+        // debugLogger.logMessage is not a unique log. For these events we log:
+        // flush policy triggered log, uploading batch events log
+        Assert.assertEquals(3, debugLogger.messagesLogged)
         Assert.assertEquals("eventDefinitions/my_event", uploadedEvents[0].eventDefinition)
         Assert.assertEquals(
             mapOf(
@@ -245,13 +262,15 @@ class EventSenderIntegrationTest {
                 return true
             }
         }
+        val debugLogger = DebugLoggerMock()
         val engine = EventSenderEngineImpl(
             eventStorage,
             clientSecret,
             flushPolicies = mutableListOf(flushPolicy),
             dispatcher = testDispatcher,
             sdkMetadata = SdkMetadata("kotlin_test", ""),
-            uploader = uploader
+            uploader = uploader,
+            debugLogger = debugLogger
         )
         eventSender = Confidence(
             eventSenderEngine = engine,
@@ -259,7 +278,8 @@ class EventSenderIntegrationTest {
             diskStorage = mock(),
             clientSecret = "",
             flagApplierClient = mock(),
-            flagResolver = mock()
+            flagResolver = mock(),
+            debugLogger = debugLogger
         )
         val eventSender = this@EventSenderIntegrationTest.eventSender
         val eventCount = 4 * batchSize + 2
@@ -268,6 +288,12 @@ class EventSenderIntegrationTest {
             eventSender.track("navigate")
         }
         advanceUntilIdle()
+        // debugLogger.logEvent is not a unique log. For these events we sent logs:
+        // emit event and emit written to disk
+        Assert.assertEquals(eventCount * 2, debugLogger.eventsLogged)
+        // debugLogger.logMessage is not a unique log. For these events we log:
+        // flush policy triggered log, uploading batch events log
+        Assert.assertEquals(12, debugLogger.messagesLogged)
         Assert.assertEquals(uploadRequestCount, eventCount / batchSize)
         runBlocking {
             val batchReadyFiles = eventStorage.batchReadyFiles()
@@ -312,20 +338,28 @@ class EventSenderIntegrationTest {
                 return true
             }
         }
+        val debugLogger = DebugLoggerMock()
         val engine = EventSenderEngineImpl(
             eventStorage,
             clientSecret,
             flushPolicies = mutableListOf(flushPolicy),
             dispatcher = testDispatcher,
             sdkMetadata = SdkMetadata("kotlin_test", ""),
-            uploader = uploader
+            uploader = uploader,
+            debugLogger = debugLogger
         )
 
         engine.emit("my_event", mapOf("a" to ConfidenceValue.Integer(0)), mapOf("a" to ConfidenceValue.Integer(1)))
         engine.emit("my_event", mapOf("a" to ConfidenceValue.Integer(0)), mapOf("a" to ConfidenceValue.Integer(1)))
+        // debugLogger.logEvent is not a unique log. For these events we sent logs:
+        // emit event and emit written to disk
+        Assert.assertEquals(4, debugLogger.eventsLogged)
         Assert.assertEquals(uploader.requests.size, 0)
         engine.flush()
         advanceUntilIdle()
+        // debugLogger.logMessage is not a unique log. For these events we log:
+        // flush policy triggered log, uploading batch events log
+        Assert.assertEquals(3, debugLogger.messagesLogged)
         Assert.assertEquals(1, uploader.requests.size)
         Assert.assertEquals(2, uploader.requests[0].events.size)
     }

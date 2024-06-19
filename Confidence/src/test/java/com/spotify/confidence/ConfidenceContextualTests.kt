@@ -8,6 +8,7 @@ import org.mockito.kotlin.mock
 class ConfidenceContextualTests {
     @Test
     fun test_forking_context_works() {
+        val debugLogger = DebugLoggerMock()
         val confidence = Confidence(
             "",
             Dispatchers.IO,
@@ -18,7 +19,8 @@ class ConfidenceContextualTests {
             mapOf(),
             mock(),
             mock(),
-            ConfidenceRegion.EUROPE
+            ConfidenceRegion.EUROPE,
+            debugLogger
         )
 
         val mutableMap = mutableMapOf<String, ConfidenceValue>()
@@ -27,15 +29,18 @@ class ConfidenceContextualTests {
         mutableMap["NN"] = ConfidenceValue.Double(20.0)
         mutableMap["my_struct"] = ConfidenceValue.Struct(mapOf("x" to ConfidenceValue.Double(2.0)))
         confidence.putContext(mutableMap)
+        Assert.assertEquals(1, debugLogger.contextLogs)
         val eventSender = confidence.withContext(mapOf("my_value" to ConfidenceValue.String("my value")))
         Assert.assertEquals(mutableMap, confidence.getContext())
         Assert.assertTrue(mutableMap.all { eventSender.getContext().containsKey(it.key) })
         Assert.assertTrue(eventSender.getContext().containsKey("my_value"))
         Assert.assertTrue(eventSender.getContext()["my_value"] == ConfidenceValue.String("my value"))
+        Assert.assertEquals(2, debugLogger.contextLogs)
     }
 
     @Test
     fun removing_context_will_skip_the_context_coming_from_parent() {
+        val debugLogger = DebugLoggerMock()
         val confidence = Confidence(
             "",
             Dispatchers.IO,
@@ -46,7 +51,8 @@ class ConfidenceContextualTests {
             mapOf(),
             mock(),
             mock(),
-            ConfidenceRegion.EUROPE
+            ConfidenceRegion.EUROPE,
+            debugLogger
         )
 
         val mutableMap = mutableMapOf<String, ConfidenceValue>()
@@ -55,7 +61,9 @@ class ConfidenceContextualTests {
         mutableMap["NN"] = ConfidenceValue.Double(20.0)
         mutableMap["my_struct"] = ConfidenceValue.Struct(mapOf("x" to ConfidenceValue.Double(2.0)))
         confidence.putContext(mutableMap)
+        Assert.assertEquals(1, debugLogger.contextLogs)
         val eventSender = confidence.withContext(mapOf("my_value" to ConfidenceValue.String("my value")))
+        Assert.assertEquals(2, debugLogger.contextLogs)
         Assert.assertEquals(mutableMap, confidence.getContext())
         Assert.assertTrue(mutableMap.all { eventSender.getContext().containsKey(it.key) })
         Assert.assertTrue(eventSender.getContext().containsKey("my_value"))
@@ -64,6 +72,7 @@ class ConfidenceContextualTests {
         // remove the screen
         Assert.assertTrue(eventSender.getContext().containsKey("screen"))
         eventSender.removeContext("screen")
+        Assert.assertEquals(3, debugLogger.contextLogs)
         Assert.assertTrue(!eventSender.getContext().containsKey("screen"))
     }
 }
