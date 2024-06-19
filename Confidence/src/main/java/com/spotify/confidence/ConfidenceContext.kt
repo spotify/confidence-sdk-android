@@ -13,3 +13,5 @@ interface Contextual : ConfidenceContextProvider {
     fun putContext(key: String, value: ConfidenceValue)
     fun removeContext(key: String)
 }
+
+interface ConfidenceAPI : Contextual, EventSender
