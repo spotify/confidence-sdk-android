@@ -1,18 +1,13 @@
 
 package com.spotify.confidence.openfeature
 
-import android.content.Context
-import com.spotify.confidence.BuildConfig
 import com.spotify.confidence.Confidence
 import com.spotify.confidence.ConfidenceError.ErrorCode
 import com.spotify.confidence.ConfidenceError.FlagNotFoundError
 import com.spotify.confidence.ConfidenceError.ParseError
-import com.spotify.confidence.ConfidenceFactory
-import com.spotify.confidence.ConfidenceRegion
 import com.spotify.confidence.ConfidenceValue
 import com.spotify.confidence.Evaluation
 import com.spotify.confidence.ResolveReason
-import com.spotify.confidence.client.SdkMetadata
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FeatureProvider
 import dev.openfeature.sdk.Hook
@@ -147,23 +142,6 @@ class ConfidenceFeatureProvider private constructor(
     }
     companion object {
         private class ConfidenceMetadata(override var name: String? = "confidence") : ProviderMetadata
-
-        fun createConfidence(
-            context: Context,
-            clientSecret: String,
-            initialContext: Map<String, ConfidenceValue> = mapOf(),
-            region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
-            dispatcher: CoroutineDispatcher = Dispatchers.IO
-        ): Confidence {
-            return ConfidenceFactory.create(
-                context,
-                clientSecret,
-                sdk = SdkMetadata("SDK_ID_KOTLIN_PROVIDER", BuildConfig.SDK_VERSION),
-                initialContext = initialContext,
-                region = region,
-                dispatcher = dispatcher
-            )
-        }
 
         @Suppress("LongParameterList")
         fun create(

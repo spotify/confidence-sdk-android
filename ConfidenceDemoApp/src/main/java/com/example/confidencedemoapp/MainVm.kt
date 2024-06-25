@@ -47,7 +47,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
             app.applicationContext,
             clientSecret,
             initialContext = mapOf("targeting_key" to ConfidenceValue.String("a98a4291-53b0-49d9-bae8-73d3f5da2070")),
-            region = ConfidenceRegion.EUROPE
+            ConfidenceRegion.EUROPE
         )
         confidence.track(AndroidLifecycleEventProducer(getApplication(), false))
         eventSender = confidence.withContext(mutableMap)
