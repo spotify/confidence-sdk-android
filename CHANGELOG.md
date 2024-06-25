@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.5](https://github.com/spotify/confidence-sdk-android/compare/0.3.4...0.3.5) (2024-06-25)
+
+
+### ✨ New Features
+
+* add DebugLogger to Confidence ([#165](https://github.com/spotify/confidence-sdk-android/issues/165)) ([0848912](https://github.com/spotify/confidence-sdk-android/commit/08489126c94db2abb227e7aab439308f483df3c4))
+
+
+### 🔄 Refactoring
+
+* Revert "feat: Expose set sdk metadata ([#166](https://github.com/spotify/confidence-sdk-android/issues/166))" ([#173](https://github.com/spotify/confidence-sdk-android/issues/173)) ([743a076](https://github.com/spotify/confidence-sdk-android/commit/743a076d13581f9d9581a835fcef352b0e0b0141))
+
 ## [0.3.4](https://github.com/spotify/confidence-sdk-android/compare/0.3.3...0.3.4) (2024-06-18)
 
 
