@@ -26,6 +26,8 @@ import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
+internal const val PROVIDER_ID = "SDK_ID_KOTLIN_CONFIDENCE"
+
 @Suppress(
     "TooManyFunctions",
     "LongParameterList"
@@ -141,7 +143,7 @@ class ConfidenceFeatureProvider private constructor(
         }
     }
     companion object {
-        private class ConfidenceMetadata(override var name: String? = "confidence") : ProviderMetadata
+        private class ConfidenceMetadata(override var name: String? = PROVIDER_ID) : ProviderMetadata
 
         @Suppress("LongParameterList")
         fun create(
