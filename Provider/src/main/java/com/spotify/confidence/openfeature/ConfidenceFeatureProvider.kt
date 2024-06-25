@@ -145,10 +145,8 @@ class ConfidenceFeatureProvider private constructor(
             throw OpenFeatureError.FlagNotFoundError(e.flag)
         }
     }
-
     companion object {
         private class ConfidenceMetadata(override var name: String? = "confidence") : ProviderMetadata
-        class ConfidenceForOpenFeature internal constructor(val confidence: Confidence)
 
         fun createConfidence(
             context: Context,
@@ -156,22 +154,20 @@ class ConfidenceFeatureProvider private constructor(
             initialContext: Map<String, ConfidenceValue> = mapOf(),
             region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
             dispatcher: CoroutineDispatcher = Dispatchers.IO
-        ): ConfidenceForOpenFeature {
-            return ConfidenceForOpenFeature(
-                ConfidenceFactory.create(
-                    context,
-                    clientSecret,
-                    sdk = SdkMetadata("SDK_ID_KOTLIN_PROVIDER", BuildConfig.SDK_VERSION),
-                    initialContext = initialContext,
-                    region = region,
-                    dispatcher = dispatcher
-                )
+        ): Confidence {
+            return ConfidenceFactory.create(
+                context,
+                clientSecret,
+                sdk = SdkMetadata("SDK_ID_KOTLIN_PROVIDER", BuildConfig.SDK_VERSION),
+                initialContext = initialContext,
+                region = region,
+                dispatcher = dispatcher
             )
         }
 
         @Suppress("LongParameterList")
         fun create(
-            confidenceForOF: ConfidenceForOpenFeature,
+            confidence: Confidence,
             initialisationStrategy: InitialisationStrategy = InitialisationStrategy.FetchAndActivate,
             hooks: List<Hook<*>> = listOf(),
             metadata: ProviderMetadata = ConfidenceMetadata(),
@@ -183,7 +179,7 @@ class ConfidenceFeatureProvider private constructor(
                 metadata = metadata,
                 initialisationStrategy = initialisationStrategy,
                 eventHandler = eventHandler,
-                confidence = confidenceForOF.confidence,
+                confidence = confidence,
                 dispatcher = dispatcher
             )
         }
