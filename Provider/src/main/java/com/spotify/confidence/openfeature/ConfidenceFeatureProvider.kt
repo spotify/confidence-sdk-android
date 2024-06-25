@@ -1,18 +1,13 @@
 
 package com.spotify.confidence.openfeature
 
-import android.content.Context
-import com.spotify.confidence.BuildConfig
 import com.spotify.confidence.Confidence
 import com.spotify.confidence.ConfidenceError.ErrorCode
 import com.spotify.confidence.ConfidenceError.FlagNotFoundError
 import com.spotify.confidence.ConfidenceError.ParseError
-import com.spotify.confidence.ConfidenceFactory
-import com.spotify.confidence.ConfidenceRegion
 import com.spotify.confidence.ConfidenceValue
 import com.spotify.confidence.Evaluation
 import com.spotify.confidence.ResolveReason
-import com.spotify.confidence.client.SdkMetadata
 import dev.openfeature.sdk.EvaluationContext
 import dev.openfeature.sdk.FeatureProvider
 import dev.openfeature.sdk.Hook
@@ -30,6 +25,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+
+internal const val PROVIDER_ID = "SDK_ID_KOTLIN_CONFIDENCE"
 
 @Suppress(
     "TooManyFunctions",
@@ -145,33 +142,12 @@ class ConfidenceFeatureProvider private constructor(
             throw OpenFeatureError.FlagNotFoundError(e.flag)
         }
     }
-
     companion object {
-        private class ConfidenceMetadata(override var name: String? = "confidence") : ProviderMetadata
-        class ConfidenceForOpenFeature internal constructor(val confidence: Confidence)
-
-        fun createConfidence(
-            context: Context,
-            clientSecret: String,
-            initialContext: Map<String, ConfidenceValue> = mapOf(),
-            region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
-            dispatcher: CoroutineDispatcher = Dispatchers.IO
-        ): ConfidenceForOpenFeature {
-            return ConfidenceForOpenFeature(
-                ConfidenceFactory.create(
-                    context,
-                    clientSecret,
-                    sdk = SdkMetadata("SDK_ID_KOTLIN_PROVIDER", BuildConfig.SDK_VERSION),
-                    initialContext = initialContext,
-                    region = region,
-                    dispatcher = dispatcher
-                )
-            )
-        }
+        private class ConfidenceMetadata(override var name: String? = PROVIDER_ID) : ProviderMetadata
 
         @Suppress("LongParameterList")
         fun create(
-            confidenceForOF: ConfidenceForOpenFeature,
+            confidence: Confidence,
             initialisationStrategy: InitialisationStrategy = InitialisationStrategy.FetchAndActivate,
             hooks: List<Hook<*>> = listOf(),
             metadata: ProviderMetadata = ConfidenceMetadata(),
@@ -183,7 +159,7 @@ class ConfidenceFeatureProvider private constructor(
                 metadata = metadata,
                 initialisationStrategy = initialisationStrategy,
                 eventHandler = eventHandler,
-                confidence = confidenceForOF.confidence,
+                confidence = confidence,
                 dispatcher = dispatcher
             )
         }

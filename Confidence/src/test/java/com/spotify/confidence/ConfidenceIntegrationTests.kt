@@ -41,7 +41,7 @@ class ConfidenceIntegrationTests {
         map["user"] =
             ConfidenceValue.Struct(mapOf("country" to ConfidenceValue.String("SE")))
 
-        val oldConfidence = ConfidenceFactory.create(mockContext, clientSecret, initialContext = map)
+        val oldConfidence = ConfidenceFactory.create(mockContext, clientSecret, map)
         val context = oldConfidence.getContext()
 
         val storage = FileDiskStorage.create(mockContext)
