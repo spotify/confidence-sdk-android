@@ -2,45 +2,65 @@ package com.spotify.confidence
 
 import android.util.Log
 
+private const val TAG = "Confidence"
+
 internal interface DebugLogger {
-    fun logEvent(tag: String, event: EngineEvent, details: String)
-    fun logMessage(tag: String, message: String, isWarning: Boolean = false)
-    fun logFlags(tag: String, flag: String)
-    fun logContext(context: Map<String, ConfidenceValue>)
+    fun logEvent(action: String, event: EngineEvent)
+    fun logMessage(message: String, isWarning: Boolean = false, throwable: Throwable? = null)
+    fun logFlag(action: String, flag: String? = null)
+    fun logContext(action: String, context: Map<String, ConfidenceValue>)
 }
 
-internal class DebugLoggerImpl(private val level: DebugLoggerLevel) : DebugLogger {
-    override fun logEvent(tag: String, event: EngineEvent, details: String) {
-        log(tag, details + event.toString())
+internal class DebugLoggerImpl(private val filterLevel: LoggingLevel) : DebugLogger {
+
+    override fun logEvent(action: String, event: EngineEvent) {
+        debug("[$action] $event")
     }
 
-    override fun logMessage(tag: String, message: String, isWarning: Boolean) {
-        if (!isWarning) {
-            log(tag, message)
+    override fun logMessage(message: String, isWarning: Boolean, throwable: Throwable?) {
+        if (isWarning) {
+            warn(message, throwable)
+        } else if (throwable != null) {
+            error(message, throwable)
         } else {
-            Log.w(tag, message)
+            debug(message)
         }
     }
 
-    override fun logFlags(tag: String, flag: String) {
-        log(tag, flag)
+    override fun logFlag(action: String, flag: String?) {
+        verbose("[$action] $flag")
     }
 
-    override fun logContext(context: Map<String, ConfidenceValue>) {
-        log("CurrentContext", context.toString())
+    override fun logContext(action: String, context: Map<String, ConfidenceValue>) {
+        verbose(context.toString())
     }
 
-    private fun log(tag: String, message: String) {
-        when (level) {
-            DebugLoggerLevel.VERBOSE -> Log.v(tag, message)
-            DebugLoggerLevel.DEBUG -> Log.d(tag, message)
-            DebugLoggerLevel.NONE -> {
-                // do nothing
+    private fun verbose(message: String) = log(LoggingLevel.VERBOSE, message)
+    private fun debug(message: String) = log(LoggingLevel.DEBUG, message)
+    private fun warn(message: String, throwable: Throwable?) =
+        log(LoggingLevel.WARN, throwable?.let { "$message: ${throwable.message}" } ?: message)
+
+    private fun error(message: String, throwable: Throwable) = log(LoggingLevel.ERROR, "$message: ${throwable.message}")
+
+    private fun log(messageLevel: LoggingLevel, message: String) {
+        if (messageLevel >= filterLevel) {
+            when (messageLevel) {
+                LoggingLevel.VERBOSE -> Log.v(TAG, message)
+                LoggingLevel.DEBUG -> Log.d(TAG, message)
+                LoggingLevel.WARN -> Log.w(TAG, message)
+                LoggingLevel.ERROR -> Log.e(TAG, message)
+                LoggingLevel.NONE -> {
+                    // do nothing
+                }
             }
         }
     }
 }
 
-enum class DebugLoggerLevel {
-    VERBOSE, DEBUG, NONE
+enum class LoggingLevel {
+    VERBOSE, // 0
+    DEBUG, // 1
+    WARN, // 2
+    ERROR, // 3
+    NONE // 4
 }

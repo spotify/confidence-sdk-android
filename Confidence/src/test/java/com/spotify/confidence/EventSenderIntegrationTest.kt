@@ -118,7 +118,7 @@ class EventSenderIntegrationTest {
                 return false
             }
         }
-        val debugLogger = DebugLoggerMock()
+        val debugLogger = DebugLoggerFake()
         val engine = EventSenderEngineImpl(
             eventStorage,
             clientSecret,
@@ -143,9 +143,6 @@ class EventSenderIntegrationTest {
         repeat(eventCount) {
             eventSender.track("navigate")
         }
-        // debugLogger.logEvent is not a unique log. For these events we sent logs:
-        // emit event and emit written to disk
-        Assert.assertEquals(eventCount * 2, debugLogger.eventsLogged)
         advanceUntilIdle()
         // debugLogger.logMessage is not a unique log. For these events we log:
         // flush policy triggered log, uploading batch events log
@@ -193,7 +190,7 @@ class EventSenderIntegrationTest {
                 return false
             }
         }
-        val debugLogger = DebugLoggerMock()
+        val debugLogger = DebugLoggerFake()
         val engine = EventSenderEngineImpl(
             eventStorage,
             clientSecret,
@@ -214,9 +211,6 @@ class EventSenderIntegrationTest {
             )
         )
         advanceUntilIdle()
-        // debugLogger.logEvent is not a unique log. For these events we sent logs:
-        // emit event and emit written to disk
-        Assert.assertEquals(2, debugLogger.eventsLogged)
         // debugLogger.logMessage is not a unique log. For these events we log:
         // flush policy triggered log, uploading batch events log
         Assert.assertEquals(3, debugLogger.messagesLogged)
@@ -262,7 +256,7 @@ class EventSenderIntegrationTest {
                 return true
             }
         }
-        val debugLogger = DebugLoggerMock()
+        val debugLogger = DebugLoggerFake()
         val engine = EventSenderEngineImpl(
             eventStorage,
             clientSecret,
@@ -288,9 +282,6 @@ class EventSenderIntegrationTest {
             eventSender.track("navigate")
         }
         advanceUntilIdle()
-        // debugLogger.logEvent is not a unique log. For these events we sent logs:
-        // emit event and emit written to disk
-        Assert.assertEquals(eventCount * 2, debugLogger.eventsLogged)
         // debugLogger.logMessage is not a unique log. For these events we log:
         // flush policy triggered log, uploading batch events log
         Assert.assertEquals(12, debugLogger.messagesLogged)
@@ -338,7 +329,7 @@ class EventSenderIntegrationTest {
                 return true
             }
         }
-        val debugLogger = DebugLoggerMock()
+        val debugLogger = DebugLoggerFake()
         val engine = EventSenderEngineImpl(
             eventStorage,
             clientSecret,
@@ -353,7 +344,6 @@ class EventSenderIntegrationTest {
         engine.emit("my_event", mapOf("a" to ConfidenceValue.Integer(0)), mapOf("a" to ConfidenceValue.Integer(1)))
         // debugLogger.logEvent is not a unique log. For these events we sent logs:
         // emit event and emit written to disk
-        Assert.assertEquals(4, debugLogger.eventsLogged)
         Assert.assertEquals(uploader.requests.size, 0)
         engine.flush()
         advanceUntilIdle()

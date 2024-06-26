@@ -15,8 +15,6 @@ import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import java.io.File
 
-private const val className = "ConfidenceEventSender"
-
 internal interface EventSenderEngine {
     fun onLowMemoryChannel(): Channel<List<File>>
     fun emit(eventName: String, data: ConfidenceFieldsType, context: Map<String, ConfidenceValue>)
@@ -53,7 +51,7 @@ internal class EventSenderEngineImpl(
                 if (event.eventDefinition != manualFlushEvent.eventDefinition) {
                     // skip storing manual flush event
                     eventStorage.writeEvent(event)
-                    debugLogger?.logEvent(tag = className, event = event, details = "Event written to disk ")
+                    debugLogger?.logEvent(action = "DiskWrite ", event = event)
                 }
                 for (policy in flushPolicies) {
                     policy.hit(event)
@@ -63,7 +61,6 @@ internal class EventSenderEngineImpl(
                     for (policy in flushPolicies) {
                         policy.reset()
                         debugLogger?.logMessage(
-                            tag = className,
                             message = "Flush policy $policy triggered to flush. Flushing."
                         )
                     }
@@ -94,7 +91,7 @@ internal class EventSenderEngineImpl(
                     )
                     runCatching {
                         val shouldCleanup = uploader.upload(batch)
-                        debugLogger?.logMessage(tag = className, message = "Uploading batched events")
+                        debugLogger?.logMessage(message = "Uploading events")
                         if (shouldCleanup) {
                             readyFile.delete()
                         }
@@ -105,7 +102,7 @@ internal class EventSenderEngineImpl(
     }
 
     override fun onLowMemoryChannel(): Channel<List<File>> {
-        debugLogger?.logMessage(tag = className, message = "Low memory", isWarning = true)
+        debugLogger?.logMessage(message = "LowMemory", isWarning = true)
         return eventStorage.onLowMemoryChannel()
     }
 
@@ -122,21 +119,21 @@ internal class EventSenderEngineImpl(
                 payload = payload
             )
             writeReqChannel.send(event)
-            debugLogger?.logEvent(tag = className, event = event, details = "Emitting event ")
+            debugLogger?.logEvent(action = "EmitEvent ", event = event)
         }
     }
 
     override fun flush() {
         coroutineScope.launch {
             writeReqChannel.send(manualFlushEvent)
-            debugLogger?.logEvent(tag = className, event = manualFlushEvent, details = "Event flushed ")
+            debugLogger?.logEvent(action = "Flush ", event = manualFlushEvent)
         }
     }
 
     override fun stop() {
         coroutineScope.cancel()
         eventStorage.stop()
-        debugLogger?.logMessage(tag = className, message = "$className closed ")
+        debugLogger?.logMessage(message = "EventSenderEngine closed ")
     }
 
     companion object {

@@ -112,7 +112,7 @@ class StorageFileCacheTests {
         dispatcher: CoroutineDispatcher,
         cache: ProviderCache = mock(),
         initialContext: Map<String, ConfidenceValue> = mapOf(),
-        debugLogger: DebugLoggerMock = DebugLoggerMock()
+        debugLogger: DebugLoggerFake = DebugLoggerFake()
     ) = Confidence(
         clientSecret = "",
         dispatcher = dispatcher,
