@@ -8,13 +8,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.spotify.confidence.AndroidLifecycleEventProducer
-import com.spotify.confidence.Confidence
-import com.spotify.confidence.ConfidenceFactory
-import com.spotify.confidence.ConfidenceRegion
-import com.spotify.confidence.ConfidenceValue
-import com.spotify.confidence.Evaluation
-import com.spotify.confidence.EventSender
+import com.spotify.confidence.*
 import kotlinx.coroutines.launch
 import java.util.Date
 import java.util.UUID
@@ -47,7 +41,8 @@ class MainVm(app: Application) : AndroidViewModel(app) {
             app.applicationContext,
             clientSecret,
             initialContext = mapOf("targeting_key" to ConfidenceValue.String("a98a4291-53b0-49d9-bae8-73d3f5da2070")),
-            ConfidenceRegion.EUROPE
+            ConfidenceRegion.EUROPE,
+            loggingLevel = LoggingLevel.VERBOSE
         )
         confidence.track(AndroidLifecycleEventProducer(getApplication(), false))
         eventSender = confidence.withContext(mutableMap)

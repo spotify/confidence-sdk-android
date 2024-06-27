@@ -32,7 +32,7 @@ internal class DebugLoggerImpl(private val filterLevel: LoggingLevel) : DebugLog
     }
 
     override fun logContext(action: String, context: Map<String, ConfidenceValue>) {
-        verbose(context.toString())
+        verbose("[$action] $context")
     }
 
     private fun verbose(message: String) = log(LoggingLevel.VERBOSE, message)
