@@ -100,6 +100,12 @@ confidence.track(
 )
 ```
 
+### Logging
+By default, the Confidence SDK will log errors and warnings. You can change the preferred log level by passing a `loggingLevel` to the `Confidence.create()` function.
+
+To turn off logging completely, you can pass `LoggingLevel.NONE` to the `Confidence.create()` function.
+
+
 ## OpenFeature Kotlin Confidence Provider
 If you want to use OpenFeature, an OpenFeature Provider for the [OpenFeature SDK](https://github.com/open-feature/kotlin-sdk) is also available.
 
