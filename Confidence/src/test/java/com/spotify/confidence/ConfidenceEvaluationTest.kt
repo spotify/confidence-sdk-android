@@ -875,6 +875,36 @@ internal class ConfidenceEvaluationTest {
     }
 
     @Test
+    fun testNetworkErrorIsLogged() = runTest {
+        val cache = InMemoryCache()
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val context = mapOf("key" to ConfidenceValue.String("foo"))
+        val debugLoggerFake = DebugLoggerFake()
+        val mockConfidence = getConfidence(
+            testDispatcher,
+            initialContext = context,
+            cache = cache,
+            debugLogger = debugLoggerFake
+        )
+        whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
+        whenever(
+            flagResolverClient.resolve(
+                eq(listOf()),
+                any()
+            )
+        ).thenThrow(Error("Something went terribly wrong on the Internetz"))
+
+        mockConfidence.fetchAndActivate()
+        advanceUntilIdle()
+        Assert.assertEquals(1, debugLoggerFake.messagesLogged.size)
+        Assert.assertEquals("Network error", debugLoggerFake.messagesLogged.first().message)
+        Assert.assertEquals(
+            "Something went terribly wrong on the Internetz",
+            debugLoggerFake.messagesLogged.first().throwable?.message
+        )
+    }
+
+    @Test
     fun testInvalidTargetingKey() = runTest {
         val cache = InMemoryCache()
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)

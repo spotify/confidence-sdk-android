@@ -146,7 +146,7 @@ class EventSenderIntegrationTest {
         advanceUntilIdle()
         // debugLogger.logMessage is not a unique log. For these events we log:
         // flush policy triggered log, uploading batch events log
-        Assert.assertEquals(18, debugLogger.messagesLogged)
+        Assert.assertEquals(18, debugLogger.messagesLogged.size)
         runBlocking {
             val batchReadyFiles = eventStorage.batchReadyFiles()
             val totalFiles = directory.walkFiles()
@@ -213,7 +213,7 @@ class EventSenderIntegrationTest {
         advanceUntilIdle()
         // debugLogger.logMessage is not a unique log. For these events we log:
         // flush policy triggered log, uploading batch events log
-        Assert.assertEquals(3, debugLogger.messagesLogged)
+        Assert.assertEquals(3, debugLogger.messagesLogged.size)
         Assert.assertEquals("eventDefinitions/my_event", uploadedEvents[0].eventDefinition)
         Assert.assertEquals(
             mapOf(
@@ -284,7 +284,7 @@ class EventSenderIntegrationTest {
         advanceUntilIdle()
         // debugLogger.logMessage is not a unique log. For these events we log:
         // flush policy triggered log, uploading batch events log
-        Assert.assertEquals(12, debugLogger.messagesLogged)
+        Assert.assertEquals(12, debugLogger.messagesLogged.size)
         Assert.assertEquals(uploadRequestCount, eventCount / batchSize)
         runBlocking {
             val batchReadyFiles = eventStorage.batchReadyFiles()
@@ -349,7 +349,7 @@ class EventSenderIntegrationTest {
         advanceUntilIdle()
         // debugLogger.logMessage is not a unique log. For these events we log:
         // flush policy triggered log, uploading batch events log
-        Assert.assertEquals(3, debugLogger.messagesLogged)
+        Assert.assertEquals(3, debugLogger.messagesLogged.size)
         Assert.assertEquals(1, uploader.requests.size)
         Assert.assertEquals(2, uploader.requests[0].events.size)
     }

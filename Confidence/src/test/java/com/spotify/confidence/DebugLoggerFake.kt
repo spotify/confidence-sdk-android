@@ -1,14 +1,14 @@
 package com.spotify.confidence
 
 internal open class DebugLoggerFake : DebugLogger {
-    var messagesLogged = 0
+    val messagesLogged = mutableListOf<Msg>()
 
     override fun logEvent(action: String, event: EngineEvent) {
         // not important enough to test right now
     }
 
     override fun logMessage(message: String, isWarning: Boolean, throwable: Throwable?) {
-        messagesLogged++
+        messagesLogged.add(Msg(message, isWarning, throwable))
     }
 
     override fun logFlag(action: String, flag: String?) {
@@ -18,4 +18,6 @@ internal open class DebugLoggerFake : DebugLogger {
     override fun logContext(action: String, context: Map<String, ConfidenceValue>) {
         // not important enough to test right now
     }
+
+    data class Msg(val message: String, val isWarning: Boolean, val throwable: Throwable?)
 }
