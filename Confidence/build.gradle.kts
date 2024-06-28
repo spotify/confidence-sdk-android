@@ -58,6 +58,7 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.coroutines}")
     testImplementation("org.mockito.kotlin:mockito-kotlin:${Versions.kotlinMockito}")
     testImplementation("com.squareup.okhttp3:mockwebserver:${Versions.mockWebServer}")
+    testImplementation("io.mockk:mockk:1.13.11")
 }
 
 publishing {
