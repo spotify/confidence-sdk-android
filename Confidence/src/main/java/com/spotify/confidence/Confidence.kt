@@ -36,7 +36,7 @@ class Confidence internal constructor(
     private val parent: ConfidenceContextProvider? = null,
     private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
     private val debugLogger: DebugLogger?
-) : ConfidenceAPI {
+) : Contextual, EventSender {
     private val removedKeys = mutableListOf<String>()
     private val contextMap = MutableStateFlow(initialContext)
     private var currentFetchJob: Job? = null
@@ -146,7 +146,7 @@ class Confidence internal constructor(
             it.getContext().filterKeys { key -> !removedKeys.contains(key) } + contextMap.value
         } ?: contextMap.value
 
-    override fun withContext(context: Map<String, ConfidenceValue>): ConfidenceAPI = Confidence(
+    override fun withContext(context: Map<String, ConfidenceValue>): EventSender = Confidence(
         clientSecret,
         dispatcher,
         eventSenderEngine,
