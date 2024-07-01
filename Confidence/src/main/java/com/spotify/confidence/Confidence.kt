@@ -50,11 +50,13 @@ class Confidence internal constructor(
     private val eventProducers: MutableList<EventProducer> = mutableListOf()
 
     init {
-        coroutineScope.launch {
-            contextChanges
-                .collect {
-                    fetchAndActivate()
-                }
+        if (parent == null) {
+            coroutineScope.launch {
+                contextChanges
+                    .collect {
+                        fetchAndActivate()
+                    }
+            }
         }
     }
 
@@ -142,7 +144,7 @@ class Confidence internal constructor(
             it.getContext().filterKeys { key -> !removedKeys.contains(key) } + contextMap.value
         } ?: contextMap.value
 
-    override fun withContext(context: Map<String, ConfidenceValue>): Confidence = Confidence(
+    override fun withContext(context: Map<String, ConfidenceValue>): EventSender = Confidence(
         clientSecret,
         dispatcher,
         eventSenderEngine,
