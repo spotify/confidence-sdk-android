@@ -68,9 +68,7 @@ class Confidence internal constructor(
 
     private suspend fun resolve(flags: List<String>): Result<FlagResolution> {
         debugLogger?.let {
-            for (flag in flags) {
-                debugLogger.logFlags("ResolveFlag", flag)
-            }
+            debugLogger.logFlag("Resolve")
         }
         return flagResolver.resolve(flags, getContext())
     }
@@ -84,7 +82,7 @@ class Confidence internal constructor(
 
     fun apply(flagName: String, resolveToken: String) {
         flagApplier.apply(flagName, resolveToken)
-        debugLogger?.logFlags("ApplyFlag", flagName)
+        debugLogger?.logFlag("Apply", flagName)
     }
 
     fun <T> getValue(key: String, default: T) = getFlag(key, default).value
@@ -107,7 +105,7 @@ class Confidence internal constructor(
         val map = contextMap.value.toMutableMap()
         map[key] = value
         contextMap.value = map
-        debugLogger?.logContext(contextMap.value)
+        debugLogger?.logContext("PutContext", contextMap.value)
     }
 
     @Synchronized
@@ -115,7 +113,7 @@ class Confidence internal constructor(
         val map = contextMap.value.toMutableMap()
         map += context
         contextMap.value = map
-        debugLogger?.logContext(contextMap.value)
+        debugLogger?.logContext("PutContext", contextMap.value)
     }
 
     fun isStorageEmpty(): Boolean = diskStorage.read() == FlagResolution.EMPTY
@@ -129,7 +127,7 @@ class Confidence internal constructor(
         }
         this.removedKeys.addAll(removedKeys)
         contextMap.value = map
-        debugLogger?.logContext(contextMap.value)
+        debugLogger?.logContext("PutContext", contextMap.value)
     }
 
     @Synchronized
@@ -138,7 +136,7 @@ class Confidence internal constructor(
         map.remove(key)
         removedKeys.add(key)
         contextMap.value = map
-        debugLogger?.logContext(contextMap.value)
+        debugLogger?.logContext("RemoveContext", contextMap.value)
     }
 
     override fun getContext(): Map<String, ConfidenceValue> =
@@ -174,7 +172,8 @@ class Confidence internal constructor(
     }
 
     private val networkExceptionHandler by lazy {
-        CoroutineExceptionHandler { _, _ ->
+        CoroutineExceptionHandler { _, throwable ->
+            debugLogger?.logMessage("Network error", isWarning = true, throwable = throwable)
             // network failed, provider is ready but with default/cache values
         }
     }
@@ -250,16 +249,15 @@ object ConfidenceFactory {
     fun create(
         context: Context,
         clientSecret: String,
-        sdk: SdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
         initialContext: Map<String, ConfidenceValue> = mapOf(),
         region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
-        debugLoggerLevel: DebugLoggerLevel = DebugLoggerLevel.NONE
+        loggingLevel: LoggingLevel = LoggingLevel.WARN
     ): Confidence {
-        val debugLogger: DebugLogger? = if (debugLoggerLevel == DebugLoggerLevel.NONE) {
+        val debugLogger: DebugLogger? = if (loggingLevel == LoggingLevel.NONE) {
             null
         } else {
-            DebugLoggerImpl(debugLoggerLevel)
+            DebugLoggerImpl(loggingLevel)
         }
         val engine = EventSenderEngineImpl.instance(
             context,
@@ -271,7 +269,7 @@ object ConfidenceFactory {
         )
         val flagApplierClient = FlagApplierClientImpl(
             clientSecret,
-            sdk,
+            SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
             region,
             dispatcher
         )
@@ -280,12 +278,12 @@ object ConfidenceFactory {
             region = region,
             httpClient = OkHttpClient(),
             dispatcher = dispatcher,
-            sdkMetadata = sdk
+            sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION)
         )
         val visitorId = ConfidenceValue.String(VisitorUtil.getId(context))
         val initContext = initialContext.toMutableMap()
         initContext[VISITOR_ID_CONTEXT_KEY] = visitorId
-        debugLogger?.logContext(initContext)
+        debugLogger?.logContext("InitialContext", initContext)
 
         return Confidence(
             clientSecret,

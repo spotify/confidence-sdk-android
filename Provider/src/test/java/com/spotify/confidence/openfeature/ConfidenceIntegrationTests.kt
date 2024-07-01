@@ -45,12 +45,10 @@ class ConfidenceIntegrationTests {
         val eventsHandler = EventHandler(Dispatchers.IO).apply {
             publish(OpenFeatureEvents.ProviderStale)
         }
-        val mockConfidence = ConfidenceFeatureProvider.Companion.ConfidenceForOpenFeature(
-            ConfidenceFactory.create(mockContext, clientSecret)
-        )
+        val mockConfidence = ConfidenceFactory.create(mockContext, clientSecret)
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
-                confidenceForOF = mockConfidence,
+                confidence = mockConfidence,
                 initialisationStrategy = InitialisationStrategy.FetchAndActivate,
                 eventHandler = eventsHandler
             ),
@@ -89,12 +87,10 @@ class ConfidenceIntegrationTests {
         }
         val cacheFile = File(mockContext.filesDir, FLAGS_FILE_NAME)
         assertEquals(0L, cacheFile.length())
-        val mockConfidence = ConfidenceFeatureProvider.Companion.ConfidenceForOpenFeature(
-            ConfidenceFactory.create(mockContext, clientSecret)
-        )
+        val mockConfidence = ConfidenceFactory.create(mockContext, clientSecret)
         OpenFeatureAPI.setProvider(
             ConfidenceFeatureProvider.create(
-                confidenceForOF = mockConfidence,
+                confidence = mockConfidence,
                 eventHandler = eventsHandler
             ),
             ImmutableContext(
