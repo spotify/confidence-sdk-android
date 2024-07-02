@@ -5,6 +5,7 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint")
     id("signing")
     kotlin("plugin.serialization").version("1.8.10").apply(true)
+    id("org.jetbrains.kotlinx.binary-compatibility-validator")
 }
 
 val providerVersion = project.extra["version"].toString()
