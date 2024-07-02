@@ -6,6 +6,7 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint")
     kotlin("plugin.serialization")
     id("signing")
+    id("org.jetbrains.kotlinx.binary-compatibility-validator")
 }
 
 object Versions {
