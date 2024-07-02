@@ -17,10 +17,10 @@ The latest release of the SDK is available on Maven central.
 <!---x-release-please-start-version-->
 Add the following dependency to your gradle file to use it:
 ```
-implementation("com.spotify.confidence:confidence-sdk-android:0.3.5")
+implementation("com.spotify.confidence:confidence-sdk-android:0.3.6")
 ```
 
-Where `0.3.5` is the most recent version of this SDK. 
+Where `0.3.6` is the most recent version of this SDK. 
 
 Released versions can be found under "Releases" within this repository.
 <!---x-release-please-end-->
@@ -116,10 +116,10 @@ The latest release of the Provider is available on Maven central.
 <!---x-release-please-start-version-->
 Add the following dependency to your gradle file:
 ```
-implementation("com.spotify.confidence:openfeature-provider-android:0.3.5")
+implementation("com.spotify.confidence:openfeature-provider-android:0.3.6")
 ```
 
-Where `0.3.5` is the most recent version of the Provider. Released versions can be found under "Releases" within this repository.
+Where `0.3.6` is the most recent version of the Provider. Released versions can be found under "Releases" within this repository.
 <!---x-release-please-end-->
 
 
