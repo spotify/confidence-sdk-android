@@ -30,8 +30,6 @@ android {
         version = providerVersion
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        buildConfigField("String", "SDK_VERSION", "\"" + providerVersion + "\"")
     }
 
     compileOptions {
@@ -48,6 +46,8 @@ android {
             withSourcesJar()
         }
     }
+
+    buildFeatures.buildConfig = false
 }
 
 dependencies {
