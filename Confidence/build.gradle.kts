@@ -122,3 +122,13 @@ publishing {
 signing {
     sign(publishing.publications["release"])
 }
+
+kover {
+    reports {
+        verify {
+            rule {
+                minBound(78)
+            }
+        }
+    }
+}
