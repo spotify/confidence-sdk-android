@@ -8,6 +8,7 @@ import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.events.EventHandler
 import dev.openfeature.sdk.events.OpenFeatureEvents
+import dev.openfeature.sdk.exceptions.ErrorCode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -28,7 +29,7 @@ import java.util.UUID
 private const val clientSecret = "21wxcxXpU6tKBRFtEFTXYiH7nDqL86Mm"
 private val mockContext: Context = mock()
 
-class ConfidenceIntegrationTests {
+class ProviderIntegrationTest {
 
     @get:Rule
     var tmpFile = TemporaryFolder()
@@ -85,7 +86,7 @@ class ConfidenceIntegrationTests {
         val eventsHandler = EventHandler(Dispatchers.IO).apply {
             publish(OpenFeatureEvents.ProviderStale)
         }
-        val cacheFile = File(mockContext.filesDir, FLAGS_FILE_NAME)
+        val cacheFile = File(mockContext.filesDir, flagsFileName)
         assertEquals(0L, cacheFile.length())
         val mockConfidence = ConfidenceFactory.create(mockContext, clientSecret)
         OpenFeatureAPI.setProvider(
@@ -118,5 +119,62 @@ class ConfidenceIntegrationTests {
         assertEquals(Reason.TARGETING_MATCH.name, intDetails.reason)
         assertNotNull(intDetails.variant)
     }
+
+    @Test
+    fun testSimpleResolveWithFetchAndActivateInMemoryCache() {
+        val eventsHandler = EventHandler(Dispatchers.IO).apply {
+            publish(OpenFeatureEvents.ProviderStale)
+        }
+        val mockConfidence = ConfidenceFactory.create(mockContext, clientSecret)
+
+        OpenFeatureAPI.setProvider(
+            ConfidenceFeatureProvider.create(
+                confidence = mockConfidence,
+                initialisationStrategy = InitialisationStrategy.ActivateAndFetchAsync,
+                eventHandler = eventsHandler
+            ),
+            ImmutableContext(
+                targetingKey = UUID.randomUUID().toString(),
+                attributes = mutableMapOf(
+                    "user" to Value.Structure(
+                        mapOf(
+                            "country" to Value.String("SE")
+                        )
+                    )
+                )
+            )
+        )
+        runBlocking {
+            awaitProviderReady(eventsHandler = eventsHandler)
+        }
+
+        val flagNotFoundDetails = OpenFeatureAPI.getClient()
+            .getObjectDetails(
+                "kotlin-test-flag",
+                Value.Structure(emptyMap())
+            )
+        assertEquals(ErrorCode.FLAG_NOT_FOUND, flagNotFoundDetails.errorCode)
+        assertNull(flagNotFoundDetails.errorMessage)
+        assertEquals(Value.Structure(emptyMap()), flagNotFoundDetails.value)
+        assertEquals(Reason.ERROR.name, flagNotFoundDetails.reason)
+        assertNull(flagNotFoundDetails.variant)
+
+        runBlocking {
+            mockConfidence.fetchAndActivate()
+        }
+
+        val evaluationDetails = OpenFeatureAPI.getClient()
+            .getObjectDetails(
+                "kotlin-test-flag",
+                Value.Structure(emptyMap())
+            )
+        assertNull(evaluationDetails.errorCode)
+        assertNull(evaluationDetails.errorMessage)
+        assertNotNull(evaluationDetails.value)
+        assertEquals(Reason.TARGETING_MATCH.name, evaluationDetails.reason)
+        assertNotNull(evaluationDetails.variant)
+
+        assertEquals(4, evaluationDetails.value.asStructure()?.getOrDefault("my-integer", Value.Integer(-1))?.asInteger())
+    }
+    private val flagsFileName = "confidence_flags_cache.json"
 }
-internal const val FLAGS_FILE_NAME = "confidence_flags_cache.json"
