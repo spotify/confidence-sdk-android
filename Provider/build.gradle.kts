@@ -56,7 +56,6 @@ dependencies {
     implementation(
         "org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}"
     )
-    implementation("androidx.lifecycle:lifecycle-process:2.6.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
     api(project(":Confidence"))
     testImplementation("junit:junit:${Versions.junit}")
