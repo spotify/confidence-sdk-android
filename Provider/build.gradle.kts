@@ -30,8 +30,6 @@ android {
         version = providerVersion
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        buildConfigField("String", "SDK_VERSION", "\"" + providerVersion + "\"")
     }
 
     compileOptions {
@@ -48,6 +46,8 @@ android {
             withSourcesJar()
         }
     }
+
+    buildFeatures.buildConfig = false
 }
 
 dependencies {
@@ -56,7 +56,6 @@ dependencies {
     implementation(
         "org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}"
     )
-    implementation("androidx.lifecycle:lifecycle-process:2.6.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
     api(project(":Confidence"))
     testImplementation("junit:junit:${Versions.junit}")

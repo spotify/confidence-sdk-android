@@ -1,11 +1,3 @@
-public final class com/spotify/confidence/openfeature/BuildConfig {
-	public static final field BUILD_TYPE Ljava/lang/String;
-	public static final field DEBUG Z
-	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
-	public static final field SDK_VERSION Ljava/lang/String;
-	public fun <init> ()V
-}
-
 public final class com/spotify/confidence/openfeature/ConfidenceFeatureProvider : dev/openfeature/sdk/FeatureProvider {
 	public static final field Companion Lcom/spotify/confidence/openfeature/ConfidenceFeatureProvider$Companion;
 	public synthetic fun <init> (Ljava/util/List;Ldev/openfeature/sdk/ProviderMetadata;Lcom/spotify/confidence/openfeature/InitialisationStrategy;Ldev/openfeature/sdk/events/EventHandler;Lcom/spotify/confidence/Confidence;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
