@@ -7,6 +7,7 @@ plugins {
     id("com.android.application") version "7.4.2" apply false
     id("io.github.gradle-nexus.publish-plugin").version("1.3.0").apply(true)
     id("org.jetbrains.kotlinx.binary-compatibility-validator").version("0.15.0-Beta.3").apply(false)
+    id("org.jetbrains.kotlinx.kover").version("0.8.2").apply(true)
 }
 
 allprojects {
