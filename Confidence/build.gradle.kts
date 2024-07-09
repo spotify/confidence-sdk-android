@@ -6,6 +6,7 @@ plugins {
     id("signing")
     kotlin("plugin.serialization").version("1.8.10").apply(true)
     id("org.jetbrains.kotlinx.binary-compatibility-validator")
+    id("org.jetbrains.kotlinx.kover")
 }
 
 val providerVersion = project.extra["version"].toString()
@@ -120,4 +121,14 @@ publishing {
 
 signing {
     sign(publishing.publications["release"])
+}
+
+kover {
+    reports {
+        verify {
+            rule {
+                minBound(78)
+            }
+        }
+    }
 }

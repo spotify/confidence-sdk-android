@@ -17,7 +17,7 @@ suspend fun awaitProviderReady(
     dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) = suspendCancellableCoroutine { continuation ->
     fun observeProviderReady() = eventsHandler
-        .observe<OpenFeatureEvents.ProviderReady>()
+        .observe<OpenFeatureEvents>()
         .onStart {
             if (eventsHandler.getProviderStatus() == OpenFeatureEvents.ProviderReady) {
                 this.emit(OpenFeatureEvents.ProviderReady)
