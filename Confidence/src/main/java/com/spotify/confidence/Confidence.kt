@@ -80,13 +80,28 @@ class Confidence internal constructor(
         }
     }
 
+    /**
+     * Apply a flag
+     * @param flagName name of the flag.
+     * @param resolveToken resolve token.
+     */
     fun apply(flagName: String, resolveToken: String) {
         flagApplier.apply(flagName, resolveToken)
         debugLogger?.logFlag("Apply", flagName)
     }
 
+    /**
+     * @return flag value for a specific flag.
+     * @param key expects dot-notation to retrieve a specific entry in the flag's value, e.g. "flagname.myentry"
+     * @param default  returned in case of errors or in case of the variant's rule indicating to use the default value.
+     */
     fun <T> getValue(key: String, default: T) = getFlag(key, default).value
 
+    /**
+     * @return evaluation data for a specific flag. Evaluation data includes the variant's name and reason/error information.
+     * @param key expects dot-notation to retrieve a specific entry in the flag's value, e.g. "flagname.myentry"
+     * @param default returned in case of errors or in case of the variant's rule indicating to use the default value.
+     */
     fun <T> getFlag(
         key: String,
         default: T
@@ -116,8 +131,16 @@ class Confidence internal constructor(
         debugLogger?.logContext("PutContext", contextMap.value)
     }
 
+    /**
+     * Check if cache is empty
+     */
     fun isStorageEmpty(): Boolean = diskStorage.read() == FlagResolution.EMPTY
 
+    /**
+     * Mutate context by adding an entry and removing another
+     * @param context context to add.
+     * @param removedKeys key to remove from context.
+     */
     @Synchronized
     fun putContext(context: Map<String, ConfidenceValue>, removedKeys: List<String>) {
         val map = contextMap.value.toMutableMap()
@@ -192,16 +215,29 @@ class Confidence internal constructor(
         }
     }
 
+    /**
+     * Activating the cache means that the flag data on disk is loaded into memory, so consumers can access flag values.
+     */
     fun activate() {
         val resolveResponse = diskStorage.read()
         cache.refresh(resolveResponse)
     }
 
+    /**
+     * Fetch latest flag evaluations and store them on disk. Note that "activate" must be called for this data to be
+     * made available in the app session.
+     */
     fun asyncFetch() {
         currentFetchJob?.cancel()
         currentFetchJob = fetch()
     }
 
+    /**
+     * Fetch latest flag evaluations and store them on disk. Regardless of the fetch outcome (success or failure), this
+     * function activates the cache after the fetch.
+     * Activating the cache means that the flag data on disk is loaded into memory, so consumers can access flag values.
+     * Fetching is best-effort, so no error is propagated. Errors can still be thrown if something goes wrong access data on disk.
+     */
     suspend fun fetchAndActivate() = kotlinx.coroutines.withContext(dispatcher) {
         currentFetchJob?.cancel()
         currentFetchJob = fetch()
@@ -245,7 +281,19 @@ class Confidence internal constructor(
 
 internal const val VISITOR_ID_CONTEXT_KEY = "visitor_id"
 
+/**
+ * Confidence instance, which can be used for flag evaluation and event tracking.
+ */
 object ConfidenceFactory {
+    /**
+     * Create a Factory Confidence instance.
+     * @param context application context.
+     * @param clientSecret confidence clientSecret, which is found in Confidence console.
+     * @param initialContext can be set initially, e.g. targeting_key:value.
+     * @param region region of operation.
+     * @param dispatcher coroutine dispatcher.
+     * @param loggingLevel allows to print warnings or debugging information to the local console.
+     */
     fun create(
         context: Context,
         clientSecret: String,
