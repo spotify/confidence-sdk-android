@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
+import java.util.concurrent.TimeUnit
 
 internal const val SDK_ID = "SDK_ID_KOTLIN_CONFIDENCE"
 
@@ -293,6 +294,7 @@ object ConfidenceFactory {
      * @param region region of operation.
      * @param dispatcher coroutine dispatcher.
      * @param loggingLevel allows to print warnings or debugging information to the local console.
+     * @param timeoutMillis sets a timeout for completing an HTTP call. Defaults to 10 seconds
      */
     fun create(
         context: Context,
@@ -300,7 +302,8 @@ object ConfidenceFactory {
         initialContext: Map<String, ConfidenceValue> = mapOf(),
         region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
-        loggingLevel: LoggingLevel = LoggingLevel.WARN
+        loggingLevel: LoggingLevel = LoggingLevel.WARN,
+        timeoutMillis: Long = 10000
     ): Confidence {
         val debugLogger: DebugLogger? = if (loggingLevel == LoggingLevel.NONE) {
             null
@@ -324,7 +327,9 @@ object ConfidenceFactory {
         val flagResolver = RemoteFlagResolver(
             clientSecret = clientSecret,
             region = region,
-            httpClient = OkHttpClient(),
+            httpClient = OkHttpClient.Builder()
+                .callTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
+                .build(),
             dispatcher = dispatcher,
             sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION)
         )
