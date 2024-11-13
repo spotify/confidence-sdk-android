@@ -55,7 +55,7 @@ internal class FileDiskStorage internal constructor(
             try {
                 Json.decodeFromString(fileText)
             } catch (e: Throwable) {
-                clear()
+                flagsFile.delete()
                 FlagResolution.EMPTY
             }
         }

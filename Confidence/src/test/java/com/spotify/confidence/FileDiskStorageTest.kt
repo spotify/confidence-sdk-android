@@ -3,7 +3,6 @@ package com.spotify.confidence
 import com.spotify.confidence.apply.ApplyInstance
 import com.spotify.confidence.apply.EventStatus
 import com.spotify.confidence.cache.FileDiskStorage
-import com.spotify.confidence.client.ConfidenceValueMap
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
