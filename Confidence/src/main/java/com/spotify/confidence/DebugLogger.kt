@@ -9,6 +9,7 @@ internal interface DebugLogger {
     fun logMessage(message: String, isWarning: Boolean = false, throwable: Throwable? = null)
     fun logFlag(action: String, flag: String? = null)
     fun logContext(action: String, context: Map<String, ConfidenceValue>)
+    fun logResolve(flag: String, context: Map<String, ConfidenceValue>)
 }
 
 internal class DebugLoggerImpl(private val filterLevel: LoggingLevel) : DebugLogger {
@@ -33,6 +34,11 @@ internal class DebugLoggerImpl(private val filterLevel: LoggingLevel) : DebugLog
 
     override fun logContext(action: String, context: Map<String, ConfidenceValue>) {
         verbose("[$action] $context")
+    }
+
+    override fun logResolve(flag: String, context: Map<String, ConfidenceValue>) {
+        val trimContext = "$context".replace(" ", "")
+        debug("[Resolve Debug] https://app.confidence.spotify.com/flags/resolver-test?flag=flags/$flag&context=$trimContext")
     }
 
     private fun verbose(message: String) = log(LoggingLevel.VERBOSE, message)
