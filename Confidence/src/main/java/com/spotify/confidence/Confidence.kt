@@ -106,15 +106,24 @@ class Confidence internal constructor(
     fun <T> getFlag(
         key: String,
         default: T
-    ): Evaluation<T> = cache.get().getEvaluation(
-        key,
-        default,
-        getContext()
-    ) { flagName, resolveToken ->
-        // this lambda will be invoked inside the evaluation process
-        // and only if the resolve reason is not targeting key error.
-        apply(flagName, resolveToken)
+    ): Evaluation<T> {
+        val eval = cache.get().getEvaluation(
+            key,
+            default,
+            getContext()
+        ) { flagName, resolveToken ->
+            // this lambda will be invoked inside the evaluation process
+            // and only if the resolve reason is not targeting key error.
+            apply(flagName, resolveToken)
+        }
+        if (eval.reason !== ResolveReason.RESOLVE_REASON_MATCH) {
+            val context = this.getContext()
+            val flag = key.splitToSequence(".").first()
+            debugLogger?.logResolve(flag, context)
+        }
+        return eval
     }
+
 
     @Synchronized
     override fun putContext(key: String, value: ConfidenceValue) {
