@@ -1,6 +1,7 @@
 package com.spotify.confidence
 
 import android.util.Log
+import kotlinx.serialization.json.JsonElement
 
 private const val TAG = "Confidence"
 
@@ -9,7 +10,7 @@ internal interface DebugLogger {
     fun logMessage(message: String, isWarning: Boolean = false, throwable: Throwable? = null)
     fun logFlag(action: String, flag: String? = null)
     fun logContext(action: String, context: Map<String, ConfidenceValue>)
-    fun logResolve(flag: String, context: Map<String, ConfidenceValue>)
+    fun logResolve(flag: String, context: JsonElement)
 }
 
 internal class DebugLoggerImpl(private val filterLevel: LoggingLevel) : DebugLogger {
@@ -36,9 +37,10 @@ internal class DebugLoggerImpl(private val filterLevel: LoggingLevel) : DebugLog
         verbose("[$action] $context")
     }
 
-    override fun logResolve(flag: String, context: Map<String, ConfidenceValue>) {
-        val trimContext = "$context".replace(" ", "")
-        debug("[Resolve Debug] https://app.confidence.spotify.com/flags/resolver-test?flag=flags/$flag&context=$trimContext")
+    override fun logResolve(flag: String, context: JsonElement) {
+        debug(
+            "[Resolve Debug] https://app.confidence.spotify.com/flags/resolver-test?flag=flags/$flag&context=$context"
+        )
     }
 
     private fun verbose(message: String) = log(LoggingLevel.VERBOSE, message)

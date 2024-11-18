@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToJsonElement
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
@@ -116,14 +118,11 @@ class Confidence internal constructor(
             // and only if the resolve reason is not targeting key error.
             apply(flagName, resolveToken)
         }
-        if (eval.reason !== ResolveReason.RESOLVE_REASON_MATCH) {
-            val context = this.getContext()
-            val flag = key.splitToSequence(".").first()
-            debugLogger?.logResolve(flag, context)
-        }
+        val contextJson = Json.encodeToJsonElement(this.getContext())
+        val flag = key.splitToSequence(".").first()
+        debugLogger?.logResolve(flag, contextJson)
         return eval
     }
-
 
     @Synchronized
     override fun putContext(key: String, value: ConfidenceValue) {
