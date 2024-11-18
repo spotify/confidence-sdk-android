@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
 import okhttp3.OkHttpClient
@@ -118,7 +119,10 @@ class Confidence internal constructor(
             // and only if the resolve reason is not targeting key error.
             apply(flagName, resolveToken)
         }
-        val contextJson = Json.encodeToJsonElement(this.getContext())
+        // we are using a custom serializer so that the Json is serialized correctly in the logs
+        val newMap: Map<String, @Serializable(NetworkConfidenceValueSerializer::class) ConfidenceValue> =
+            this.getContext()
+        val contextJson = Json.encodeToJsonElement(newMap)
         val flag = key.splitToSequence(".").first()
         debugLogger?.logResolve(flag, contextJson)
         return eval

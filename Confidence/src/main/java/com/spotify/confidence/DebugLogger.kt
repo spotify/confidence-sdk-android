@@ -2,6 +2,7 @@ package com.spotify.confidence
 
 import android.util.Log
 import kotlinx.serialization.json.JsonElement
+import java.net.URLEncoder
 
 private const val TAG = "Confidence"
 
@@ -14,6 +15,10 @@ internal interface DebugLogger {
 }
 
 internal class DebugLoggerImpl(private val filterLevel: LoggingLevel) : DebugLogger {
+    private val JsonElement.urlEncoded
+        get() = URLEncoder.encode(this.toString(), "UTF-8")
+    private val String.urlEncoded
+        get() = URLEncoder.encode(this, "UTF-8")
 
     override fun logEvent(action: String, event: EngineEvent) {
         debug("[$action] $event")
@@ -39,7 +44,9 @@ internal class DebugLoggerImpl(private val filterLevel: LoggingLevel) : DebugLog
 
     override fun logResolve(flag: String, context: JsonElement) {
         debug(
-            "[Resolve Debug] https://app.confidence.spotify.com/flags/resolver-test?flag=flags/$flag&context=$context"
+            "[Resolve Debug] " +
+                "https://app.confidence.spotify.com/flags/resolver-test?flag=flags/" +
+                "${flag.urlEncoded}&context=${context.urlEncoded}"
         )
     }
 
