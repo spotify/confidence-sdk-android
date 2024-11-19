@@ -20,6 +20,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToJsonElement
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
@@ -106,14 +109,24 @@ class Confidence internal constructor(
     fun <T> getFlag(
         key: String,
         default: T
-    ): Evaluation<T> = cache.get().getEvaluation(
-        key,
-        default,
-        getContext()
-    ) { flagName, resolveToken ->
-        // this lambda will be invoked inside the evaluation process
-        // and only if the resolve reason is not targeting key error.
-        apply(flagName, resolveToken)
+    ): Evaluation<T> {
+        val evaluationContext = getContext()
+        val eval = cache.get().getEvaluation(
+            key,
+            default,
+            evaluationContext
+        ) { flagName, resolveToken ->
+            // this lambda will be invoked inside the evaluation process
+            // and only if the resolve reason is not targeting key error.
+            apply(flagName, resolveToken)
+        }
+        // we are using a custom serializer so that the Json is serialized correctly in the logs
+        val newMap: Map<String, @Serializable(NetworkConfidenceValueSerializer::class) ConfidenceValue> =
+            evaluationContext
+        val contextJson = Json.encodeToJsonElement(newMap)
+        val flag = key.splitToSequence(".").first()
+        debugLogger?.logResolve(flag, contextJson)
+        return eval
     }
 
     @Synchronized
@@ -308,7 +321,7 @@ object ConfidenceFactory {
         val debugLogger: DebugLogger? = if (loggingLevel == LoggingLevel.NONE) {
             null
         } else {
-            DebugLoggerImpl(loggingLevel)
+            DebugLoggerImpl(loggingLevel, clientSecret)
         }
         val engine = EventSenderEngineImpl.instance(
             context,

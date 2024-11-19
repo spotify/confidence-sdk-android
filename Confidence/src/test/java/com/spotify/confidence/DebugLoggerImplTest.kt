@@ -21,7 +21,7 @@ class DebugLoggerImplTest {
         every { Log.v(any(), any()) } returns 0
         every { Log.w(any(), any<String>()) } returns 0
         every { Log.e(any(), any()) } returns 0
-        verboseLogger = DebugLoggerImpl(LoggingLevel.VERBOSE)
+        verboseLogger = DebugLoggerImpl(LoggingLevel.VERBOSE, "key")
     }
 
     @After
@@ -77,7 +77,7 @@ class DebugLoggerImplTest {
 
     @Test
     fun filterOnDebugLevel() {
-        val debugLogger = DebugLoggerImpl(LoggingLevel.DEBUG)
+        val debugLogger = DebugLoggerImpl(LoggingLevel.DEBUG, clientKey = "key")
         debugLogger.logFlag("Resolve")
         verify(inverse = true) { Log.v("Confidence", "[Resolve] null") }
         debugLogger.logMessage("Normal Debug")
@@ -86,7 +86,7 @@ class DebugLoggerImplTest {
 
     @Test
     fun filterOnWarnLevel() {
-        val warnLogger = DebugLoggerImpl(LoggingLevel.WARN)
+        val warnLogger = DebugLoggerImpl(LoggingLevel.WARN, clientKey = "key")
         warnLogger.logFlag("Resolve")
         verify(inverse = true) { Log.v("Confidence", "[Resolve] null") }
         warnLogger.logMessage("Normal Debug")
@@ -98,7 +98,7 @@ class DebugLoggerImplTest {
 
     @Test
     fun filterOnErrorLevel() {
-        val errorLogger = DebugLoggerImpl(LoggingLevel.ERROR)
+        val errorLogger = DebugLoggerImpl(LoggingLevel.ERROR, clientKey = "key")
         errorLogger.logFlag("Resolve")
         verify(inverse = true) { Log.v("Confidence", "[Resolve] null") }
         errorLogger.logMessage("Normal Debug")
@@ -113,7 +113,7 @@ class DebugLoggerImplTest {
 
     @Test
     fun filterNoneLevel() {
-        val noneLogger = DebugLoggerImpl(LoggingLevel.NONE)
+        val noneLogger = DebugLoggerImpl(LoggingLevel.NONE, clientKey = "key")
         noneLogger.logFlag("Resolve")
         verify(inverse = true) { Log.v("Confidence", "[Resolve] null") }
         noneLogger.logMessage("Normal Debug")

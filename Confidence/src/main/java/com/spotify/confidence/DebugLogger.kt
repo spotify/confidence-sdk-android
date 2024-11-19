@@ -1,6 +1,8 @@
 package com.spotify.confidence
 
 import android.util.Log
+import kotlinx.serialization.json.JsonElement
+import java.net.URLEncoder
 
 private const val TAG = "Confidence"
 
@@ -9,9 +11,14 @@ internal interface DebugLogger {
     fun logMessage(message: String, isWarning: Boolean = false, throwable: Throwable? = null)
     fun logFlag(action: String, flag: String? = null)
     fun logContext(action: String, context: Map<String, ConfidenceValue>)
+    fun logResolve(flag: String, context: JsonElement)
 }
 
-internal class DebugLoggerImpl(private val filterLevel: LoggingLevel) : DebugLogger {
+internal class DebugLoggerImpl(private val filterLevel: LoggingLevel, private val clientKey: String) : DebugLogger {
+    private val JsonElement.urlEncoded
+        get() = URLEncoder.encode(this.toString(), "UTF-8")
+    private val String.urlEncoded
+        get() = URLEncoder.encode(this, "UTF-8")
 
     override fun logEvent(action: String, event: EngineEvent) {
         debug("[$action] $event")
@@ -33,6 +40,14 @@ internal class DebugLoggerImpl(private val filterLevel: LoggingLevel) : DebugLog
 
     override fun logContext(action: String, context: Map<String, ConfidenceValue>) {
         verbose("[$action] $context")
+    }
+
+    override fun logResolve(flag: String, context: JsonElement) {
+        debug(
+            "[Resolve Debug] " +
+                "https://app.confidence.spotify.com/flags/resolver-test?client-key=$clientKey&flag=flags/" +
+                "${flag.urlEncoded}&context=${context.urlEncoded}"
+        )
     }
 
     private fun verbose(message: String) = log(LoggingLevel.VERBOSE, message)

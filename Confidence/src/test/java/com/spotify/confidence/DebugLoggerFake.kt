@@ -1,5 +1,7 @@
 package com.spotify.confidence
 
+import kotlinx.serialization.json.JsonElement
+
 internal open class DebugLoggerFake : DebugLogger {
     val messagesLogged = mutableListOf<Msg>()
 
@@ -16,6 +18,10 @@ internal open class DebugLoggerFake : DebugLogger {
     }
 
     override fun logContext(action: String, context: Map<String, ConfidenceValue>) {
+        // not important enough to test right now
+    }
+
+    override fun logResolve(flag: String, context: JsonElement) {
         // not important enough to test right now
     }
 
