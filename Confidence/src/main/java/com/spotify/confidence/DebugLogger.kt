@@ -14,7 +14,7 @@ internal interface DebugLogger {
     fun logResolve(flag: String, context: JsonElement)
 }
 
-internal class DebugLoggerImpl(private val filterLevel: LoggingLevel) : DebugLogger {
+internal class DebugLoggerImpl(private val filterLevel: LoggingLevel, private val clientKey: String) : DebugLogger {
     private val JsonElement.urlEncoded
         get() = URLEncoder.encode(this.toString(), "UTF-8")
     private val String.urlEncoded
@@ -45,7 +45,7 @@ internal class DebugLoggerImpl(private val filterLevel: LoggingLevel) : DebugLog
     override fun logResolve(flag: String, context: JsonElement) {
         debug(
             "[Resolve Debug] " +
-                "https://app.confidence.spotify.com/flags/resolver-test?flag=flags/" +
+                "https://app.confidence.spotify.com/flags/resolver-test?client-key=$clientKey&flag=flags/" +
                 "${flag.urlEncoded}&context=${context.urlEncoded}"
         )
     }

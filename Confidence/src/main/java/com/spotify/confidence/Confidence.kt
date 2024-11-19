@@ -121,7 +121,8 @@ class Confidence internal constructor(
             apply(flagName, resolveToken)
         }
         // we are using a custom serializer so that the Json is serialized correctly in the logs
-        val newMap: Map<String, @Serializable(NetworkConfidenceValueSerializer::class) ConfidenceValue> = evaluationContext
+        val newMap: Map<String, @Serializable(NetworkConfidenceValueSerializer::class) ConfidenceValue> =
+            evaluationContext
         val contextJson = Json.encodeToJsonElement(newMap)
         val flag = key.splitToSequence(".").first()
         debugLogger?.logResolve(flag, contextJson)
@@ -320,7 +321,7 @@ object ConfidenceFactory {
         val debugLogger: DebugLogger? = if (loggingLevel == LoggingLevel.NONE) {
             null
         } else {
-            DebugLoggerImpl(loggingLevel)
+            DebugLoggerImpl(loggingLevel, clientSecret)
         }
         val engine = EventSenderEngineImpl.instance(
             context,
