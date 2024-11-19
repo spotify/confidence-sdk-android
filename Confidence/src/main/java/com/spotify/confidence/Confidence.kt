@@ -110,18 +110,18 @@ class Confidence internal constructor(
         key: String,
         default: T
     ): Evaluation<T> {
+        val evaluationContext = getContext()
         val eval = cache.get().getEvaluation(
             key,
             default,
-            getContext()
+            evaluationContext
         ) { flagName, resolveToken ->
             // this lambda will be invoked inside the evaluation process
             // and only if the resolve reason is not targeting key error.
             apply(flagName, resolveToken)
         }
         // we are using a custom serializer so that the Json is serialized correctly in the logs
-        val newMap: Map<String, @Serializable(NetworkConfidenceValueSerializer::class) ConfidenceValue> =
-            this.getContext()
+        val newMap: Map<String, @Serializable(NetworkConfidenceValueSerializer::class) ConfidenceValue> = evaluationContext
         val contextJson = Json.encodeToJsonElement(newMap)
         val flag = key.splitToSequence(".").first()
         debugLogger?.logResolve(flag, contextJson)
