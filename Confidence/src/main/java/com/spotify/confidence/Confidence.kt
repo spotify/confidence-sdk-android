@@ -15,10 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -45,24 +42,8 @@ class Confidence internal constructor(
     private val contextMap = MutableStateFlow(initialContext)
     private var currentFetchJob: Job? = null
 
-    // only return changes not the initial value
-    // only return distinct value
-    private val contextChanges: Flow<Map<String, ConfidenceValue>> = contextMap
-        .drop(1)
-        .distinctUntilChanged()
     private val coroutineScope = CoroutineScope(SupervisorJob() + dispatcher)
     private val eventProducers: MutableList<EventProducer> = mutableListOf()
-
-    init {
-        if (parent == null) {
-            coroutineScope.launch {
-                contextChanges
-                    .collect {
-                        fetchAndActivate()
-                    }
-            }
-        }
-    }
 
     private val flagApplier = FlagApplierWithRetries(
         client = flagApplierClient,
@@ -129,20 +110,35 @@ class Confidence internal constructor(
         return eval
     }
 
-    @Synchronized
-    override fun putContext(key: String, value: ConfidenceValue) {
+    override fun putContextSync(key: String, value: ConfidenceValue) {
         val map = contextMap.value.toMutableMap()
         map[key] = value
         contextMap.value = map
         debugLogger?.logContext("PutContext", contextMap.value)
     }
 
-    @Synchronized
-    override fun putContext(context: Map<String, ConfidenceValue>) {
+    override suspend fun putContext(key: String, value: ConfidenceValue) {
+        putContextSync(key, value)
+        triggerContextChange()
+    }
+
+    private suspend fun triggerContextChange() {
+        // Only have context changes trigger fetch on top level Confidence
+        if (parent == null) {
+            fetchAndActivate()
+        }
+    }
+
+    override fun putContextSync(context: Map<String, ConfidenceValue>) {
         val map = contextMap.value.toMutableMap()
         map += context
         contextMap.value = map
         debugLogger?.logContext("PutContext", contextMap.value)
+    }
+
+    override suspend fun putContext(context: Map<String, ConfidenceValue>) {
+        putContextSync(context)
+        triggerContextChange()
     }
 
     /**
@@ -155,8 +151,7 @@ class Confidence internal constructor(
      * @param context context to add.
      * @param removedKeys key to remove from context.
      */
-    @Synchronized
-    fun putContext(context: Map<String, ConfidenceValue>, removedKeys: List<String>) {
+    suspend fun putContext(context: Map<String, ConfidenceValue>, removedKeys: List<String>) {
         val map = contextMap.value.toMutableMap()
         map += context
         for (key in removedKeys) {
@@ -165,15 +160,20 @@ class Confidence internal constructor(
         this.removedKeys.addAll(removedKeys)
         contextMap.value = map
         debugLogger?.logContext("PutContext", contextMap.value)
+        triggerContextChange()
     }
 
-    @Synchronized
-    override fun removeContext(key: String) {
+    override fun removeContextSync(key: String) {
         val map = contextMap.value.toMutableMap()
         map.remove(key)
         removedKeys.add(key)
         contextMap.value = map
         debugLogger?.logContext("RemoveContext", contextMap.value)
+    }
+
+    override suspend fun removeContext(key: String) {
+        removeContextSync(key)
+        triggerContextChange()
     }
 
     override fun getContext(): Map<String, ConfidenceValue> =
@@ -194,7 +194,7 @@ class Confidence internal constructor(
         region,
         debugLogger
     ).also {
-        it.putContext(context)
+        it.putContextSync(context)
     }
 
     override fun track(

@@ -28,7 +28,7 @@ class ConfidenceContextualTests {
         mutableMap["hello"] = ConfidenceValue.Boolean(false)
         mutableMap["NN"] = ConfidenceValue.Double(20.0)
         mutableMap["my_struct"] = ConfidenceValue.Struct(mapOf("x" to ConfidenceValue.Double(2.0)))
-        confidence.putContext(mutableMap)
+        confidence.putContextSync(mutableMap)
         val eventSender = confidence.withContext(mapOf("my_value" to ConfidenceValue.String("my value")))
         Assert.assertEquals(mutableMap, confidence.getContext())
         Assert.assertTrue(mutableMap.all { eventSender.getContext().containsKey(it.key) })
@@ -58,7 +58,7 @@ class ConfidenceContextualTests {
         mutableMap["hello"] = ConfidenceValue.Boolean(false)
         mutableMap["NN"] = ConfidenceValue.Double(20.0)
         mutableMap["my_struct"] = ConfidenceValue.Struct(mapOf("x" to ConfidenceValue.Double(2.0)))
-        confidence.putContext(mutableMap)
+        confidence.putContextSync(mutableMap)
         val eventSender = confidence.withContext(mapOf("my_value" to ConfidenceValue.String("my value")))
         Assert.assertEquals(mutableMap, confidence.getContext())
         Assert.assertTrue(mutableMap.all { eventSender.getContext().containsKey(it.key) })
@@ -67,7 +67,7 @@ class ConfidenceContextualTests {
 
         // remove the screen
         Assert.assertTrue(eventSender.getContext().containsKey("screen"))
-        eventSender.removeContext("screen")
+        eventSender.removeContextSync("screen")
         Assert.assertTrue(!eventSender.getContext().containsKey("screen"))
     }
 }

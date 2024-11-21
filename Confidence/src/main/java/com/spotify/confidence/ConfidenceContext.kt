@@ -20,18 +20,37 @@ interface Contextual : ConfidenceContextProvider {
      * Add entry to context
      * @param context context to add.
      */
-    fun putContext(context: Map<String, ConfidenceValue>)
+    suspend fun putContext(context: Map<String, ConfidenceValue>)
 
     /**
      * Add entry to context
      * @param key key of the entry.
      * @param value value of the entry.
      */
-    fun putContext(key: String, value: ConfidenceValue)
+    suspend fun putContext(key: String, value: ConfidenceValue)
 
     /**
      * Remove entry from context
      * @param key key of the context to be removed.
      */
-    fun removeContext(key: String)
+    suspend fun removeContext(key: String)
+
+    /**
+     * Add entry to context
+     * @param context context to add.
+     */
+    fun putContextSync(context: Map<String, ConfidenceValue>)
+
+    /**
+     * Add entry to context
+     * @param key key of the entry.
+     * @param value value of the entry.
+     */
+    fun putContextSync(key: String, value: ConfidenceValue)
+
+    /**
+     * Remove entry from context
+     * @param key key of the context to be removed.
+     */
+    fun removeContextSync(key: String)
 }
