@@ -1,26 +1,3 @@
-public final class com/spotify/confidence/AndroidLifecycleEventProducer : android/app/Application$ActivityLifecycleCallbacks, androidx/lifecycle/DefaultLifecycleObserver, com/spotify/confidence/EventProducer {
-	public static final field Companion Lcom/spotify/confidence/AndroidLifecycleEventProducer$Companion;
-	public fun <init> (Landroid/app/Application;Z)V
-	public fun contextChanges ()Lkotlinx/coroutines/flow/Flow;
-	public fun events ()Lkotlinx/coroutines/flow/Flow;
-	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
-	public fun onActivityDestroyed (Landroid/app/Activity;)V
-	public fun onActivityPaused (Landroid/app/Activity;)V
-	public fun onActivityResumed (Landroid/app/Activity;)V
-	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
-	public fun onActivityStarted (Landroid/app/Activity;)V
-	public fun onActivityStopped (Landroid/app/Activity;)V
-	public fun onCreate (Landroidx/lifecycle/LifecycleOwner;)V
-	public fun stop ()V
-}
-
-public final class com/spotify/confidence/AndroidLifecycleEventProducer$Companion {
-}
-
-public final class com/spotify/confidence/AndroidLifecycleEventProducerKt {
-	public static final fun getReferrer (Landroid/app/Activity;)Landroid/net/Uri;
-}
-
 public final class com/spotify/confidence/BuildConfig {
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEBUG Z
@@ -45,7 +22,7 @@ public final class com/spotify/confidence/Confidence : com/spotify/confidence/Co
 	public final fun putContext (Ljava/util/Map;Ljava/util/List;)V
 	public fun removeContext (Ljava/lang/String;)V
 	public fun stop ()V
-	public fun track (Lcom/spotify/confidence/EventProducer;)V
+	public final fun track (Lcom/spotify/confidence/Producer;)V
 	public fun track (Ljava/lang/String;Ljava/util/Map;)V
 	public synthetic fun withContext (Ljava/util/Map;)Lcom/spotify/confidence/Contextual;
 	public fun withContext (Ljava/util/Map;)Lcom/spotify/confidence/EventSender;
@@ -102,8 +79,8 @@ public final class com/spotify/confidence/ConfidenceError$ParseError : java/lang
 
 public final class com/spotify/confidence/ConfidenceFactory {
 	public static final field INSTANCE Lcom/spotify/confidence/ConfidenceFactory;
-	public final fun create (Landroid/content/Context;Ljava/lang/String;Ljava/util/Map;Lcom/spotify/confidence/ConfidenceRegion;Lkotlinx/coroutines/CoroutineDispatcher;Lcom/spotify/confidence/LoggingLevel;)Lcom/spotify/confidence/Confidence;
-	public static synthetic fun create$default (Lcom/spotify/confidence/ConfidenceFactory;Landroid/content/Context;Ljava/lang/String;Ljava/util/Map;Lcom/spotify/confidence/ConfidenceRegion;Lkotlinx/coroutines/CoroutineDispatcher;Lcom/spotify/confidence/LoggingLevel;ILjava/lang/Object;)Lcom/spotify/confidence/Confidence;
+	public final fun create (Landroid/content/Context;Ljava/lang/String;Ljava/util/Map;Lcom/spotify/confidence/ConfidenceRegion;Lkotlinx/coroutines/CoroutineDispatcher;Lcom/spotify/confidence/LoggingLevel;JLjava/util/List;)Lcom/spotify/confidence/Confidence;
+	public static synthetic fun create$default (Lcom/spotify/confidence/ConfidenceFactory;Landroid/content/Context;Ljava/lang/String;Ljava/util/Map;Lcom/spotify/confidence/ConfidenceRegion;Lkotlinx/coroutines/CoroutineDispatcher;Lcom/spotify/confidence/LoggingLevel;JLjava/util/List;ILjava/lang/Object;)Lcom/spotify/confidence/Confidence;
 }
 
 public final class com/spotify/confidence/ConfidenceFlagEvaluationKt {
@@ -378,6 +355,10 @@ public final class com/spotify/confidence/ConfidenceValueKt {
 	public static final fun toNetworkJson (Lcom/spotify/confidence/ConfidenceValue$Struct;)Ljava/lang/String;
 }
 
+public abstract interface class com/spotify/confidence/ContextProducer : com/spotify/confidence/Producer {
+	public abstract fun contextChanges ()Lkotlinx/coroutines/flow/Flow;
+}
+
 public abstract interface class com/spotify/confidence/Contextual : com/spotify/confidence/ConfidenceContextProvider {
 	public abstract fun putContext (Ljava/lang/String;Lcom/spotify/confidence/ConfidenceValue;)V
 	public abstract fun putContext (Ljava/util/Map;)V
@@ -421,16 +402,13 @@ public final class com/spotify/confidence/Event {
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract interface class com/spotify/confidence/EventProducer {
-	public abstract fun contextChanges ()Lkotlinx/coroutines/flow/Flow;
+public abstract interface class com/spotify/confidence/EventProducer : com/spotify/confidence/Producer {
 	public abstract fun events ()Lkotlinx/coroutines/flow/Flow;
-	public abstract fun stop ()V
 }
 
 public abstract interface class com/spotify/confidence/EventSender : com/spotify/confidence/Contextual {
 	public abstract fun flush ()V
 	public abstract fun stop ()V
-	public abstract fun track (Lcom/spotify/confidence/EventProducer;)V
 	public abstract fun track (Ljava/lang/String;Ljava/util/Map;)V
 	public abstract fun withContext (Ljava/util/Map;)Lcom/spotify/confidence/EventSender;
 }
@@ -487,6 +465,10 @@ public final class com/spotify/confidence/LoggingLevel : java/lang/Enum {
 	public static final field WARN Lcom/spotify/confidence/LoggingLevel;
 	public static fun valueOf (Ljava/lang/String;)Lcom/spotify/confidence/LoggingLevel;
 	public static fun values ()[Lcom/spotify/confidence/LoggingLevel;
+}
+
+public abstract interface class com/spotify/confidence/Producer {
+	public abstract fun stop ()V
 }
 
 public abstract interface class com/spotify/confidence/ProviderCache {

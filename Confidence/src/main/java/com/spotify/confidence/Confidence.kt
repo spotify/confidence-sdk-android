@@ -39,7 +39,8 @@ class Confidence internal constructor(
     private val flagApplierClient: FlagApplierClient,
     private val parent: ConfidenceContextProvider? = null,
     private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
-    private val debugLogger: DebugLogger?
+    private val debugLogger: DebugLogger?,
+    contextProducers: List<Producer> = listOf()
 ) : Contextual, EventSender {
     private val removedKeys = mutableListOf<String>()
     private val contextMap = MutableStateFlow(initialContext)
@@ -51,9 +52,10 @@ class Confidence internal constructor(
         .drop(1)
         .distinctUntilChanged()
     private val coroutineScope = CoroutineScope(SupervisorJob() + dispatcher)
-    private val eventProducers: MutableList<EventProducer> = mutableListOf()
+    private val producers: MutableList<Producer> = mutableListOf()
 
     init {
+        producers.addAll(contextProducers)
         if (parent == null) {
             coroutineScope.launch {
                 contextChanges
@@ -259,31 +261,33 @@ class Confidence internal constructor(
         activate()
     }
 
-    override fun track(eventProducer: EventProducer) {
-        coroutineScope.launch {
-            eventProducer
-                .events()
-                .collect { event ->
-                    eventSenderEngine.emit(
-                        event.name,
-                        event.data,
-                        getContext()
-                    )
-                    if (event.shouldFlush) {
-                        eventSenderEngine.flush()
-                    }
-                }
-        }
+    /**
+     * Automatically adds entries to the context using a producer or emits events based on a producer
 
+     * @param producer a Producer that produces context changes or events
+     */
+    fun track(producer: Producer) {
+        producers.add(producer)
         coroutineScope.launch {
-            eventProducer.contextChanges()
-                .collect(this@Confidence::putContext)
+            when (val p = producer) {
+                is ContextProducer -> p.contextChanges().collect(this@Confidence::putContext)
+                is EventProducer -> p.events()
+                    .collect { event ->
+                        eventSenderEngine.emit(
+                            event.name,
+                            event.data,
+                            getContext()
+                        )
+                        if (event.shouldFlush) {
+                            eventSenderEngine.flush()
+                        }
+                    }
+            }
         }
-        eventProducers.add(eventProducer)
     }
 
     override fun stop() {
-        for (producer in eventProducers) {
+        for (producer in producers) {
             producer.stop()
         }
         if (parent == null) {
@@ -316,7 +320,8 @@ object ConfidenceFactory {
         region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
         loggingLevel: LoggingLevel = LoggingLevel.WARN,
-        timeoutMillis: Long = 10000
+        timeoutMillis: Long = 10000,
+        contextProducers: List<Producer> = listOf()
     ): Confidence {
         val debugLogger: DebugLogger? = if (loggingLevel == LoggingLevel.NONE) {
             null
@@ -360,7 +365,8 @@ object ConfidenceFactory {
             flagResolver = flagResolver,
             diskStorage = FileDiskStorage.create(context),
             flagApplierClient = flagApplierClient,
-            debugLogger = debugLogger
+            debugLogger = debugLogger,
+            contextProducers = contextProducers
         )
     }
 }

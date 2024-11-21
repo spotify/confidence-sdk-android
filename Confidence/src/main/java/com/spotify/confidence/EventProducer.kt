@@ -8,9 +8,14 @@ data class Event(
     val shouldFlush: Boolean = false
 )
 
-interface EventProducer {
-    fun events(): Flow<Event>
-    fun contextChanges(): Flow<Map<String, ConfidenceValue>>
-
+sealed interface Producer {
     fun stop()
+}
+
+interface EventProducer : Producer {
+    fun events(): Flow<Event>
+}
+
+interface ContextProducer : Producer {
+    fun contextChanges(): Flow<Map<String, ConfidenceValue>>
 }

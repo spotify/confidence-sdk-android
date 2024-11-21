@@ -12,12 +12,6 @@ interface EventSender : Contextual {
     )
 
     /**
-     * Track Android-specific events like activities.
-     * @param eventProducer an eventProducer that produces the event, e.g. AndroidLifecycleEventProducer.
-     */
-    fun track(eventProducer: EventProducer)
-
-    /**
      * Safely stop a Confidence instance
      */
     fun stop()

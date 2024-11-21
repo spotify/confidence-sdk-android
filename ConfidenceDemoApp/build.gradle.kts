@@ -32,14 +32,14 @@ if (localPropertiesFile.exists()) {
     localProperties.load(localPropertiesFile.inputStream())
 }
 
-val clientSecret: String = localProperties.getProperty("CLIENT_SECRET")?: "CLIENT_SECRET"
+val clientSecret: String = localProperties.getProperty("CLIENT_SECRET") ?: "CLIENT_SECRET"
 
 android {
     namespace = "com.example.confidencedemoapp"
     compileSdk = 33
 
     defaultConfig {
-        buildConfigField("String","CLIENT_SECRET", "\"$clientSecret\"")
+        buildConfigField("String", "CLIENT_SECRET", "\"$clientSecret\"")
         applicationId = "com.example.confidencedemoapp"
         minSdk = 21
         targetSdk = 33
@@ -84,18 +84,20 @@ android {
 
 dependencies {
     implementation(project(":Confidence"))
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
-    implementation( "androidx.compose.runtime:runtime-livedata:${Versions.liveData}")
-    implementation( "androidx.core:core-ktx:${Versions.core}")
-    implementation( "androidx.lifecycle:lifecycle-runtime-ktx:${Versions.lifecycleRuntime}")
-    implementation( "androidx.activity:activity-compose:${Versions.activityCompose}")
-    implementation( "androidx.compose.ui:ui:${Versions.composeUi}")
-    implementation( "androidx.compose.ui:ui-tooling-preview:${Versions.composeUiToolingPreview}")
-    implementation( "androidx.compose.material:material:${Versions.composeMaterial}")
-    testImplementation( "junit:junit:${Versions.jUnit}")
-    androidTestImplementation( "androidx.test.ext:junit:${Versions.jUnitTest}")
-    androidTestImplementation( "androidx.test.espresso:espresso-core:${Versions.espresso}")
-    androidTestImplementation( "androidx.compose.ui:ui-test-junit4:${Versions.jUnitUiTest}")
+    implementation("androidx.compose.runtime:runtime-livedata:${Versions.liveData}")
+    implementation("androidx.core:core-ktx:${Versions.core}")
+    implementation("androidx.lifecycle:lifecycle-process:${Versions.lifecycleRuntime}")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:${Versions.lifecycleRuntime}")
+    implementation("androidx.activity:activity-compose:${Versions.activityCompose}")
+    implementation("androidx.compose.ui:ui:${Versions.composeUi}")
+    implementation("androidx.compose.ui:ui-tooling-preview:${Versions.composeUiToolingPreview}")
+    implementation("androidx.compose.material:material:${Versions.composeMaterial}")
+    testImplementation("junit:junit:${Versions.jUnit}")
+    androidTestImplementation("androidx.test.ext:junit:${Versions.jUnitTest}")
+    androidTestImplementation("androidx.test.espresso:espresso-core:${Versions.espresso}")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:${Versions.jUnitUiTest}")
     debugImplementation("androidx.compose.ui:ui-tooling:${Versions.composeUiTooling}")
     debugImplementation("androidx.compose.ui:ui-test-manifest:${Versions.uiTestManifest}")
 }

@@ -1,4 +1,4 @@
-package com.spotify.confidence
+package com.example.confidencedemoapp
 
 import android.app.Activity
 import android.app.Application
@@ -14,6 +14,10 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import com.spotify.confidence.ConfidenceValue
+import com.spotify.confidence.ContextProducer
+import com.spotify.confidence.Event
+import com.spotify.confidence.EventProducer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -24,7 +28,7 @@ import kotlinx.coroutines.launch
 class AndroidLifecycleEventProducer(
     private val application: Application,
     private val trackActivities: Boolean
-) : Application.ActivityLifecycleCallbacks, DefaultLifecycleObserver, EventProducer {
+) : Application.ActivityLifecycleCallbacks, DefaultLifecycleObserver, EventProducer, ContextProducer {
     private val eventsFlow = MutableSharedFlow<Event>()
     private val contextFlow = MutableStateFlow<Map<String, ConfidenceValue>>(mapOf())
     private val sharedPreferences by lazy {
