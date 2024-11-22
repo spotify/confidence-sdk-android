@@ -14,12 +14,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
@@ -77,10 +80,23 @@ class Confidence internal constructor(
         return flagResolver.resolve(flags, getContext())
     }
 
-    suspend fun awaitReconciliation() {
-        if (currentFetchJob != null) {
-            currentFetchJob?.join()
-            activate()
+    suspend fun awaitReconciliation(timeoutMillis: Long = 5000) {
+        try {
+            withTimeout(timeoutMillis) {
+                while (currentFetchJob == null ||
+                    currentFetchJob?.isCompleted == true ||
+                    currentFetchJob?.isCancelled == true
+                ) {
+                    // If this function is called just after a putContext it will likely just delay once.
+                    delay(1)
+                }
+                if (currentFetchJob != null) {
+                    currentFetchJob?.join()
+                    activate()
+                }
+            }
+        } catch (e: TimeoutCancellationException) {
+            debugLogger?.logMessage("awaitReconciliation() timed out after $timeoutMillis")
         }
     }
 
