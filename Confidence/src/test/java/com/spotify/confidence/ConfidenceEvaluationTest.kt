@@ -365,7 +365,7 @@ internal class ConfidenceEvaluationTest {
             "default"
         )
         TestCase.assertEquals("red", evalString1.value)
-        mockConfidence.putContext(context2)
+        mockConfidence.putContextAndAwait(context2)
         advanceUntilIdle()
         val evalString2 = mockConfidence.getFlag(
             "test-kotlin-flag-1.mystring",
@@ -435,7 +435,7 @@ internal class ConfidenceEvaluationTest {
                 )
             )
         )
-        mockConfidence.putContext(context2)
+        mockConfidence.putContextAndAwait(context2)
         advanceUntilIdle()
         verify(flagResolverClient, times(1))
             .resolve(any(), eq(context2))
@@ -501,7 +501,7 @@ internal class ConfidenceEvaluationTest {
         flagResolver.returnCount = 0
         TestCase.assertEquals(mockConfidence.getContext(), context1)
         TestCase.assertEquals(context1, flagResolver.latestCalledContext)
-        mockConfidence.putContext(context2)
+        mockConfidence.putContextAndAwait(context2)
         advanceUntilIdle()
         TestCase.assertEquals(mockConfidence.getContext(), context2)
         TestCase.assertEquals(context2, flagResolver.latestCalledContext)
@@ -535,7 +535,7 @@ internal class ConfidenceEvaluationTest {
         TestCase.assertEquals(evalString.reason, ResolveReason.RESOLVE_REASON_MATCH)
         TestCase.assertEquals(evalString.value, "red")
 
-        mockConfidence.putContext("hello", ConfidenceValue.String("new context"))
+        mockConfidence.putContextAndAwait("hello", ConfidenceValue.String("new context"))
         val newContextEval = mockConfidence.getFlag(
             "test-kotlin-flag-1.mystring",
             "default"

@@ -46,7 +46,7 @@ class ConfidenceFeatureProvider private constructor(
 
     override fun initialize(initialContext: EvaluationContext?) {
         initialContext?.toConfidenceContext()?.let {
-            confidence.putContextSync(it.map)
+            confidence.putContext(it.map)
         }
 
         when (initialisationStrategy) {
@@ -75,7 +75,7 @@ class ConfidenceFeatureProvider private constructor(
         val context = newContext.toConfidenceContext()
         val removedKeys = oldContext?.asMap()?.keys?.minus(newContext.asMap().keys) ?: emptySet()
         coroutineScope.launch {
-            confidence.putContext(context.map, removedKeys.toList())
+            confidence.putContextAndAwait(context.map, removedKeys.toList())
         }
     }
 

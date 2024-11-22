@@ -110,15 +110,15 @@ class Confidence internal constructor(
         return eval
     }
 
-    override fun putContextSync(key: String, value: ConfidenceValue) {
+    override fun putContext(key: String, value: ConfidenceValue) {
         val map = contextMap.value.toMutableMap()
         map[key] = value
         contextMap.value = map
         debugLogger?.logContext("PutContext", contextMap.value)
     }
 
-    override suspend fun putContext(key: String, value: ConfidenceValue) {
-        putContextSync(key, value)
+    override suspend fun putContextAndAwait(key: String, value: ConfidenceValue) {
+        putContext(key, value)
         triggerContextChange()
     }
 
@@ -129,15 +129,15 @@ class Confidence internal constructor(
         }
     }
 
-    override fun putContextSync(context: Map<String, ConfidenceValue>) {
+    override fun putContext(context: Map<String, ConfidenceValue>) {
         val map = contextMap.value.toMutableMap()
         map += context
         contextMap.value = map
         debugLogger?.logContext("PutContext", contextMap.value)
     }
 
-    override suspend fun putContext(context: Map<String, ConfidenceValue>) {
-        putContextSync(context)
+    override suspend fun putContextAndAwait(context: Map<String, ConfidenceValue>) {
+        putContext(context)
         triggerContextChange()
     }
 
@@ -151,7 +151,7 @@ class Confidence internal constructor(
      * @param context context to add.
      * @param removedKeys key to remove from context.
      */
-    suspend fun putContext(context: Map<String, ConfidenceValue>, removedKeys: List<String>) {
+    suspend fun putContextAndAwait(context: Map<String, ConfidenceValue>, removedKeys: List<String>) {
         val map = contextMap.value.toMutableMap()
         map += context
         for (key in removedKeys) {
@@ -163,7 +163,7 @@ class Confidence internal constructor(
         triggerContextChange()
     }
 
-    override fun removeContextSync(key: String) {
+    override fun removeContext(key: String) {
         val map = contextMap.value.toMutableMap()
         map.remove(key)
         removedKeys.add(key)
@@ -171,8 +171,8 @@ class Confidence internal constructor(
         debugLogger?.logContext("RemoveContext", contextMap.value)
     }
 
-    override suspend fun removeContext(key: String) {
-        removeContextSync(key)
+    override suspend fun removeContextAndAwait(key: String) {
+        removeContext(key)
         triggerContextChange()
     }
 
@@ -194,7 +194,7 @@ class Confidence internal constructor(
         region,
         debugLogger
     ).also {
-        it.putContextSync(context)
+        it.putContext(context)
     }
 
     override fun track(
@@ -365,6 +365,7 @@ object ConfidenceFactory {
     }
 }
 
+@Deprecated("Use putContextAndAwait(context) instead", replaceWith = ReplaceWith("putContextAndAwait(context)"))
 suspend fun Confidence.awaitPutContext(context: Map<String, ConfidenceValue>) {
     putContext(context)
     awaitReconciliation()

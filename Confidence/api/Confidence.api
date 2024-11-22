@@ -40,13 +40,13 @@ public final class com/spotify/confidence/Confidence : com/spotify/confidence/Co
 	public final fun getFlag (Ljava/lang/String;Ljava/lang/Object;)Lcom/spotify/confidence/Evaluation;
 	public final fun getValue (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
 	public final fun isStorageEmpty ()Z
-	public fun putContext (Ljava/lang/String;Lcom/spotify/confidence/ConfidenceValue;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun putContext (Ljava/util/Map;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun putContext (Ljava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun putContextSync (Ljava/lang/String;Lcom/spotify/confidence/ConfidenceValue;)V
-	public fun putContextSync (Ljava/util/Map;)V
-	public fun removeContext (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun removeContextSync (Ljava/lang/String;)V
+	public fun putContext (Ljava/lang/String;Lcom/spotify/confidence/ConfidenceValue;)V
+	public fun putContext (Ljava/util/Map;)V
+	public fun putContextAndAwait (Ljava/lang/String;Lcom/spotify/confidence/ConfidenceValue;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun putContextAndAwait (Ljava/util/Map;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun putContextAndAwait (Ljava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun removeContext (Ljava/lang/String;)V
+	public fun removeContextAndAwait (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun stop ()V
 	public fun track (Lcom/spotify/confidence/EventProducer;)V
 	public fun track (Ljava/lang/String;Ljava/util/Map;)V
@@ -382,12 +382,12 @@ public final class com/spotify/confidence/ConfidenceValueKt {
 }
 
 public abstract interface class com/spotify/confidence/Contextual : com/spotify/confidence/ConfidenceContextProvider {
-	public abstract fun putContext (Ljava/lang/String;Lcom/spotify/confidence/ConfidenceValue;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun putContext (Ljava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun putContextSync (Ljava/lang/String;Lcom/spotify/confidence/ConfidenceValue;)V
-	public abstract fun putContextSync (Ljava/util/Map;)V
-	public abstract fun removeContext (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public abstract fun removeContextSync (Ljava/lang/String;)V
+	public abstract fun putContext (Ljava/lang/String;Lcom/spotify/confidence/ConfidenceValue;)V
+	public abstract fun putContext (Ljava/util/Map;)V
+	public abstract fun putContextAndAwait (Ljava/lang/String;Lcom/spotify/confidence/ConfidenceValue;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun putContextAndAwait (Ljava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun removeContext (Ljava/lang/String;)V
+	public abstract fun removeContextAndAwait (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun withContext (Ljava/util/Map;)Lcom/spotify/confidence/Contextual;
 }
 
