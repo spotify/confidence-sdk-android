@@ -15,10 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -45,24 +42,8 @@ class Confidence internal constructor(
     private val contextMap = MutableStateFlow(initialContext)
     private var currentFetchJob: Job? = null
 
-    // only return changes not the initial value
-    // only return distinct value
-    private val contextChanges: Flow<Map<String, ConfidenceValue>> = contextMap
-        .drop(1)
-        .distinctUntilChanged()
     private val coroutineScope = CoroutineScope(SupervisorJob() + dispatcher)
     private val eventProducers: MutableList<EventProducer> = mutableListOf()
-
-    init {
-        if (parent == null) {
-            coroutineScope.launch {
-                contextChanges
-                    .collect {
-                        fetchAndActivate()
-                    }
-            }
-        }
-    }
 
     private val flagApplier = FlagApplierWithRetries(
         client = flagApplierClient,
@@ -72,9 +53,11 @@ class Confidence internal constructor(
 
     private suspend fun resolve(flags: List<String>): Result<FlagResolution> {
         debugLogger?.let {
-            debugLogger.logFlag("Resolve")
+            debugLogger.logFlag("Resolve", "${getContext()}")
         }
-        return flagResolver.resolve(flags, getContext())
+        return flagResolver.resolve(flags, getContext()).also {
+            debugLogger?.logFlag("Resolve Completed", "${getContext()}")
+        }
     }
 
     suspend fun awaitReconciliation() {
@@ -134,6 +117,7 @@ class Confidence internal constructor(
         val map = contextMap.value.toMutableMap()
         map[key] = value
         contextMap.value = map
+        triggerNewFlagFetch()
         debugLogger?.logContext("PutContext", contextMap.value)
     }
 
@@ -142,6 +126,7 @@ class Confidence internal constructor(
         val map = contextMap.value.toMutableMap()
         map += context
         contextMap.value = map
+        triggerNewFlagFetch()
         debugLogger?.logContext("PutContext", contextMap.value)
     }
 
@@ -164,7 +149,17 @@ class Confidence internal constructor(
         }
         this.removedKeys.addAll(removedKeys)
         contextMap.value = map
+        triggerNewFlagFetch()
         debugLogger?.logContext("PutContext", contextMap.value)
+    }
+
+    private fun triggerNewFlagFetch() {
+        currentFetchJob?.cancel().also {
+            currentFetchJob = null
+        }
+        coroutineScope.launch {
+            fetchAndActivate()
+        }
     }
 
     @Synchronized
@@ -173,6 +168,7 @@ class Confidence internal constructor(
         map.remove(key)
         removedKeys.add(key)
         contextMap.value = map
+        triggerNewFlagFetch()
         debugLogger?.logContext("RemoveContext", contextMap.value)
     }
 

@@ -102,8 +102,8 @@ public final class com/spotify/confidence/ConfidenceError$ParseError : java/lang
 
 public final class com/spotify/confidence/ConfidenceFactory {
 	public static final field INSTANCE Lcom/spotify/confidence/ConfidenceFactory;
-	public final fun create (Landroid/content/Context;Ljava/lang/String;Ljava/util/Map;Lcom/spotify/confidence/ConfidenceRegion;Lkotlinx/coroutines/CoroutineDispatcher;Lcom/spotify/confidence/LoggingLevel;)Lcom/spotify/confidence/Confidence;
-	public static synthetic fun create$default (Lcom/spotify/confidence/ConfidenceFactory;Landroid/content/Context;Ljava/lang/String;Ljava/util/Map;Lcom/spotify/confidence/ConfidenceRegion;Lkotlinx/coroutines/CoroutineDispatcher;Lcom/spotify/confidence/LoggingLevel;ILjava/lang/Object;)Lcom/spotify/confidence/Confidence;
+	public final fun create (Landroid/content/Context;Ljava/lang/String;Ljava/util/Map;Lcom/spotify/confidence/ConfidenceRegion;Lkotlinx/coroutines/CoroutineDispatcher;Lcom/spotify/confidence/LoggingLevel;J)Lcom/spotify/confidence/Confidence;
+	public static synthetic fun create$default (Lcom/spotify/confidence/ConfidenceFactory;Landroid/content/Context;Ljava/lang/String;Ljava/util/Map;Lcom/spotify/confidence/ConfidenceRegion;Lkotlinx/coroutines/CoroutineDispatcher;Lcom/spotify/confidence/LoggingLevel;JILjava/lang/Object;)Lcom/spotify/confidence/Confidence;
 }
 
 public final class com/spotify/confidence/ConfidenceFlagEvaluationKt {
