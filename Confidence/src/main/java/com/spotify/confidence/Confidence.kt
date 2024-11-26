@@ -53,9 +53,11 @@ class Confidence internal constructor(
 
     private suspend fun resolve(flags: List<String>): Result<FlagResolution> {
         debugLogger?.let {
-            debugLogger.logFlag("Resolve")
+            debugLogger.logFlag("Resolve", "${getContext()}")
         }
-        return flagResolver.resolve(flags, getContext())
+        return flagResolver.resolve(flags, getContext()).also {
+            debugLogger?.logFlag("Resolve Completed", "${getContext()}")
+        }
     }
 
     suspend fun awaitReconciliation() {

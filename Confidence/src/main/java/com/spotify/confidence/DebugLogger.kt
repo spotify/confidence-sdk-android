@@ -9,7 +9,7 @@ private const val TAG = "Confidence"
 internal interface DebugLogger {
     fun logEvent(action: String, event: EngineEvent)
     fun logMessage(message: String, isWarning: Boolean = false, throwable: Throwable? = null)
-    fun logFlag(action: String, flag: String? = null)
+    fun logFlag(action: String, details: String? = null)
     fun logContext(action: String, context: Map<String, ConfidenceValue>)
     fun logResolve(flag: String, context: JsonElement)
 }
@@ -34,8 +34,8 @@ internal class DebugLoggerImpl(private val filterLevel: LoggingLevel, private va
         }
     }
 
-    override fun logFlag(action: String, flag: String?) {
-        verbose("[$action] $flag")
+    override fun logFlag(action: String, details: String?) {
+        verbose("[$action] $details")
     }
 
     override fun logContext(action: String, context: Map<String, ConfidenceValue>) {

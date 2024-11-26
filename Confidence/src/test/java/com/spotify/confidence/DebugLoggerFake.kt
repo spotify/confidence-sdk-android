@@ -13,7 +13,7 @@ internal open class DebugLoggerFake : DebugLogger {
         messagesLogged.add(Msg(message, isWarning, throwable))
     }
 
-    override fun logFlag(action: String, flag: String?) {
+    override fun logFlag(action: String, details: String?) {
         // not important enough to test right now
     }
 
