@@ -473,39 +473,37 @@ internal class ConfidenceEvaluationTest {
                 context: Map<String, ConfidenceValue>
             ): Result<FlagResolution> {
                 latestCalledContext = context
-                if (callCount++ == 0) {
-                    delay(2000)
-                }
-                returnCount++
+                callCount++
+                delay(2000)
                 return Result.Success(
                     FlagResolution(
                         context,
                         resolvedFlags.list,
                         "token1"
                     )
-                )
+                ).also {
+                    returnCount++
+                }
             }
         }
-        val context1 = mapOf("key" to ConfidenceValue.String("foo"))
-        val context2 = mapOf("key" to ConfidenceValue.String("foo2"))
         val mockConfidence = getConfidence(
             testDispatcher,
-            flagResolver = flagResolver,
-            initialContext = context1
+            flagResolver = flagResolver
         )
 
-        mockConfidence.fetchAndActivate()
-        advanceUntilIdle()
-        // reset the fake flag resolver to count only changes
-        flagResolver.callCount = 0
-        flagResolver.returnCount = 0
-        TestCase.assertEquals(mockConfidence.getContext(), context1)
-        TestCase.assertEquals(context1, flagResolver.latestCalledContext)
+        val context1 = mapOf("key" to ConfidenceValue.String("foo"))
+        val context2 = mapOf("key" to ConfidenceValue.String("foo2"))
+        val context3 = mapOf("key" to ConfidenceValue.String("foo3"))
+        val context4 = mapOf("key" to ConfidenceValue.String("foo4"))
+        mockConfidence.putContext(context1)
         mockConfidence.putContext(context2)
+        mockConfidence.putContext(context3)
+        mockConfidence.putContext(context4)
         advanceUntilIdle()
-        TestCase.assertEquals(mockConfidence.getContext(), context2)
-        TestCase.assertEquals(context2, flagResolver.latestCalledContext)
+        TestCase.assertEquals(mockConfidence.getContext(), context4)
         TestCase.assertEquals(1, flagResolver.returnCount)
+        TestCase.assertEquals(4, flagResolver.callCount)
+        TestCase.assertEquals(context4, flagResolver.latestCalledContext)
     }
 
     @Test
