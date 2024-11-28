@@ -33,7 +33,8 @@ public final class com/spotify/confidence/Confidence : com/spotify/confidence/Co
 	public final fun activate ()V
 	public final fun apply (Ljava/lang/String;Ljava/lang/String;)V
 	public final fun asyncFetch ()V
-	public final fun awaitReconciliation (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun awaitReconciliation (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun awaitReconciliation$default (Lcom/spotify/confidence/Confidence;JLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun fetchAndActivate (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun flush ()V
 	public fun getContext ()Ljava/util/Map;

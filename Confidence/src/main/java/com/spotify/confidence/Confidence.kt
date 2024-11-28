@@ -14,9 +14,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
@@ -60,10 +63,32 @@ class Confidence internal constructor(
         }
     }
 
-    suspend fun awaitReconciliation() {
-        if (currentFetchJob != null) {
+    suspend fun awaitReconciliation(timeoutMillis: Long = 5000) {
+        val delayTime = 3L
+        if (timeoutMillis <= delayTime) error("timeoutMillis need to be larger than $delayTime")
+        debugLogger?.logMessage("reconciliation started")
+        withSafeTimeout(delayTime) {
+            while (currentFetchJob == null) {
+                delay(1)
+                debugLogger?.logMessage("delayed")
+            }
+        }
+        withSafeTimeout(timeoutMillis - delayTime) {
+            debugLogger?.logMessage("currentFetchJob=$currentFetchJob")
             currentFetchJob?.join()
+            debugLogger?.logMessage("activating")
             activate()
+        }
+        debugLogger?.logMessage("reconciliation completed")
+    }
+
+    private suspend fun withSafeTimeout(timeout: Long, block: suspend () -> Unit) {
+        try {
+            withTimeout(timeout) {
+                block()
+            }
+        } catch (e: TimeoutCancellationException) {
+            debugLogger?.logMessage("timed out after $timeout")
         }
     }
 
@@ -238,7 +263,9 @@ class Confidence internal constructor(
      * made available in the app session.
      */
     fun asyncFetch() {
-        currentFetchJob?.cancel()
+        currentFetchJob?.cancel().also {
+            currentFetchJob = null
+        }
         currentFetchJob = fetch()
     }
 
@@ -249,7 +276,9 @@ class Confidence internal constructor(
      * Fetching is best-effort, so no error is propagated. Errors can still be thrown if something goes wrong access data on disk.
      */
     suspend fun fetchAndActivate() = kotlinx.coroutines.withContext(dispatcher) {
-        currentFetchJob?.cancel()
+        currentFetchJob?.cancel().also {
+            currentFetchJob = null
+        }
         currentFetchJob = fetch()
         currentFetchJob?.join()
         activate()
@@ -337,6 +366,7 @@ object ConfidenceFactory {
             clientSecret = clientSecret,
             region = region,
             httpClient = OkHttpClient.Builder()
+                .connectTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
                 .callTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
                 .build(),
             dispatcher = dispatcher,
