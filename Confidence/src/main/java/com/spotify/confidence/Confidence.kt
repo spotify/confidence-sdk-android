@@ -15,11 +15,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
@@ -66,7 +66,7 @@ class Confidence internal constructor(
     suspend fun awaitReconciliation(timeoutMillis: Long = 5000) {
         if (timeoutMillis <= 0) error("timeoutMillis need to be larger than 0")
         debugLogger?.logMessage("reconciliation started")
-        coroutineScope.async {}.await() // will make sure that we respect other coroutine scopes triggered before this
+        yield() // will make sure that we respect other coroutine scopes triggered before this
         withSafeTimeout(timeoutMillis) {
             currentFetchJob?.join()
             activate()
