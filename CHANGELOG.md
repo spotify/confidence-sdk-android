@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.3.6](https://github.com/spotify/confidence-sdk-android/compare/0.3.5...0.3.6) (2024-11-29)
+
+
+### 🐛 Bug Fixes
+
+* await reconciliation bug ([#187](https://github.com/spotify/confidence-sdk-android/issues/187)) ([a352533](https://github.com/spotify/confidence-sdk-android/commit/a3525332573bc623321d7e91e272c615e790a728))
+* cancellation of requests work correctly ([#186](https://github.com/spotify/confidence-sdk-android/issues/186)) ([95377ad](https://github.com/spotify/confidence-sdk-android/commit/95377ad7f8706bdb572703cdd492d5e5fa35bb9d))
+* Fix the bug regarding accessing flags using with context ([#172](https://github.com/spotify/confidence-sdk-android/issues/172)) ([39625e6](https://github.com/spotify/confidence-sdk-android/commit/39625e6de9f7f2e878b4397616b0954adb0ee92b))
+* guard possible changes in serialization ([#182](https://github.com/spotify/confidence-sdk-android/issues/182)) ([64c77ac](https://github.com/spotify/confidence-sdk-android/commit/64c77ac1bb8eb8c810e7923ac1d2e145d7e7c2d9))
+* update how debug logging works ([#174](https://github.com/spotify/confidence-sdk-android/issues/174)) ([bd79fad](https://github.com/spotify/confidence-sdk-android/commit/bd79fad16079345ed9046c115cfbe09d13b791fe))
+
+
+### ✨ New Features
+
+* add binary-compatibility-validator plugin ([111e8bd](https://github.com/spotify/confidence-sdk-android/commit/111e8bd1c86cfc397845af97f63c8b63a8b4f295))
+* add timeout to the http client ([#181](https://github.com/spotify/confidence-sdk-android/issues/181)) ([eab3985](https://github.com/spotify/confidence-sdk-android/commit/eab3985f7394fef229ce576212586dbbcb016020))
+* Resolve Debug to redirect to UI tool on web ([#183](https://github.com/spotify/confidence-sdk-android/issues/183)) ([ae05eef](https://github.com/spotify/confidence-sdk-android/commit/ae05eeff0e52b0450c1a54e3083f3b890fd9987c))
+
+
+### 🧹 Chore
+
+* minor cleanups ([#177](https://github.com/spotify/confidence-sdk-android/issues/177)) ([8950ffc](https://github.com/spotify/confidence-sdk-android/commit/8950ffcedf4ae0a6015fe1d89f8869caae1955b6))
+
+
+### 📚 Documentation
+
+* Add docs to public APIs ([#179](https://github.com/spotify/confidence-sdk-android/issues/179)) ([054fb0f](https://github.com/spotify/confidence-sdk-android/commit/054fb0fd397eed410b0ae30ebb412c7c897df4ac))
+* update readme ([#180](https://github.com/spotify/confidence-sdk-android/issues/180)) ([52200f4](https://github.com/spotify/confidence-sdk-android/commit/52200f4d57f1839237126e5f7614400ba3534c2f))
+
 ## [0.3.5](https://github.com/spotify/confidence-sdk-android/compare/0.3.4...0.3.5) (2024-06-25)
 
 
