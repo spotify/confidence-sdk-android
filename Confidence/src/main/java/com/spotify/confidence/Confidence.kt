@@ -15,8 +15,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
@@ -64,19 +64,11 @@ class Confidence internal constructor(
     }
 
     suspend fun awaitReconciliation(timeoutMillis: Long = 5000) {
-        val delayTime = 3L
-        if (timeoutMillis <= delayTime) error("timeoutMillis need to be larger than $delayTime")
+        if (timeoutMillis <= 0) error("timeoutMillis need to be larger than 0")
         debugLogger?.logMessage("reconciliation started")
-        withSafeTimeout(delayTime) {
-            while (currentFetchJob == null) {
-                delay(1)
-                debugLogger?.logMessage("delayed")
-            }
-        }
-        withSafeTimeout(timeoutMillis - delayTime) {
-            debugLogger?.logMessage("currentFetchJob=$currentFetchJob")
+        coroutineScope.async {}.await() // will make sure that we respect other coroutine scopes triggered before this
+        withSafeTimeout(timeoutMillis) {
             currentFetchJob?.join()
-            debugLogger?.logMessage("activating")
             activate()
         }
         debugLogger?.logMessage("reconciliation completed")
