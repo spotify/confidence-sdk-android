@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.7](https://github.com/spotify/confidence-sdk-android/compare/0.3.6...0.3.7) (2024-12-03)
+
+
+### 🐛 Bug Fixes
+
+* align debug resolve log wording on all platforms ([a2b10f1](https://github.com/spotify/confidence-sdk-android/commit/a2b10f1bfb948b37425f8c30c5e9445c0671d83d))
+* Align debug resolve log wording on all platforms ([#188](https://github.com/spotify/confidence-sdk-android/issues/188)) ([a2b10f1](https://github.com/spotify/confidence-sdk-android/commit/a2b10f1bfb948b37425f8c30c5e9445c0671d83d))
+
 ## [0.3.6](https://github.com/spotify/confidence-sdk-android/compare/0.3.5...0.3.6) (2024-11-29)
 
 
