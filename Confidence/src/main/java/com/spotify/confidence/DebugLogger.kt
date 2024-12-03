@@ -44,7 +44,7 @@ internal class DebugLoggerImpl(private val filterLevel: LoggingLevel, private va
 
     override fun logResolve(flag: String, context: JsonElement) {
         debug(
-            "[Resolve Debug] " +
+            "See resolves for $flag in Confidence: " +
                 "https://app.confidence.spotify.com/flags/resolver-test?client-key=$clientKey&flag=flags/" +
                 "${flag.urlEncoded}&context=${context.urlEncoded}"
         )
