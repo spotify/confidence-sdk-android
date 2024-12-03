@@ -6,10 +6,7 @@ import android.util.AttributeSet
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
@@ -31,6 +28,7 @@ class MainActivity : ComponentActivity() {
             // These are observable states where changed will "update the view"
             val msgState = vm.message.observeAsState()
             val colorState = vm.color.observeAsState()
+            val surfaceText = vm.surfaceText.observeAsState()
 
             MyApplicationTheme {
                 Surface(
@@ -51,14 +49,19 @@ class MainActivity : ComponentActivity() {
                             Text("Re-apply evaluationContext")
                         }
 
+                        Button(onClick = { vm.multiput() }) {
+                            Text("MultiPut")
+                        }
                         Surface(
                             modifier = Modifier
-                                .width(100.dp)
-                                .height(100.dp),
+                                .padding(20.dp)
+                                .fillMaxWidth()
+                                .height(500.dp),
                             color = colorState.value ?: Color.Gray
                         ) {
-                            Text("This is just a Surface")
+                            Text(text = surfaceText.value ?: "N/A")
                         }
+
                     }
                 }
             }

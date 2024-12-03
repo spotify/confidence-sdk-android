@@ -33,7 +33,8 @@ public final class com/spotify/confidence/Confidence : com/spotify/confidence/Co
 	public final fun activate ()V
 	public final fun apply (Ljava/lang/String;Ljava/lang/String;)V
 	public final fun asyncFetch ()V
-	public final fun awaitReconciliation (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun awaitReconciliation (JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun awaitReconciliation$default (Lcom/spotify/confidence/Confidence;JLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun fetchAndActivate (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun flush ()V
 	public fun getContext ()Ljava/util/Map;
@@ -102,8 +103,8 @@ public final class com/spotify/confidence/ConfidenceError$ParseError : java/lang
 
 public final class com/spotify/confidence/ConfidenceFactory {
 	public static final field INSTANCE Lcom/spotify/confidence/ConfidenceFactory;
-	public final fun create (Landroid/content/Context;Ljava/lang/String;Ljava/util/Map;Lcom/spotify/confidence/ConfidenceRegion;Lkotlinx/coroutines/CoroutineDispatcher;Lcom/spotify/confidence/LoggingLevel;)Lcom/spotify/confidence/Confidence;
-	public static synthetic fun create$default (Lcom/spotify/confidence/ConfidenceFactory;Landroid/content/Context;Ljava/lang/String;Ljava/util/Map;Lcom/spotify/confidence/ConfidenceRegion;Lkotlinx/coroutines/CoroutineDispatcher;Lcom/spotify/confidence/LoggingLevel;ILjava/lang/Object;)Lcom/spotify/confidence/Confidence;
+	public final fun create (Landroid/content/Context;Ljava/lang/String;Ljava/util/Map;Lcom/spotify/confidence/ConfidenceRegion;Lkotlinx/coroutines/CoroutineDispatcher;Lcom/spotify/confidence/LoggingLevel;J)Lcom/spotify/confidence/Confidence;
+	public static synthetic fun create$default (Lcom/spotify/confidence/ConfidenceFactory;Landroid/content/Context;Ljava/lang/String;Ljava/util/Map;Lcom/spotify/confidence/ConfidenceRegion;Lkotlinx/coroutines/CoroutineDispatcher;Lcom/spotify/confidence/LoggingLevel;JILjava/lang/Object;)Lcom/spotify/confidence/Confidence;
 }
 
 public final class com/spotify/confidence/ConfidenceFlagEvaluationKt {
