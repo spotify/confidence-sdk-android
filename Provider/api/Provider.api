@@ -13,6 +13,7 @@ public final class com/spotify/confidence/openfeature/ConfidenceFeatureProvider 
 	public fun observe ()Lkotlinx/coroutines/flow/Flow;
 	public fun onContextSet (Ldev/openfeature/sdk/EvaluationContext;Ldev/openfeature/sdk/EvaluationContext;)V
 	public fun shutdown ()V
+	public fun track (Ljava/lang/String;Ldev/openfeature/sdk/EvaluationContext;Ldev/openfeature/sdk/TrackingEventDetails;)V
 }
 
 public final class com/spotify/confidence/openfeature/ConfidenceFeatureProvider$Companion {

@@ -40,7 +40,7 @@ internal class EventSenderEngineImpl(
     }
     private val exceptionHandler by lazy {
         CoroutineExceptionHandler { _, e ->
-            print(e.message)
+            debugLogger?.logMessage(message = "EventSenderEngine error: $e", isWarning = true)
         }
     }
 
