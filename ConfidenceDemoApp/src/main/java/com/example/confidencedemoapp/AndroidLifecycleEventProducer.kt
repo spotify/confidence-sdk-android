@@ -118,7 +118,7 @@ class AndroidLifecycleEventProducer(
         val packageInfo = packageInfo
         val currentVersion = ConfidenceValue.String(packageInfo?.versionName ?: "")
         val currentBuild = ConfidenceValue.String(packageInfo?.getVersionCode().toString() ?: "")
-        
+
         val previousBuild: ConfidenceValue.String? = sharedPreferences
             .getString(APP_BUILD, null)
             ?.let(ConfidenceValue::String)

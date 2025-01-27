@@ -74,7 +74,7 @@ internal class ConfidenceEvaluationTest {
         cache: ProviderCache = InMemoryCache(),
         initialContext: Map<String, ConfidenceValue> = mapOf(),
         flagResolver: FlagResolver? = null,
-        debugLogger: DebugLoggerFake? = null
+        debugLogger: DebugLoggerFake? = null,
     ): Confidence =
         Confidence(
             clientSecret = "",
@@ -470,7 +470,7 @@ internal class ConfidenceEvaluationTest {
             var latestCalledContext = mapOf<String, ConfidenceValue>()
             override suspend fun resolve(
                 flags: List<String>,
-                context: Map<String, ConfidenceValue>
+                context: Map<String, ConfidenceValue>,
             ): Result<FlagResolution> {
                 latestCalledContext = context
                 callCount++

@@ -8,6 +8,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.spotify.confidence.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -48,10 +49,20 @@ class MainVm(app: Application) : AndroidViewModel(app) {
             loggingLevel = LoggingLevel.VERBOSE
         )
         confidence.track(AndroidLifecycleEventProducer(getApplication(), false))
+        confidence.track(
+            ConfidenceDeviceInfoContextProducer(
+                applicationContext = getApplication(),
+                withVersionInfo = true,
+                withBundleId = true,
+                withDeviceInfo = true,
+                withLocale = true
+            )
+        )
+
         eventSender = confidence.withContext(mutableMap)
 
         viewModelScope.launch {
-            if(confidence.isStorageEmpty()) {
+            if (confidence.isStorageEmpty()) {
                 confidence.fetchAndActivate()
             } else {
                 confidence.activate()
@@ -77,8 +88,11 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         }.toComposeColor()
         _message.postValue(messageValue)
         _color.postValue(colorFlag)
-        _surfaceText.postValue(confidence.getContext().entries.map { "${it.key}=${it.value}"}.joinToString { it })
-        eventSender.track("navigate", mapOf("my_date" to ConfidenceValue.Date(Date()), "my_time" to ConfidenceValue.Timestamp(Date())))
+        _surfaceText.postValue(confidence.getContext().entries.map { "${it.key}=${it.value}" }.joinToString { it })
+        eventSender.track(
+            "navigate",
+            mapOf("my_date" to ConfidenceValue.Date(Date()), "my_time" to ConfidenceValue.Timestamp(Date()))
+        )
     }
 
     fun updateContext() {

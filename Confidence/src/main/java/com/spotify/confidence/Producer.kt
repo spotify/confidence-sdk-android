@@ -8,7 +8,7 @@ data class Event(
     val shouldFlush: Boolean = false
 )
 
-interface Producer {
+sealed interface Producer {
     fun stop()
 }
 

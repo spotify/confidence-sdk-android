@@ -33,6 +33,26 @@ public abstract interface class com/spotify/confidence/ConfidenceContextProvider
 	public abstract fun getContext ()Ljava/util/Map;
 }
 
+public final class com/spotify/confidence/ConfidenceDeviceInfoContextProducer : com/spotify/confidence/ContextProducer {
+	public static final field APP_BUILD_CONTEXT_KEY Ljava/lang/String;
+	public static final field APP_VERSION_CONTEXT_KEY Ljava/lang/String;
+	public static final field BUNDLE_ID_CONTEXT_KEY Ljava/lang/String;
+	public static final field Companion Lcom/spotify/confidence/ConfidenceDeviceInfoContextProducer$Companion;
+	public static final field DEVICE_BRAND_CONTEXT_KEY Ljava/lang/String;
+	public static final field DEVICE_MODEL_CONTEXT_KEY Ljava/lang/String;
+	public static final field LOCAL_IDENTIFIER_CONTEXT_KEY Ljava/lang/String;
+	public static final field PREFERRED_LANGUAGES_CONTEXT_KEY Ljava/lang/String;
+	public static final field SYSTEM_NAME_CONTEXT_KEY Ljava/lang/String;
+	public static final field SYSTEM_VERSION_CONTEXT_KEY Ljava/lang/String;
+	public fun <init> (Landroid/content/Context;ZZZZ)V
+	public synthetic fun <init> (Landroid/content/Context;ZZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun contextChanges ()Lkotlinx/coroutines/flow/Flow;
+	public fun stop ()V
+}
+
+public final class com/spotify/confidence/ConfidenceDeviceInfoContextProducer$Companion {
+}
+
 public final class com/spotify/confidence/ConfidenceError {
 	public fun <init> ()V
 }
