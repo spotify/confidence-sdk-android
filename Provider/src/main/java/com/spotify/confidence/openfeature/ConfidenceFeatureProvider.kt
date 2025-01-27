@@ -14,6 +14,7 @@ import dev.openfeature.sdk.Hook
 import dev.openfeature.sdk.ProviderEvaluation
 import dev.openfeature.sdk.ProviderMetadata
 import dev.openfeature.sdk.Reason
+import dev.openfeature.sdk.TrackingEventDetails
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.events.EventHandler
 import dev.openfeature.sdk.events.OpenFeatureEvents
@@ -130,6 +131,10 @@ class ConfidenceFeatureProvider private constructor(
         return generateEvaluation(key, defaultValue)
     }
 
+    override fun track(trackingEventName: String, context: EvaluationContext?, details: TrackingEventDetails?) {
+        confidence.track(trackingEventName, details?.toConfidenceValue() ?: emptyMap())
+    }
+
     private fun <T> generateEvaluation(
         key: String,
         defaultValue: T
@@ -164,6 +169,16 @@ class ConfidenceFeatureProvider private constructor(
             )
         }
     }
+}
+
+private fun TrackingEventDetails.toConfidenceValue(): Map<String, ConfidenceValue> = mapOf(
+    "value" to (this.value?.toConfidenceValue() ?: ConfidenceValue.Null)
+) + this.structure.asMap().mapValues { it.value.toConfidenceValue() }
+
+private fun Number.toConfidenceValue(): ConfidenceValue = when (this) {
+    is Int -> ConfidenceValue.Integer(this)
+    is Double -> ConfidenceValue.Double(this)
+    else -> ConfidenceValue.Null
 }
 
 internal fun Value.toConfidenceValue(): ConfidenceValue = when (this) {
