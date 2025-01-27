@@ -84,6 +84,7 @@ android {
 
 dependencies {
     implementation(project(":Confidence"))
+    implementation("androidx.lifecycle:lifecycle-process:2.6.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
     implementation( "androidx.compose.runtime:runtime-livedata:${Versions.liveData}")
     implementation( "androidx.core:core-ktx:${Versions.core}")

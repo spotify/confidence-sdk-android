@@ -1,26 +1,3 @@
-public final class com/spotify/confidence/AndroidLifecycleEventProducer : android/app/Application$ActivityLifecycleCallbacks, androidx/lifecycle/DefaultLifecycleObserver, com/spotify/confidence/EventProducer {
-	public static final field Companion Lcom/spotify/confidence/AndroidLifecycleEventProducer$Companion;
-	public fun <init> (Landroid/app/Application;Z)V
-	public fun contextChanges ()Lkotlinx/coroutines/flow/Flow;
-	public fun events ()Lkotlinx/coroutines/flow/Flow;
-	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
-	public fun onActivityDestroyed (Landroid/app/Activity;)V
-	public fun onActivityPaused (Landroid/app/Activity;)V
-	public fun onActivityResumed (Landroid/app/Activity;)V
-	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
-	public fun onActivityStarted (Landroid/app/Activity;)V
-	public fun onActivityStopped (Landroid/app/Activity;)V
-	public fun onCreate (Landroidx/lifecycle/LifecycleOwner;)V
-	public fun stop ()V
-}
-
-public final class com/spotify/confidence/AndroidLifecycleEventProducer$Companion {
-}
-
-public final class com/spotify/confidence/AndroidLifecycleEventProducerKt {
-	public static final fun getReferrer (Landroid/app/Activity;)Landroid/net/Uri;
-}
-
 public final class com/spotify/confidence/BuildConfig {
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEBUG Z
