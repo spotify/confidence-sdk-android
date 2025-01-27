@@ -52,8 +52,8 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         confidence.track(
             ConfidenceDeviceInfoContextProducer(
                 applicationContext = getApplication(),
-                withVersionInfo = true,
-                withBundleId = true,
+                withAppInfo = true,
+                withOsInfo = true,
                 withDeviceInfo = true,
                 withLocale = true
             )
