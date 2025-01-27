@@ -14,7 +14,7 @@ class ConfidenceDeviceInfoContextProducer(
     withVersionInfo: Boolean = false,
     withBundleId: Boolean = false,
     withDeviceInfo: Boolean = false,
-    withLocale: Boolean = false,
+    withLocale: Boolean = false
 ) : ContextProducer {
     private val contextFlow = MutableStateFlow<Map<String, ConfidenceValue>>(mapOf())
     private val packageInfo: PackageInfo? = try {
