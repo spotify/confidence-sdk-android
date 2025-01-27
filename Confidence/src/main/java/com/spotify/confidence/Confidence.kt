@@ -46,7 +46,7 @@ class Confidence internal constructor(
     private var currentFetchJob: Job? = null
 
     private val coroutineScope = CoroutineScope(SupervisorJob() + dispatcher)
-    private val eventProducers: MutableList<EventProducer> = mutableListOf()
+    private val producers: MutableList<Producer> = mutableListOf()
 
     private val flagApplier = FlagApplierWithRetries(
         client = flagApplierClient,
@@ -276,31 +276,34 @@ class Confidence internal constructor(
         activate()
     }
 
-    override fun track(eventProducer: EventProducer) {
-        coroutineScope.launch {
-            eventProducer
-                .events()
-                .collect { event ->
-                    eventSenderEngine.emit(
-                        event.name,
-                        event.data,
-                        getContext()
-                    )
-                    if (event.shouldFlush) {
-                        eventSenderEngine.flush()
+    override fun track(producer: Producer) {
+        (producer as? EventProducer)?.let {
+            coroutineScope.launch {
+                it
+                    .events()
+                    .collect { event ->
+                        eventSenderEngine.emit(
+                            event.name,
+                            event.data,
+                            getContext()
+                        )
+                        if (event.shouldFlush) {
+                            eventSenderEngine.flush()
+                        }
                     }
-                }
+            }
         }
-
-        coroutineScope.launch {
-            eventProducer.contextChanges()
-                .collect(this@Confidence::putContext)
+        (producer as? ContextProducer)?.let {
+            coroutineScope.launch {
+                it.contextChanges()
+                    .collect(this@Confidence::putContext)
+            }
         }
-        eventProducers.add(eventProducer)
+        producers.add(producer)
     }
 
     override fun stop() {
-        for (producer in eventProducers) {
+        for (producer in producers) {
             producer.stop()
         }
         if (parent == null) {

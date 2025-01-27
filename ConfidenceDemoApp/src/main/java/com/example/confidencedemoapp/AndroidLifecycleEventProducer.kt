@@ -21,7 +21,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 class AndroidLifecycleEventProducer(
@@ -29,7 +28,6 @@ class AndroidLifecycleEventProducer(
     private val trackActivities: Boolean
 ) : Application.ActivityLifecycleCallbacks, DefaultLifecycleObserver, EventProducer {
     private val eventsFlow = MutableSharedFlow<Event>()
-    private val contextFlow = MutableStateFlow<Map<String, ConfidenceValue>>(mapOf())
     private val sharedPreferences by lazy {
         application.getSharedPreferences("CONFIDENCE_EVENTS", Context.MODE_PRIVATE)
     }
@@ -59,13 +57,6 @@ class AndroidLifecycleEventProducer(
 
     override fun onCreate(owner: LifecycleOwner) {
         trackApplicationLifecycleEvents()
-    }
-
-    @Synchronized
-    private fun updateContext(map: Map<String, ConfidenceValue>) {
-        val context = contextFlow.value.toMutableMap()
-        context += map
-        contextFlow.value = context
     }
 
     override fun onActivityStarted(activity: Activity) {
@@ -127,8 +118,7 @@ class AndroidLifecycleEventProducer(
         val packageInfo = packageInfo
         val currentVersion = ConfidenceValue.String(packageInfo?.versionName ?: "")
         val currentBuild = ConfidenceValue.String(packageInfo?.getVersionCode().toString() ?: "")
-
-
+        
         val previousBuild: ConfidenceValue.String? = sharedPreferences
             .getString(APP_BUILD, null)
             ?.let(ConfidenceValue::String)
@@ -154,7 +144,6 @@ class AndroidLifecycleEventProducer(
 
     override fun events(): Flow<Event> = eventsFlow
 
-    override fun contextChanges(): Flow<Map<String, ConfidenceValue>> = contextFlow
     override fun stop() {
         if (trackActivities) {
             application.unregisterActivityLifecycleCallbacks(this)
