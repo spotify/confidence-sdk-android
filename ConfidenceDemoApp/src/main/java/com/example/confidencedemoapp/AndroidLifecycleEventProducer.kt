@@ -15,7 +15,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.spotify.confidence.ConfidenceValue
-import com.spotify.confidence.EventProducer
+import com.spotify.confidence.Producer
 import com.spotify.confidence.Update
 import com.spotify.confidence.Update.Event
 import kotlinx.coroutines.CoroutineScope
@@ -27,7 +27,7 @@ import kotlinx.coroutines.launch
 class AndroidLifecycleEventProducer(
     private val application: Application,
     private val trackActivities: Boolean
-) : Application.ActivityLifecycleCallbacks, DefaultLifecycleObserver, EventProducer {
+) : Application.ActivityLifecycleCallbacks, DefaultLifecycleObserver, Producer {
     private val eventsFlow = MutableSharedFlow<Event>()
     private val sharedPreferences by lazy {
         application.getSharedPreferences("CONFIDENCE_EVENTS", Context.MODE_PRIVATE)

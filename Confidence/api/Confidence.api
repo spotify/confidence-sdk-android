@@ -33,7 +33,7 @@ public abstract interface class com/spotify/confidence/ConfidenceContextProvider
 	public abstract fun getContext ()Ljava/util/Map;
 }
 
-public final class com/spotify/confidence/ConfidenceDeviceInfoContextProducer : com/spotify/confidence/ContextProducer {
+public final class com/spotify/confidence/ConfidenceDeviceInfoContextProducer : com/spotify/confidence/Producer {
 	public static final field APP_BUILD_CONTEXT_KEY Ljava/lang/String;
 	public static final field APP_NAMESPACE_CONTEXT_KEY Ljava/lang/String;
 	public static final field APP_VERSION_CONTEXT_KEY Ljava/lang/String;
@@ -379,9 +379,6 @@ public final class com/spotify/confidence/ConfidenceValueKt {
 	public static final fun toNetworkJson (Lcom/spotify/confidence/ConfidenceValue$Struct;)Ljava/lang/String;
 }
 
-public abstract interface class com/spotify/confidence/ContextProducer : com/spotify/confidence/Producer {
-}
-
 public abstract interface class com/spotify/confidence/Contextual : com/spotify/confidence/ConfidenceContextProvider {
 	public abstract fun putContext (Ljava/lang/String;Lcom/spotify/confidence/ConfidenceValue;)V
 	public abstract fun putContext (Ljava/util/Map;)V
@@ -407,9 +404,6 @@ public final class com/spotify/confidence/Evaluation {
 	public final fun getVariant ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-}
-
-public abstract interface class com/spotify/confidence/EventProducer : com/spotify/confidence/Producer {
 }
 
 public abstract interface class com/spotify/confidence/EventSender : com/spotify/confidence/Contextual {

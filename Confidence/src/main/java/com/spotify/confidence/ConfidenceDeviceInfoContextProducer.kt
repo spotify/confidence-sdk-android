@@ -6,18 +6,50 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flowOf
 import java.util.Locale
 
+/**
+ * Helper class to produce device information context for the Confidence context.
+ *
+ * @param applicationContext the application context.
+ * @param withAppInfo whether to include app information in the context.
+ * @param withDeviceInfo whether to include device information in the context.
+ * @param withOsInfo whether to include OS information in the context.
+ * @param withLocale whether to include locale information in the context.
+ *
+ * The values appended to the Context come primarily from the Android Build class and the application context.
+ *
+ * AppInfo contains:
+ * - version: the version name of the app.
+ * - build: the version code of the app.
+ * - namespace: the package name of the app.
+ *
+ * DeviceInfo contains:
+ * - manufacturer: the manufacturer of the device.
+ * - brand: the brand of the device.
+ * - model: the model of the device.
+ * - type: the type of the device.
+ *
+ * OsInfo contains:
+ * - name: the name of the OS.
+ * - version: the version of the OS.
+ *
+ * Locale contains:
+ * - locale: the locale of the device.
+ * - preferred_languages: the preferred languages of the device.
+ *
+ * The context is only updated when the producer is initialized and then static.
+ *
+ */
 class ConfidenceDeviceInfoContextProducer(
     applicationContext: Context,
     withAppInfo: Boolean = false,
     withDeviceInfo: Boolean = false,
     withOsInfo: Boolean = false,
     withLocale: Boolean = false
-) : ContextProducer {
-    private val contextFlow = MutableStateFlow<Map<String, ConfidenceValue>>(mapOf())
+) : Producer {
+    private val staticContext: ConfidenceFieldsType
     private val packageInfo: PackageInfo? = try {
         @Suppress("DEPRECATION")
         applicationContext.packageManager.getPackageInfo(applicationContext.packageName, 0)
@@ -76,11 +108,10 @@ class ConfidenceDeviceInfoContextProducer(
             // these are on the top level
             context += localeInfo
         }
-        contextFlow.value = context
+        staticContext = context
     }
 
-    //    override fun contextChanges(): Flow<Map<String, ConfidenceValue>> = contextFlow
-    override fun updates(): Flow<Update> = contextFlow.map { Update.ContextUpdate(it) }
+    override fun updates(): Flow<Update> = flowOf(Update.ContextUpdate(staticContext))
 
     override fun stop() {}
 

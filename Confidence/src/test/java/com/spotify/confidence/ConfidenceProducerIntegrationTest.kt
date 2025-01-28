@@ -23,7 +23,7 @@ class ConfidenceProducerIntegrationTest {
         engine = FakeEventSenderEngine()
     }
 
-    class MyProducer : EventProducer, ContextProducer {
+    class MyProducer : Producer {
         private val flow = MutableSharedFlow<Update>()
         override fun updates(): Flow<Update> = flow
         override fun stop() {}
