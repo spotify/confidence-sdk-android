@@ -35,19 +35,21 @@ public abstract interface class com/spotify/confidence/ConfidenceContextProvider
 
 public final class com/spotify/confidence/ConfidenceDeviceInfoContextProducer : com/spotify/confidence/ContextProducer {
 	public static final field APP_BUILD_CONTEXT_KEY Ljava/lang/String;
+	public static final field APP_NAMESPACE_CONTEXT_KEY Ljava/lang/String;
 	public static final field APP_VERSION_CONTEXT_KEY Ljava/lang/String;
-	public static final field BUNDLE_ID_CONTEXT_KEY Ljava/lang/String;
 	public static final field Companion Lcom/spotify/confidence/ConfidenceDeviceInfoContextProducer$Companion;
 	public static final field DEVICE_BRAND_CONTEXT_KEY Ljava/lang/String;
+	public static final field DEVICE_MANUFACTURER_CONTEXT_KEY Ljava/lang/String;
 	public static final field DEVICE_MODEL_CONTEXT_KEY Ljava/lang/String;
-	public static final field LOCAL_IDENTIFIER_CONTEXT_KEY Ljava/lang/String;
+	public static final field DEVICE_TYPE_CONTEXT_KEY Ljava/lang/String;
+	public static final field LOCALE_CONTEXT_KEY Ljava/lang/String;
+	public static final field OS_NAME_CONTEXT_KEY Ljava/lang/String;
+	public static final field OS_VERSION_CONTEXT_KEY Ljava/lang/String;
 	public static final field PREFERRED_LANGUAGES_CONTEXT_KEY Ljava/lang/String;
-	public static final field SYSTEM_NAME_CONTEXT_KEY Ljava/lang/String;
-	public static final field SYSTEM_VERSION_CONTEXT_KEY Ljava/lang/String;
 	public fun <init> (Landroid/content/Context;ZZZZ)V
 	public synthetic fun <init> (Landroid/content/Context;ZZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun contextChanges ()Lkotlinx/coroutines/flow/Flow;
 	public fun stop ()V
+	public fun updates ()Lkotlinx/coroutines/flow/Flow;
 }
 
 public final class com/spotify/confidence/ConfidenceDeviceInfoContextProducer$Companion {
@@ -283,6 +285,7 @@ public final class com/spotify/confidence/ConfidenceValue$List$Companion {
 public final class com/spotify/confidence/ConfidenceValue$Null : com/spotify/confidence/ConfidenceValue {
 	public static final field INSTANCE Lcom/spotify/confidence/ConfidenceValue$Null;
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class com/spotify/confidence/ConfidenceValue$String : com/spotify/confidence/ConfidenceValue {
@@ -377,7 +380,6 @@ public final class com/spotify/confidence/ConfidenceValueKt {
 }
 
 public abstract interface class com/spotify/confidence/ContextProducer : com/spotify/confidence/Producer {
-	public abstract fun contextChanges ()Lkotlinx/coroutines/flow/Flow;
 }
 
 public abstract interface class com/spotify/confidence/Contextual : com/spotify/confidence/ConfidenceContextProvider {
@@ -407,24 +409,7 @@ public final class com/spotify/confidence/Evaluation {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/spotify/confidence/Event {
-	public fun <init> (Ljava/lang/String;Ljava/util/Map;Z)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/util/Map;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/util/Map;
-	public final fun component3 ()Z
-	public final fun copy (Ljava/lang/String;Ljava/util/Map;Z)Lcom/spotify/confidence/Event;
-	public static synthetic fun copy$default (Lcom/spotify/confidence/Event;Ljava/lang/String;Ljava/util/Map;ZILjava/lang/Object;)Lcom/spotify/confidence/Event;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getData ()Ljava/util/Map;
-	public final fun getName ()Ljava/lang/String;
-	public final fun getShouldFlush ()Z
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
 public abstract interface class com/spotify/confidence/EventProducer : com/spotify/confidence/Producer {
-	public abstract fun events ()Lkotlinx/coroutines/flow/Flow;
 }
 
 public abstract interface class com/spotify/confidence/EventSender : com/spotify/confidence/Contextual {
@@ -491,6 +476,7 @@ public final class com/spotify/confidence/LoggingLevel : java/lang/Enum {
 
 public abstract interface class com/spotify/confidence/Producer {
 	public abstract fun stop ()V
+	public abstract fun updates ()Lkotlinx/coroutines/flow/Flow;
 }
 
 public abstract interface class com/spotify/confidence/ProviderCache {
@@ -535,6 +521,36 @@ public final class com/spotify/confidence/Result$Success : com/spotify/confidenc
 	public static synthetic fun copy$default (Lcom/spotify/confidence/Result$Success;Ljava/lang/Object;ILjava/lang/Object;)Lcom/spotify/confidence/Result$Success;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getData ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/spotify/confidence/Update {
+}
+
+public final class com/spotify/confidence/Update$ContextUpdate : com/spotify/confidence/Update {
+	public fun <init> (Ljava/util/Map;)V
+	public final fun component1 ()Ljava/util/Map;
+	public final fun copy (Ljava/util/Map;)Lcom/spotify/confidence/Update$ContextUpdate;
+	public static synthetic fun copy$default (Lcom/spotify/confidence/Update$ContextUpdate;Ljava/util/Map;ILjava/lang/Object;)Lcom/spotify/confidence/Update$ContextUpdate;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContext ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/spotify/confidence/Update$Event : com/spotify/confidence/Update {
+	public fun <init> (Ljava/lang/String;Ljava/util/Map;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/Map;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/Map;
+	public final fun component3 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/util/Map;Z)Lcom/spotify/confidence/Update$Event;
+	public static synthetic fun copy$default (Lcom/spotify/confidence/Update$Event;Ljava/lang/String;Ljava/util/Map;ZILjava/lang/Object;)Lcom/spotify/confidence/Update$Event;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getData ()Ljava/util/Map;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getShouldFlush ()Z
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }

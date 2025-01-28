@@ -15,8 +15,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.spotify.confidence.ConfidenceValue
-import com.spotify.confidence.Event
 import com.spotify.confidence.EventProducer
+import com.spotify.confidence.Update
+import com.spotify.confidence.Update.Event
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -142,7 +143,7 @@ class AndroidLifecycleEventProducer(
         }
     }
 
-    override fun events(): Flow<Event> = eventsFlow
+    override fun updates(): Flow<Update> = eventsFlow
 
     override fun stop() {
         if (trackActivities) {

@@ -7,6 +7,7 @@ import android.os.Build
 import android.util.Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 import java.util.Locale
 
 class ConfidenceDeviceInfoContextProducer(
@@ -78,7 +79,9 @@ class ConfidenceDeviceInfoContextProducer(
         contextFlow.value = context
     }
 
-    override fun contextChanges(): Flow<Map<String, ConfidenceValue>> = contextFlow
+    //    override fun contextChanges(): Flow<Map<String, ConfidenceValue>> = contextFlow
+    override fun updates(): Flow<Update> = contextFlow.map { Update.ContextUpdate(it) }
+
     override fun stop() {}
 
     companion object {

@@ -277,29 +277,24 @@ class Confidence internal constructor(
     }
 
     override fun track(producer: Producer) {
-        (producer as? EventProducer)?.let {
-            coroutineScope.launch {
-                it
-                    .events()
-                    .collect { event ->
+        coroutineScope.launch {
+            producer.updates().collect { update ->
+                when (update) {
+                    is Update.Event -> {
                         eventSenderEngine.emit(
-                            event.name,
-                            event.data,
+                            update.name,
+                            update.data,
                             getContext()
                         )
-                        if (event.shouldFlush) {
+                        if (update.shouldFlush) {
                             eventSenderEngine.flush()
                         }
                     }
+                    is Update.ContextUpdate -> putContext(update.context)
+                }
             }
+            producers.add(producer)
         }
-        (producer as? ContextProducer)?.let {
-            coroutineScope.launch {
-                it.contextChanges()
-                    .collect(this@Confidence::putContext)
-            }
-        }
-        producers.add(producer)
     }
 
     override fun stop() {

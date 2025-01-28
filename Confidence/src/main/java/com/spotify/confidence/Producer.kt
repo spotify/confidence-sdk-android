@@ -2,20 +2,21 @@ package com.spotify.confidence
 
 import kotlinx.coroutines.flow.Flow
 
-data class Event(
-    val name: String,
-    val data: Map<String, ConfidenceValue>,
-    val shouldFlush: Boolean = false
-)
+sealed interface Update {
+    data class Event(
+        val name: String,
+        val data: Map<String, ConfidenceValue>,
+        val shouldFlush: Boolean = false
+    ) : Update
+
+    data class ContextUpdate(val context: Map<String, ConfidenceValue>) : Update
+}
 
 sealed interface Producer {
     fun stop()
+    fun updates(): Flow<Update>
 }
 
-interface EventProducer : Producer {
-    fun events(): Flow<Event>
-}
+interface EventProducer : Producer
 
-interface ContextProducer : Producer {
-    fun contextChanges(): Flow<Map<String, ConfidenceValue>>
-}
+interface ContextProducer : Producer
