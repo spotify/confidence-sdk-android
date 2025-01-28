@@ -72,7 +72,7 @@ class DebugLoggerImplTest {
     @Test
     fun logContextLogsOnVerboseLevel() {
         verboseLogger.logContext("action", mapOf("key" to ConfidenceValue.String("value")))
-        verify { Log.v("Confidence", "[action] {key=String(string=value)}") }
+        verify { Log.v("Confidence", "[action] {key=value}") }
     }
 
     @Test
