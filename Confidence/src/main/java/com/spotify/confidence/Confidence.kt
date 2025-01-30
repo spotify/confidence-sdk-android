@@ -46,7 +46,7 @@ class Confidence internal constructor(
     private var currentFetchJob: Job? = null
 
     private val coroutineScope = CoroutineScope(SupervisorJob() + dispatcher)
-    private val eventProducers: MutableList<EventProducer> = mutableListOf()
+    private val producers: MutableList<Producer> = mutableListOf()
 
     private val flagApplier = FlagApplierWithRetries(
         client = flagApplierClient,
@@ -276,31 +276,29 @@ class Confidence internal constructor(
         activate()
     }
 
-    override fun track(eventProducer: EventProducer) {
+    override fun track(producer: Producer) {
         coroutineScope.launch {
-            eventProducer
-                .events()
-                .collect { event ->
-                    eventSenderEngine.emit(
-                        event.name,
-                        event.data,
-                        getContext()
-                    )
-                    if (event.shouldFlush) {
-                        eventSenderEngine.flush()
+            producer.updates().collect { update ->
+                when (update) {
+                    is Update.Event -> {
+                        eventSenderEngine.emit(
+                            update.name,
+                            update.data,
+                            getContext()
+                        )
+                        if (update.shouldFlush) {
+                            eventSenderEngine.flush()
+                        }
                     }
+                    is Update.ContextUpdate -> putContext(update.context)
                 }
+            }
+            producers.add(producer)
         }
-
-        coroutineScope.launch {
-            eventProducer.contextChanges()
-                .collect(this@Confidence::putContext)
-        }
-        eventProducers.add(eventProducer)
     }
 
     override fun stop() {
-        for (producer in eventProducers) {
+        for (producer in producers) {
             producer.stop()
         }
         if (parent == null) {

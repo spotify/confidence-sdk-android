@@ -1,4 +1,4 @@
-package com.spotify.confidence
+package com.example.confidencedemoapp
 
 import android.app.Activity
 import android.app.Application
@@ -14,19 +14,21 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import com.spotify.confidence.ConfidenceValue
+import com.spotify.confidence.Producer
+import com.spotify.confidence.Update
+import com.spotify.confidence.Update.Event
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 class AndroidLifecycleEventProducer(
     private val application: Application,
     private val trackActivities: Boolean
-) : Application.ActivityLifecycleCallbacks, DefaultLifecycleObserver, EventProducer {
+) : Application.ActivityLifecycleCallbacks, DefaultLifecycleObserver, Producer {
     private val eventsFlow = MutableSharedFlow<Event>()
-    private val contextFlow = MutableStateFlow<Map<String, ConfidenceValue>>(mapOf())
     private val sharedPreferences by lazy {
         application.getSharedPreferences("CONFIDENCE_EVENTS", Context.MODE_PRIVATE)
     }
@@ -56,13 +58,6 @@ class AndroidLifecycleEventProducer(
 
     override fun onCreate(owner: LifecycleOwner) {
         trackApplicationLifecycleEvents()
-    }
-
-    @Synchronized
-    private fun updateContext(map: Map<String, ConfidenceValue>) {
-        val context = contextFlow.value.toMutableMap()
-        context += map
-        contextFlow.value = context
     }
 
     override fun onActivityStarted(activity: Activity) {
@@ -125,12 +120,6 @@ class AndroidLifecycleEventProducer(
         val currentVersion = ConfidenceValue.String(packageInfo?.versionName ?: "")
         val currentBuild = ConfidenceValue.String(packageInfo?.getVersionCode().toString() ?: "")
 
-        val addedContext = mapOf(
-            APP_VERSION_KEY to currentVersion,
-            APP_BUILD_KEY to currentBuild
-        )
-        updateContext(addedContext)
-
         val previousBuild: ConfidenceValue.String? = sharedPreferences
             .getString(APP_BUILD, null)
             ?.let(ConfidenceValue::String)
@@ -154,9 +143,8 @@ class AndroidLifecycleEventProducer(
         }
     }
 
-    override fun events(): Flow<Event> = eventsFlow
+    override fun updates(): Flow<Update> = eventsFlow
 
-    override fun contextChanges(): Flow<Map<String, ConfidenceValue>> = contextFlow
     override fun stop() {
         if (trackActivities) {
             application.unregisterActivityLifecycleCallbacks(this)
@@ -171,10 +159,6 @@ class AndroidLifecycleEventProducer(
         private const val APP_VERSION = "APP_VERSION"
         private const val APP_BUILD = "APP_BUILD"
         private const val LEGACY_APP_BUILD = "LEGACY_APP_BUILD"
-
-        // Context keys
-        private const val APP_VERSION_KEY = "app_version"
-        private const val APP_BUILD_KEY = "app_build"
 
         // Event keys
         private const val APP_INSTALLED_EVENT = "app-installed"

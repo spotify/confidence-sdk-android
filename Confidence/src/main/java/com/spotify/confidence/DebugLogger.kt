@@ -4,14 +4,15 @@ import android.util.Log
 import kotlinx.serialization.json.JsonElement
 import java.net.URLEncoder
 
-private const val TAG = "Confidence"
-
 internal interface DebugLogger {
     fun logEvent(action: String, event: EngineEvent)
     fun logMessage(message: String, isWarning: Boolean = false, throwable: Throwable? = null)
     fun logFlag(action: String, details: String? = null)
     fun logContext(action: String, context: Map<String, ConfidenceValue>)
     fun logResolve(flag: String, context: JsonElement)
+    companion object {
+        const val TAG = "Confidence"
+    }
 }
 
 internal class DebugLoggerImpl(private val filterLevel: LoggingLevel, private val clientKey: String) : DebugLogger {
@@ -60,10 +61,10 @@ internal class DebugLoggerImpl(private val filterLevel: LoggingLevel, private va
     private fun log(messageLevel: LoggingLevel, message: String) {
         if (messageLevel >= filterLevel) {
             when (messageLevel) {
-                LoggingLevel.VERBOSE -> Log.v(TAG, message)
-                LoggingLevel.DEBUG -> Log.d(TAG, message)
-                LoggingLevel.WARN -> Log.w(TAG, message)
-                LoggingLevel.ERROR -> Log.e(TAG, message)
+                LoggingLevel.VERBOSE -> Log.v(DebugLogger.TAG, message)
+                LoggingLevel.DEBUG -> Log.d(DebugLogger.TAG, message)
+                LoggingLevel.WARN -> Log.w(DebugLogger.TAG, message)
+                LoggingLevel.ERROR -> Log.e(DebugLogger.TAG, message)
                 LoggingLevel.NONE -> {
                     // do nothing
                 }

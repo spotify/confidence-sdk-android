@@ -94,16 +94,19 @@ All `context` data set on the `Confidence` instance will be appended to the even
 confidence.track("button-tapped", mapOf("button_id" to ConfidenceValue.String("purchase_button")))
 ```
 
-The Confidence SDK has support for `EventProducer`. This is a way to programmatically emit context changes and events into streams 
+The Confidence SDK has support for `Producer`s. This is a way for SDK integrators to programmatically emit context changes and events into streams 
 which can be consumed by the SDK to automatically emit events or to automatically update context data.
 
-The Confidence SDK comes with a pre-defined event producer to emit some application lifecycle events: `AndroidLifecycleEventProducer`. To use it:
+The Confidence SDK comes with a pre-defined producer to set some context data: `ConfidenceDeviceInfoContextProducer`. To use it:
 ```kotlin
-import com.spotify.confidence.AndroidLifecycleEventProducer
+import com.spotify.confidence.ConfidenceDeviceInfoContextProducer
 confidence.track(
-    AndroidLifecycleEventProducer(
-        application = getApplication(),
-        trackActivities = false // or true
+    ConfidenceDeviceInfoContextProducer(
+        applicationContext = getApplication(),
+        withAppInfo = true, // defaults to false
+        withOsInfo = true, // defaults to false
+        withDeviceInfo = true, // defaults to false
+        withLocale = true // defaults to false
     )
 )
 ```
