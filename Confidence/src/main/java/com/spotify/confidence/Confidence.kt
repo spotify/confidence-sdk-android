@@ -88,9 +88,10 @@ class Confidence internal constructor(
      * Apply a flag
      * @param flagName name of the flag.
      * @param resolveToken resolve token.
+     * @param shouldApply whether to send an apply event or not
      */
-    fun apply(flagName: String, resolveToken: String) {
-        flagApplier.apply(flagName, resolveToken)
+    fun apply(flagName: String, resolveToken: String, shouldApply: Boolean) {
+        flagApplier.apply(flagName, resolveToken, shouldApply)
         debugLogger?.logFlag("Apply", flagName)
     }
 
@@ -115,10 +116,10 @@ class Confidence internal constructor(
             key,
             default,
             evaluationContext
-        ) { flagName, resolveToken ->
+        ) { flagName, resolveToken, shouldApply ->
             // this lambda will be invoked inside the evaluation process
             // and only if the resolve reason is not targeting key error.
-            apply(flagName, resolveToken)
+            apply(flagName, resolveToken, shouldApply)
         }
         // we are using a custom serializer so that the Json is serialized correctly in the logs
         val newMap: Map<String, @Serializable(NetworkConfidenceValueSerializer::class) ConfidenceValue> =

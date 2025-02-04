@@ -59,7 +59,8 @@ internal class ConfidenceEvaluationTest {
                 "test-kotlin-flag-1",
                 "flags/test-kotlin-flag-1/variants/variant-1",
                 resolvedValueAsMap,
-                ResolveReason.RESOLVE_REASON_MATCH
+                ResolveReason.RESOLVE_REASON_MATCH,
+                shouldApply = true
             )
         )
     )
@@ -919,7 +920,8 @@ internal class ConfidenceEvaluationTest {
                     "test-kotlin-flag-1",
                     "",
                     mapOf(),
-                    ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR
+                    ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR,
+                    shouldApply = true
                 )
             )
         )
@@ -965,7 +967,8 @@ internal class ConfidenceEvaluationTest {
                     flag = "test-kotlin-flag-1",
                     variant = "",
                     mapOf(),
-                    reason
+                    reason,
+                    true
                 )
             )
         )

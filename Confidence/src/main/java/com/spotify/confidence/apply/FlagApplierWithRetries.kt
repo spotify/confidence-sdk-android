@@ -104,8 +104,10 @@ class FlagApplierWithRetries(
         eventProcessor.start()
     }
 
-    override fun apply(flagName: String, resolveToken: String) {
-        eventProcessor.apply(FlagApplierInput(resolveToken, flagName))
+    override fun apply(flagName: String, resolveToken: String, shouldApply: Boolean) {
+        if (shouldApply) {
+            eventProcessor.apply(FlagApplierInput(resolveToken, flagName))
+        }
     }
 
     private fun internalApply(

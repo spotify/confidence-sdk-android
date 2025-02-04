@@ -6,7 +6,7 @@ fun <T> FlagResolution?.getEvaluation(
     flag: String,
     defaultValue: T,
     context: Map<String, ConfidenceValue>,
-    applyFlag: (String, String) -> Unit = { _, _ -> }
+    applyFlag: (String, String, Boolean) -> Unit = { _, _, _ -> }
 ): Evaluation<T> {
     val parsedKey = FlagKey(flag)
     if (this == null) {
@@ -25,7 +25,7 @@ fun <T> FlagResolution?.getEvaluation(
         )
 
     if (resolvedFlag.reason != ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR) {
-        applyFlag(parsedKey.flagName, resolveToken)
+        applyFlag(parsedKey.flagName, resolveToken, resolvedFlag.shouldApply)
     } else {
         return Evaluation(
             value = defaultValue,

@@ -40,7 +40,8 @@ class StorageFileCacheTests {
                     ),
                     "mynull" to ConfidenceValue.Null
                 ),
-                ResolveReason.RESOLVE_REASON_MATCH
+                ResolveReason.RESOLVE_REASON_MATCH,
+                shouldApply = true
             )
         )
     )

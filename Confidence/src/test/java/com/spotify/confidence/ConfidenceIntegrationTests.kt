@@ -54,7 +54,8 @@ class ConfidenceIntegrationTests {
                     "my-integer" to ConfidenceValue.Integer(
                         storedValue
                     )
-                )
+                ),
+                shouldApply = true
             )
         )
 
