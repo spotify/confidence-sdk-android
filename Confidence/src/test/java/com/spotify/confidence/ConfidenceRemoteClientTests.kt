@@ -146,7 +146,7 @@ internal class ConfidenceRemoteClientTests {
     }
 
     @Test
-    fun testDeserializeResolveResponseNoMatch() = runTest {
+    fun testDeserializeResolveResponseNoApply() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val jsonPayload = "{\n" +
             " \"resolvedFlags\": [\n" +
@@ -156,7 +156,7 @@ internal class ConfidenceRemoteClientTests {
             "   \"value\": null,\n" +
             "   \"flagSchema\": null,\n" +
             "   \"reason\": \"RESOLVE_REASON_NO_SEGMENT_MATCH\",\n" +
-            "   \"shouldApply\": true\n" +
+            "   \"shouldApply\": false\n" +
             "  }\n" +
             " ],\n" +
             " \"resolveToken\": \"token1\"\n" +
@@ -183,7 +183,7 @@ internal class ConfidenceRemoteClientTests {
                         flag = "test-kotlin-flag-1",
                         variant = "",
                         reason = com.spotify.confidence.ResolveReason.RESOLVE_REASON_NO_SEGMENT_MATCH,
-                        shouldApply = true
+                        shouldApply = false
                     )
                 )
             ),
