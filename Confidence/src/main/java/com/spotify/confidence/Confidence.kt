@@ -362,7 +362,8 @@ object ConfidenceFactory {
                 .callTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
                 .build(),
             dispatcher = dispatcher,
-            sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION)
+            sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
+            debugLogger = debugLogger
         )
         val visitorId = ConfidenceValue.String(VisitorUtil.getId(context))
         val initContext = initialContext.toMutableMap()
