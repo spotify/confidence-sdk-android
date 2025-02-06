@@ -115,10 +115,12 @@ class Confidence internal constructor(
             key,
             default,
             evaluationContext
-        ) { flagName, resolveToken ->
+        ) { flagName, resolveToken, shouldApply ->
             // this lambda will be invoked inside the evaluation process
             // and only if the resolve reason is not targeting key error.
-            apply(flagName, resolveToken)
+            if (shouldApply) {
+                apply(flagName, resolveToken)
+            }
         }
         // we are using a custom serializer so that the Json is serialized correctly in the logs
         val newMap: Map<String, @Serializable(NetworkConfidenceValueSerializer::class) ConfidenceValue> =

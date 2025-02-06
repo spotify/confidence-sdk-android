@@ -59,7 +59,19 @@ internal class ConfidenceEvaluationTest {
                 "test-kotlin-flag-1",
                 "flags/test-kotlin-flag-1/variants/variant-1",
                 resolvedValueAsMap,
-                ResolveReason.RESOLVE_REASON_MATCH
+                ResolveReason.RESOLVE_REASON_MATCH,
+                shouldApply = true
+            )
+        )
+    )
+    private val resolvedFlagsNoApply = Flags(
+        listOf(
+            ResolvedFlag(
+                "test-kotlin-flag-2",
+                "flags/test-kotlin-flag-2/variants/variant-1",
+                resolvedValueAsMap,
+                ResolveReason.RESOLVE_REASON_MATCH,
+                shouldApply = false
             )
         )
     )
@@ -919,7 +931,8 @@ internal class ConfidenceEvaluationTest {
                     "test-kotlin-flag-1",
                     "",
                     mapOf(),
-                    ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR
+                    ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR,
+                    shouldApply = true
                 )
             )
         )
@@ -965,7 +978,8 @@ internal class ConfidenceEvaluationTest {
                     flag = "test-kotlin-flag-1",
                     variant = "",
                     mapOf(),
-                    reason
+                    reason,
+                    true
                 )
             )
         )
@@ -1096,6 +1110,39 @@ internal class ConfidenceEvaluationTest {
             "default"
         )
         TestCase.assertEquals(ErrorCode.PARSE_ERROR, ex.errorCode)
+    }
+
+    @Test
+    fun testShouldApplyFalse() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val context = mapOf("targeting_key" to ConfidenceValue.String("foo"))
+        val flagResolver: FlagResolver = mock()
+        val mockConfidence = getConfidence(
+            testDispatcher,
+            initialContext = context,
+            flagResolver = flagResolver
+        )
+        whenever(
+            flagResolver.resolve(
+                any(),
+                eq(context)
+            )
+        ).thenReturn(
+            Result.Success(
+                FlagResolution(
+                    context,
+                    resolvedFlagsNoApply.list,
+                    "token1"
+                )
+            )
+        )
+        mockConfidence.fetchAndActivate()
+        advanceUntilIdle()
+        val evalString = mockConfidence.getFlag("test-kotlin-flag-2.mystring", "default")
+
+        // Resolve is correct, but no Apply sent
+        TestCase.assertEquals("red", evalString.value)
+        verify(flagApplierClient, times(0)).apply(any(), any())
     }
 }
 

@@ -37,7 +37,8 @@ data class ResolvedFlag(
     val flag: String,
     val variant: String,
     val value: ConfidenceValueMap = mapOf(),
-    val reason: ResolveReason
+    val reason: ResolveReason,
+    val shouldApply: Boolean
 )
 
 sealed interface SchemaType {

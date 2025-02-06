@@ -86,6 +86,7 @@ internal object NetworkResolvedFlagSerializer : KSerializer<ResolvedFlag> {
             .replace("\"", "")
 
         val resolvedReason = Json.decodeFromString<ResolveReason>(json["reason"].toString())
+        val shouldApply = Json.decodeFromString<Boolean>(json["shouldApply"].toString())
         val flagSchemaJsonElement = json["flagSchema"]
 
         val schemasJson = if (flagSchemaJsonElement != null && flagSchemaJsonElement != JsonNull) {
@@ -112,14 +113,16 @@ internal object NetworkResolvedFlagSerializer : KSerializer<ResolvedFlag> {
                 flag = flag,
                 variant = variant,
                 reason = resolvedReason,
-                value = values.map
+                value = values.map,
+                shouldApply = shouldApply
             )
         } else {
             ResolvedFlag(
                 flag = flag,
                 variant = variant,
                 reason = resolvedReason,
-                value = mutableMapOf()
+                value = mutableMapOf(),
+                shouldApply = shouldApply
             )
         }
     }

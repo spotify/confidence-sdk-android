@@ -94,7 +94,8 @@ internal class ConfidenceRemoteClientTests {
             "     }\n" +
             "    }\n" +
             "   },\n" +
-            "   \"reason\": \"RESOLVE_REASON_MATCH\"\n" +
+            "   \"reason\": \"RESOLVE_REASON_MATCH\",\n" +
+            "   \"shouldApply\": true\n" +
             "  }\n" +
             " ],\n" +
             " \"resolveToken\": \"token1\"\n" +
@@ -132,7 +133,8 @@ internal class ConfidenceRemoteClientTests {
                             )
                         )
                     ),
-                    ResolveReason.RESOLVE_REASON_MATCH
+                    ResolveReason.RESOLVE_REASON_MATCH,
+                    shouldApply = true
                 )
             )
         )
@@ -144,7 +146,7 @@ internal class ConfidenceRemoteClientTests {
     }
 
     @Test
-    fun testDeserializeResolveResponseNoMatch() = runTest {
+    fun testDeserializeResolveResponseNoApply() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val jsonPayload = "{\n" +
             " \"resolvedFlags\": [\n" +
@@ -153,7 +155,8 @@ internal class ConfidenceRemoteClientTests {
             "   \"variant\": \"\",\n" +
             "   \"value\": null,\n" +
             "   \"flagSchema\": null,\n" +
-            "   \"reason\": \"RESOLVE_REASON_NO_SEGMENT_MATCH\"\n" +
+            "   \"reason\": \"RESOLVE_REASON_NO_SEGMENT_MATCH\",\n" +
+            "   \"shouldApply\": false\n" +
             "  }\n" +
             " ],\n" +
             " \"resolveToken\": \"token1\"\n" +
@@ -179,7 +182,8 @@ internal class ConfidenceRemoteClientTests {
                     ResolvedFlag(
                         flag = "test-kotlin-flag-1",
                         variant = "",
-                        reason = com.spotify.confidence.ResolveReason.RESOLVE_REASON_NO_SEGMENT_MATCH
+                        reason = com.spotify.confidence.ResolveReason.RESOLVE_REASON_NO_SEGMENT_MATCH,
+                        shouldApply = false
                     )
                 )
             ),
@@ -207,6 +211,7 @@ internal class ConfidenceRemoteClientTests {
             "     }\n" +
             "    }\n" +
             "   },\n" +
+            "   \"shouldApply\": true,\n" +
             "   \"reason\": \"RESOLVE_REASON_MATCH\"\n" +
             "  }\n" +
             " ],\n" +
@@ -237,7 +242,8 @@ internal class ConfidenceRemoteClientTests {
                         mutableMapOf(
                             "mydouble" to ConfidenceValue.Double(3.0)
                         ),
-                        com.spotify.confidence.ResolveReason.RESOLVE_REASON_MATCH
+                        com.spotify.confidence.ResolveReason.RESOLVE_REASON_MATCH,
+                        shouldApply = true
                     )
                 )
             ),
@@ -263,7 +269,8 @@ internal class ConfidenceRemoteClientTests {
             "     }\n" +
             "    }\n" +
             "   },\n" +
-            "   \"reason\": \"RESOLVE_REASON_MATCH\"\n" +
+            "   \"reason\": \"RESOLVE_REASON_MATCH\",\n" +
+            "   \"shouldApply\": true\n" +
             "  }\n" +
             " ],\n" +
             " \"resolveToken\": \"token1\"\n" +
@@ -308,7 +315,8 @@ internal class ConfidenceRemoteClientTests {
             "     }\n" +
             "    }\n" +
             "   },\n" +
-            "   \"reason\": \"RESOLVE_REASON_MATCH\"\n" +
+            "   \"reason\": \"RESOLVE_REASON_MATCH\",\n" +
+            "   \"shouldApply\": true\n" +
             "  }\n" +
             " ],\n" +
             " \"resolveToken\": \"token1\"\n" +
@@ -393,7 +401,8 @@ internal class ConfidenceRemoteClientTests {
             "     }\n" +
             "    }\n" +
             "   },\n" +
-            "   \"reason\": \"RESOLVE_REASON_MATCH\"\n" +
+            "   \"reason\": \"RESOLVE_REASON_MATCH\",\n" +
+            "   \"shouldApply\": true\n" +
             "  }\n" +
             " ],\n" +
             " \"resolveToken\": \"token1\"\n" +
