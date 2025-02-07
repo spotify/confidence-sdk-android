@@ -10,6 +10,7 @@ internal interface DebugLogger {
     fun logFlag(action: String, details: String? = null)
     fun logContext(action: String, context: Map<String, ConfidenceValue>)
     fun logResolve(flag: String, context: JsonElement)
+    fun logError(message: String, throwable: Throwable? = null)
     companion object {
         const val TAG = "Confidence"
     }
@@ -51,12 +52,19 @@ internal class DebugLoggerImpl(private val filterLevel: LoggingLevel, private va
         )
     }
 
+    override fun logError(message: String, throwable: Throwable?) {
+        error(message, throwable)
+    }
+
     private fun verbose(message: String) = log(LoggingLevel.VERBOSE, message)
     private fun debug(message: String) = log(LoggingLevel.DEBUG, message)
     private fun warn(message: String, throwable: Throwable?) =
         log(LoggingLevel.WARN, throwable?.let { "$message: ${throwable.message}" } ?: message)
 
-    private fun error(message: String, throwable: Throwable) = log(LoggingLevel.ERROR, "$message: ${throwable.message}")
+    private fun error(message: String, throwable: Throwable?) = log(
+        LoggingLevel.ERROR,
+        throwable?.let { "$message: ${throwable.message}" } ?: message
+    )
 
     private fun log(messageLevel: LoggingLevel, message: String) {
         if (messageLevel >= filterLevel) {

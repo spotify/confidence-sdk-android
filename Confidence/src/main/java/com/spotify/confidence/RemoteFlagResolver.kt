@@ -72,7 +72,7 @@ internal class RemoteFlagResolver(
 
     private fun Response.toResolveFlags(): ResolveResponse {
         if (!isSuccessful) {
-            debugLogger?.logMessage("Failed to resolve flags. Http code: $code", isWarning = true)
+            debugLogger?.logError("Failed to resolve flags. Http code: $code")
         }
         body?.let { body ->
             val bodyString = body.string()

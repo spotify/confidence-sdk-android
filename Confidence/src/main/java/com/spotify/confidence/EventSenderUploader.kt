@@ -67,7 +67,7 @@ internal class EventSenderUploaderImpl(
 
         val response = httpClient.newCall(httpRequest).await()
         if (!response.isSuccessful) {
-            debugLogger?.logMessage(message = "Failed to upload events. http code ${response.code}", isWarning = true)
+            debugLogger?.logError(message = "Failed to upload events. http code ${response.code}")
         }
         when (response.code) {
             // clean up in case of success

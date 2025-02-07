@@ -25,5 +25,9 @@ internal open class DebugLoggerFake : DebugLogger {
         // not important enough to test right now
     }
 
+    override fun logError(message: String, throwable: Throwable?) {
+        messagesLogged.add(Msg(message, true, throwable))
+    }
+
     data class Msg(val message: String, val isWarning: Boolean, val throwable: Throwable?)
 }
