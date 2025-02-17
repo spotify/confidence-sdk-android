@@ -89,6 +89,10 @@ private fun Response.toResolveFlags(): ResolveResponse {
                 ignoreUnknownKeys = true
             }
         }
-        return ResolveResponse.Resolved(networkJson.decodeFromString(bodyString))
+        try {
+            return ResolveResponse.Resolved(networkJson.decodeFromString(bodyString))
+        } finally {
+            body.close()
+        }
     } ?: throw ConfidenceError.ParseError("Response body is null", listOf())
 }

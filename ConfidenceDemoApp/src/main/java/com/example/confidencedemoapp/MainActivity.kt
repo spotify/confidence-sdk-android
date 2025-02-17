@@ -52,6 +52,9 @@ class MainActivity : ComponentActivity() {
                         Button(onClick = { vm.multiput() }) {
                             Text("MultiPut")
                         }
+                        Button(onClick = { vm.clear() }) {
+                            Text(text = "Clear out for re-fetching")
+                        }
                         Surface(
                             modifier = Modifier
                                 .padding(20.dp)
