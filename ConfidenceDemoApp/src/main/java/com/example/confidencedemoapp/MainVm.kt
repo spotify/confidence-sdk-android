@@ -136,6 +136,14 @@ class MainVm(app: Application) : AndroidViewModel(app) {
             refreshUi()
         }
     }
+
+    fun clear() {
+        Log.d(TAG, "clearing confidence")
+        for (key in confidence.getContext()) {
+            confidence.removeContext(key.key)
+        }
+        Log.d(TAG, "confidence context: ${confidence.getContext()}")
+    }
 }
 
 private fun <T> Evaluation<T>.toComposeColor(): Color {
