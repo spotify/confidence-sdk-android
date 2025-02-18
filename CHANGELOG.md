@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.4.0](https://github.com/spotify/confidence-sdk-android/compare/0.3.6...0.4.0) (2025-02-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* refactor context provider ([#191](https://github.com/spotify/confidence-sdk-android/issues/191))
+
+### 🐛 Bug Fixes
+
+* add additional logging to detect network issues ([#193](https://github.com/spotify/confidence-sdk-android/issues/193)) ([780feb1](https://github.com/spotify/confidence-sdk-android/commit/780feb184ff8ee0c93b1c5e4ab8a7f6e3a7669e5))
+* align debug resolve log wording on all platforms ([a2b10f1](https://github.com/spotify/confidence-sdk-android/commit/a2b10f1bfb948b37425f8c30c5e9445c0671d83d))
+* Align debug resolve log wording on all platforms ([#188](https://github.com/spotify/confidence-sdk-android/issues/188)) ([a2b10f1](https://github.com/spotify/confidence-sdk-android/commit/a2b10f1bfb948b37425f8c30c5e9445c0671d83d))
+* close leaking okhttp response body ([#196](https://github.com/spotify/confidence-sdk-android/issues/196)) ([5a14feb](https://github.com/spotify/confidence-sdk-android/commit/5a14feb9d79df41330af8ae237ab26657c9edaef))
+
+
+### ✨ New Features
+
+* add shouldApply to the apply call to depend on backend ([#192](https://github.com/spotify/confidence-sdk-android/issues/192)) ([70598bd](https://github.com/spotify/confidence-sdk-android/commit/70598bd3d3adc1dd9d36155653a0d7f64c26ddfa))
+* **Provider:** Add support for Tracking from OpenFeature ([#190](https://github.com/spotify/confidence-sdk-android/issues/190)) ([97c763c](https://github.com/spotify/confidence-sdk-android/commit/97c763c6bd2f07249a808d44cdbba63cba58fc2e))
+* refactor context provider ([#191](https://github.com/spotify/confidence-sdk-android/issues/191)) ([37c243e](https://github.com/spotify/confidence-sdk-android/commit/37c243e1cc8c02ee06c09a018d6211fb778a2fdf))
+
+
+### 🧹 Chore
+
+* update OF version ([#195](https://github.com/spotify/confidence-sdk-android/issues/195)) ([56852a9](https://github.com/spotify/confidence-sdk-android/commit/56852a984d8ef032a96762b66ef15890bfb367e5))
+
 ## [0.3.6](https://github.com/spotify/confidence-sdk-android/compare/0.3.5...0.3.6) (2024-11-29)
 
 
