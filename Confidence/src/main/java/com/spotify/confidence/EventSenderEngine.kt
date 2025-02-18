@@ -151,7 +151,7 @@ internal class EventSenderEngineImpl(
                 EventSenderEngineImpl(
                     EventStorageImpl(context),
                     clientSecret,
-                    uploader = EventSenderUploaderImpl(OkHttpClient(), dispatcher),
+                    uploader = EventSenderUploaderImpl(OkHttpClient(), dispatcher, debugLogger),
                     flushPolicies = flushPolicies.toMutableList(),
                     dispatcher = dispatcher,
                     sdkMetadata = sdkMetadata,

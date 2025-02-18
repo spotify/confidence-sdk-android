@@ -109,6 +109,9 @@ class DebugLoggerImplTest {
 
         errorLogger.logMessage("Error msg", throwable = Error("my error"))
         verify { Log.e("Confidence", "Error msg: my error") }
+
+        errorLogger.logError("Error msg")
+        verify { Log.e("Confidence", "Error msg") }
     }
 
     @Test

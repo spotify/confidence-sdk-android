@@ -28,7 +28,8 @@ internal class RemoteFlagResolver(
     private val httpClient: OkHttpClient,
     private val sdkMetadata: SdkMetadata,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
-    private val baseUrl: HttpUrl? = null
+    private val baseUrl: HttpUrl? = null,
+    private val debugLogger: DebugLogger? = null
 ) : FlagResolver {
     private val headers = Headers.headersOf(
         "Content-Type",
@@ -68,6 +69,27 @@ internal class RemoteFlagResolver(
         ConfidenceRegion.EUROPE -> "https://resolver.eu.confidence.dev"
         ConfidenceRegion.USA -> "https://resolver.us.confidence.dev"
     }
+
+    private fun Response.toResolveFlags(): ResolveResponse {
+        if (!isSuccessful) {
+            debugLogger?.logError("Failed to resolve flags. Http code: $code")
+        }
+        body?.let { body ->
+            val bodyString = body.string()
+
+            // building the json class responsible for serializing the object
+            val networkJson = Json {
+                serializersModule = SerializersModule {
+                    ignoreUnknownKeys = true
+                }
+            }
+            try {
+                return ResolveResponse.Resolved(networkJson.decodeFromString(bodyString))
+            } finally {
+                body.close()
+            }
+        } ?: throw ConfidenceError.ParseError("Response body is null", listOf())
+    }
 }
 
 @Serializable
@@ -78,21 +100,3 @@ private data class ResolveFlagsRequest(
     val apply: Boolean,
     val sdk: Sdk
 )
-
-private fun Response.toResolveFlags(): ResolveResponse {
-    body?.let { body ->
-        val bodyString = body.string()
-
-        // building the json class responsible for serializing the object
-        val networkJson = Json {
-            serializersModule = SerializersModule {
-                ignoreUnknownKeys = true
-            }
-        }
-        try {
-            return ResolveResponse.Resolved(networkJson.decodeFromString(bodyString))
-        } finally {
-            body.close()
-        }
-    } ?: throw ConfidenceError.ParseError("Response body is null", listOf())
-}

@@ -40,7 +40,8 @@ internal data class EngineEvent(
 
 internal class EventSenderUploaderImpl(
     private val httpClient: OkHttpClient,
-    private val dispatcher: CoroutineDispatcher
+    private val dispatcher: CoroutineDispatcher,
+    private val debugLogger: DebugLogger? = null
 ) : EventSenderUploader {
     private val headers by lazy {
         Headers.headersOf(
@@ -65,6 +66,9 @@ internal class EventSenderUploaderImpl(
             .build()
 
         val response = httpClient.newCall(httpRequest).await()
+        if (!response.isSuccessful) {
+            debugLogger?.logError(message = "Failed to upload events. http code ${response.code}")
+        }
         when (response.code) {
             // clean up in case of success
             200 -> true
