@@ -8,10 +8,7 @@ import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.TrackingEventDetails
 import dev.openfeature.sdk.Value
-import dev.openfeature.sdk.events.EventHandler
-import dev.openfeature.sdk.events.OpenFeatureEvents
 import dev.openfeature.sdk.exceptions.ErrorCode
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -53,16 +50,12 @@ class ProviderIntegrationTest {
     }
 
     @Test
-    fun testSimpleResolveInMemoryCache() {
-        val eventsHandler = EventHandler(Dispatchers.IO).apply {
-            publish(OpenFeatureEvents.ProviderStale)
-        }
+    fun testSimpleResolveInMemoryCache() = runTest {
         val mockConfidence = ConfidenceFactory.create(mockContext, clientSecret)
-        OpenFeatureAPI.setProvider(
+        OpenFeatureAPI.setProviderAndWait(
             ConfidenceFeatureProvider.create(
                 confidence = mockConfidence,
-                initialisationStrategy = InitialisationStrategy.FetchAndActivate,
-                eventHandler = eventsHandler
+                initialisationStrategy = InitialisationStrategy.FetchAndActivate
             ),
             ImmutableContext(
                 targetingKey = UUID.randomUUID().toString(),
@@ -75,9 +68,6 @@ class ProviderIntegrationTest {
                 )
             )
         )
-        runBlocking {
-            awaitProviderReady(eventsHandler = eventsHandler)
-        }
 
         val intDetails = OpenFeatureAPI.getClient()
             .getIntegerDetails(
@@ -93,17 +83,13 @@ class ProviderIntegrationTest {
     }
 
     @Test
-    fun testSimpleResolveStoredCache() {
-        val eventsHandler = EventHandler(Dispatchers.IO).apply {
-            publish(OpenFeatureEvents.ProviderStale)
-        }
+    fun testSimpleResolveStoredCache() = runTest {
         val cacheFile = File(mockContext.filesDir, flagsFileName)
         assertEquals(0L, cacheFile.length())
         val mockConfidence = ConfidenceFactory.create(mockContext, clientSecret)
-        OpenFeatureAPI.setProvider(
+        OpenFeatureAPI.setProviderAndWait(
             ConfidenceFeatureProvider.create(
-                confidence = mockConfidence,
-                eventHandler = eventsHandler
+                confidence = mockConfidence
             ),
             ImmutableContext(
                 targetingKey = UUID.randomUUID().toString(),
@@ -116,11 +102,6 @@ class ProviderIntegrationTest {
                 )
             )
         )
-
-        runBlocking {
-            awaitProviderReady(eventsHandler = eventsHandler)
-        }
-
         assertNotEquals(0L, cacheFile.length())
         val intDetails = OpenFeatureAPI.getClient().getIntegerDetails("kotlin-test-flag.my-integer", 0)
         assertNull(intDetails.errorCode)
@@ -132,17 +113,13 @@ class ProviderIntegrationTest {
     }
 
     @Test
-    fun testSimpleResolveWithFetchAndActivateInMemoryCache() {
-        val eventsHandler = EventHandler(Dispatchers.IO).apply {
-            publish(OpenFeatureEvents.ProviderStale)
-        }
+    fun testSimpleResolveWithFetchAndActivateInMemoryCache() = runTest {
         val mockConfidence = ConfidenceFactory.create(mockContext, clientSecret)
 
-        OpenFeatureAPI.setProvider(
+        OpenFeatureAPI.setProviderAndWait(
             ConfidenceFeatureProvider.create(
                 confidence = mockConfidence,
-                initialisationStrategy = InitialisationStrategy.ActivateAndFetchAsync,
-                eventHandler = eventsHandler
+                initialisationStrategy = InitialisationStrategy.ActivateAndFetchAsync
             ),
             ImmutableContext(
                 targetingKey = UUID.randomUUID().toString(),
@@ -155,9 +132,6 @@ class ProviderIntegrationTest {
                 )
             )
         )
-        runBlocking {
-            awaitProviderReady(eventsHandler = eventsHandler)
-        }
 
         val flagNotFoundDetails = OpenFeatureAPI.getClient()
             .getObjectDetails(
@@ -191,19 +165,15 @@ class ProviderIntegrationTest {
     @Test
     fun testEventTracking() = runTest {
         val testDispatcher = StandardTestDispatcher(testScheduler)
-        val eventsHandler = EventHandler(Dispatchers.IO).apply {
-            publish(OpenFeatureEvents.ProviderStale)
-        }
         val cacheDir = mockContext.getDir("events", Context.MODE_PRIVATE)
         assertTrue(cacheDir.isDirectory)
         assertTrue(cacheDir.listFiles().isEmpty())
         val mockConfidence = ConfidenceFactory.create(mockContext, clientSecret, dispatcher = testDispatcher)
 
-        OpenFeatureAPI.setProvider(
+        OpenFeatureAPI.setProviderAndWait(
             ConfidenceFeatureProvider.create(
                 confidence = mockConfidence,
-                initialisationStrategy = InitialisationStrategy.ActivateAndFetchAsync,
-                eventHandler = eventsHandler
+                initialisationStrategy = InitialisationStrategy.ActivateAndFetchAsync
             ),
             ImmutableContext(
                 targetingKey = UUID.randomUUID().toString(),
@@ -216,9 +186,6 @@ class ProviderIntegrationTest {
                 )
             )
         )
-        runBlocking {
-            awaitProviderReady(eventsHandler = eventsHandler)
-        }
 
         assertEquals(1, cacheDir.listFiles()?.size)
         assertEquals(0, cacheDir.listFiles()?.first()?.readLines()?.size)

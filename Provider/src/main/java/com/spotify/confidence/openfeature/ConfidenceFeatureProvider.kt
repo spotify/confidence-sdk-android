@@ -16,16 +16,9 @@ import dev.openfeature.sdk.ProviderMetadata
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.TrackingEventDetails
 import dev.openfeature.sdk.Value
-import dev.openfeature.sdk.events.EventHandler
-import dev.openfeature.sdk.events.OpenFeatureEvents
 import dev.openfeature.sdk.exceptions.OpenFeatureError
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
 
 internal const val PROVIDER_ID = "SDK_ID_KOTLIN_CONFIDENCE"
 
@@ -37,15 +30,11 @@ class ConfidenceFeatureProvider private constructor(
     override val hooks: List<Hook<*>>,
     override val metadata: ProviderMetadata,
     private val initialisationStrategy: InitialisationStrategy,
-    private val eventHandler: EventHandler,
-    private val confidence: Confidence,
-    dispatcher: CoroutineDispatcher
+    private val confidence: Confidence
 ) : FeatureProvider {
     private val job = SupervisorJob()
 
-    private val coroutineScope = CoroutineScope(job + dispatcher)
-
-    override fun initialize(initialContext: EvaluationContext?) {
+    override suspend fun initialize(initialContext: EvaluationContext?) {
         initialContext?.toConfidenceContext()?.let {
             confidence.putContextLocal(it.map)
         }
@@ -54,13 +43,9 @@ class ConfidenceFeatureProvider private constructor(
             InitialisationStrategy.ActivateAndFetchAsync -> {
                 confidence.activate()
                 confidence.asyncFetch()
-                eventHandler.publish(OpenFeatureEvents.ProviderReady)
             }
             InitialisationStrategy.FetchAndActivate -> {
-                coroutineScope.launch {
-                    confidence.fetchAndActivate()
-                    eventHandler.publish(OpenFeatureEvents.ProviderReady)
-                }
+                confidence.fetchAndActivate()
             }
         }
     }
@@ -69,19 +54,13 @@ class ConfidenceFeatureProvider private constructor(
         job.cancelChildren()
     }
 
-    override fun onContextSet(
+    override suspend fun onContextSet(
         oldContext: EvaluationContext?,
         newContext: EvaluationContext
     ) {
         val context = newContext.toConfidenceContext()
         val removedKeys = oldContext?.asMap()?.keys?.minus(newContext.asMap().keys) ?: emptySet()
         confidence.putContext(context.map, removedKeys.toList())
-    }
-
-    override fun observe(): Flow<OpenFeatureEvents> = eventHandler.observe()
-
-    override fun getProviderStatus(): OpenFeatureEvents {
-        return eventHandler.getProviderStatus()
     }
 
     override fun getBooleanEvaluation(
@@ -155,17 +134,13 @@ class ConfidenceFeatureProvider private constructor(
             confidence: Confidence,
             initialisationStrategy: InitialisationStrategy = InitialisationStrategy.FetchAndActivate,
             hooks: List<Hook<*>> = listOf(),
-            metadata: ProviderMetadata = ConfidenceMetadata(),
-            eventHandler: EventHandler = EventHandler(Dispatchers.IO),
-            dispatcher: CoroutineDispatcher = Dispatchers.IO
+            metadata: ProviderMetadata = ConfidenceMetadata()
         ): ConfidenceFeatureProvider {
             return ConfidenceFeatureProvider(
                 hooks = hooks,
                 metadata = metadata,
                 initialisationStrategy = initialisationStrategy,
-                eventHandler = eventHandler,
-                confidence = confidence,
-                dispatcher = dispatcher
+                confidence = confidence
             )
         }
     }
