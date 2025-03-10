@@ -17,8 +17,6 @@ import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.TrackingEventDetails
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.exceptions.OpenFeatureError
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancelChildren
 
 internal const val PROVIDER_ID = "SDK_ID_KOTLIN_CONFIDENCE"
 
@@ -32,7 +30,6 @@ class ConfidenceFeatureProvider private constructor(
     private val initialisationStrategy: InitialisationStrategy,
     private val confidence: Confidence
 ) : FeatureProvider {
-    private val job = SupervisorJob()
 
     override suspend fun initialize(initialContext: EvaluationContext?) {
         initialContext?.toConfidenceContext()?.let {
@@ -51,7 +48,6 @@ class ConfidenceFeatureProvider private constructor(
     }
 
     override fun shutdown() {
-        job.cancelChildren()
     }
 
     override suspend fun onContextSet(

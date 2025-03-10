@@ -18,11 +18,11 @@ public final class com/spotify/confidence/Confidence : com/spotify/confidence/Co
 	public final fun getFlag (Ljava/lang/String;Ljava/lang/Object;)Lcom/spotify/confidence/Evaluation;
 	public final fun getValue (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
 	public final fun isStorageEmpty ()Z
-	public fun putContext (Ljava/lang/String;Lcom/spotify/confidence/ConfidenceValue;)V
-	public fun putContext (Ljava/util/Map;)V
+	public fun putContext (Ljava/lang/String;Lcom/spotify/confidence/ConfidenceValue;Z)V
 	public final fun putContext (Ljava/util/Map;Ljava/util/List;)V
+	public fun putContext (Ljava/util/Map;Z)V
 	public final fun putContextLocal (Ljava/util/Map;)V
-	public fun removeContext (Ljava/lang/String;)V
+	public fun removeContext (Ljava/lang/String;Z)V
 	public fun stop ()V
 	public fun track (Lcom/spotify/confidence/Producer;)V
 	public fun track (Ljava/lang/String;Ljava/util/Map;)V
@@ -381,10 +381,16 @@ public final class com/spotify/confidence/ConfidenceValueKt {
 }
 
 public abstract interface class com/spotify/confidence/Contextual : com/spotify/confidence/ConfidenceContextProvider {
-	public abstract fun putContext (Ljava/lang/String;Lcom/spotify/confidence/ConfidenceValue;)V
-	public abstract fun putContext (Ljava/util/Map;)V
-	public abstract fun removeContext (Ljava/lang/String;)V
+	public abstract fun putContext (Ljava/lang/String;Lcom/spotify/confidence/ConfidenceValue;Z)V
+	public abstract fun putContext (Ljava/util/Map;Z)V
+	public abstract fun removeContext (Ljava/lang/String;Z)V
 	public abstract fun withContext (Ljava/util/Map;)Lcom/spotify/confidence/Contextual;
+}
+
+public final class com/spotify/confidence/Contextual$DefaultImpls {
+	public static synthetic fun putContext$default (Lcom/spotify/confidence/Contextual;Ljava/lang/String;Lcom/spotify/confidence/ConfidenceValue;ZILjava/lang/Object;)V
+	public static synthetic fun putContext$default (Lcom/spotify/confidence/Contextual;Ljava/util/Map;ZILjava/lang/Object;)V
+	public static synthetic fun removeContext$default (Lcom/spotify/confidence/Contextual;Ljava/lang/String;ZILjava/lang/Object;)V
 }
 
 public final class com/spotify/confidence/Evaluation {

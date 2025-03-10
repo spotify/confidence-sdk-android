@@ -132,20 +132,20 @@ class Confidence internal constructor(
     }
 
     @Synchronized
-    override fun putContext(key: String, value: ConfidenceValue) {
+    override fun putContext(key: String, value: ConfidenceValue, skipFetch: Boolean) {
         val map = contextMap.value.toMutableMap()
         map[key] = value
         contextMap.value = map
-        triggerNewFlagFetch()
+        if (!skipFetch) triggerNewFlagFetch()
         debugLogger?.logContext("PutContext", contextMap.value)
     }
 
     @Synchronized
-    override fun putContext(context: Map<String, ConfidenceValue>) {
+    override fun putContext(context: Map<String, ConfidenceValue>, skipFetch: Boolean) {
         val map = contextMap.value.toMutableMap()
         map += context
         contextMap.value = map
-        triggerNewFlagFetch()
+        if (!skipFetch) triggerNewFlagFetch()
         debugLogger?.logContext("PutContext", contextMap.value)
     }
 
@@ -196,12 +196,12 @@ class Confidence internal constructor(
     }
 
     @Synchronized
-    override fun removeContext(key: String) {
+    override fun removeContext(key: String, skipFetch: Boolean) {
         val map = contextMap.value.toMutableMap()
         map.remove(key)
         removedKeys.add(key)
         contextMap.value = map
-        triggerNewFlagFetch()
+        if (!skipFetch) triggerNewFlagFetch()
         debugLogger?.logContext("RemoveContext", contextMap.value)
     }
 
@@ -306,6 +306,7 @@ class Confidence internal constructor(
                             eventSenderEngine.flush()
                         }
                     }
+
                     is Update.ContextUpdate -> putContext(update.context)
                 }
             }
