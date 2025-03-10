@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
@@ -44,6 +45,11 @@ class ProviderIntegrationTest {
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
         whenever(mockContext.getDir(any(), any())).thenReturn(Files.createTempDirectory("events").toFile())
         whenever(mockContext.getSharedPreferences(SHARED_PREFS_NAME, Context.MODE_PRIVATE)).thenReturn(InMemorySharedPreferences())
+    }
+
+    @After
+    fun tearDown() {
+        OpenFeatureAPI.shutdown()
     }
 
     @Test
@@ -223,7 +229,6 @@ class ProviderIntegrationTest {
         assertEquals(1, lines.size)
         val jsonString = lines.first()
         assertTrue(jsonString.contains("\"eventDefinition\":\"MyEventName\""))
-        println(lines.first())
         assertTrue(jsonString.contains("\"payload\":{\"value\":{\"double\":33.0},\"key\":{\"string\":\"value\"}"))
         val regex = Regex(
             "\"context\":\\{\"map\":\\{\"visitor_id\":\\{\"string\":\"[a-f0-9\\-]+\"}," +
