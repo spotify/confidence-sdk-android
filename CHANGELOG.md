@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/spotify/confidence-sdk-android/compare/0.4.0...0.4.1) (2025-03-11)
+
+
+### 🐛 Bug Fixes
+
+* skip extra resolve when initialising ConfidenceProvider ([#199](https://github.com/spotify/confidence-sdk-android/issues/199)) ([b074b8b](https://github.com/spotify/confidence-sdk-android/commit/b074b8b06727e44768382faebb06c6300b3e69c7))
+
 ## [0.4.0](https://github.com/spotify/confidence-sdk-android/compare/0.3.6...0.4.0) (2025-02-18)
 
 
