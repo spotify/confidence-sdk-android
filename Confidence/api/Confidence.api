@@ -21,6 +21,7 @@ public final class com/spotify/confidence/Confidence : com/spotify/confidence/Co
 	public fun putContext (Ljava/lang/String;Lcom/spotify/confidence/ConfidenceValue;)V
 	public fun putContext (Ljava/util/Map;)V
 	public final fun putContext (Ljava/util/Map;Ljava/util/List;)V
+	public final fun putContextLocal (Ljava/util/Map;)V
 	public fun removeContext (Ljava/lang/String;)V
 	public fun stop ()V
 	public fun track (Lcom/spotify/confidence/Producer;)V

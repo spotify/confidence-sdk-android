@@ -47,7 +47,7 @@ class ConfidenceFeatureProvider private constructor(
 
     override fun initialize(initialContext: EvaluationContext?) {
         initialContext?.toConfidenceContext()?.let {
-            confidence.putContext(it.map)
+            confidence.putContextLocal(it.map)
         }
 
         when (initialisationStrategy) {
