@@ -150,6 +150,20 @@ class Confidence internal constructor(
     }
 
     /**
+     * Adds/override entry to local context data only.
+     * Warning: Does not trigger a new flag fetch after the context change.
+     * @param context context to add.
+     */
+    @Synchronized
+    fun putContextLocal(context: Map<String, ConfidenceValue>) {
+        val map = contextMap.value.toMutableMap()
+        map += context
+        contextMap.value = map
+        // No triggering of new flag fetch
+        debugLogger?.logContext("putContextLocal", contextMap.value)
+    }
+
+    /**
      * Check if cache is empty
      */
     fun isStorageEmpty(): Boolean = diskStorage.read() == FlagResolution.EMPTY
