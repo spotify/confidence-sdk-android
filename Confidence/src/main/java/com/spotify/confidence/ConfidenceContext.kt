@@ -19,22 +19,19 @@ interface Contextual : ConfidenceContextProvider {
     /**
      * Add entry to context
      * @param context context to add.
-     * @param skipFetch if true, the context will not initiate a new fetch.
      */
-    fun putContext(context: Map<String, ConfidenceValue>, skipFetch: Boolean = false)
+    fun putContext(context: Map<String, ConfidenceValue>)
 
     /**
      * Add entry to context
      * @param key key of the entry.
      * @param value value of the entry.
-     * @param skipFetch if true, the context will not initiate a new fetch.
      */
-    fun putContext(key: String, value: ConfidenceValue, skipFetch: Boolean = false)
+    fun putContext(key: String, value: ConfidenceValue)
 
     /**
      * Remove entry from context
      * @param key key of the context to be removed.
-     * @param skipFetch if true, the context will not initiate a new fetch.
      */
-    fun removeContext(key: String, skipFetch: Boolean = false)
+    fun removeContext(key: String)
 }
