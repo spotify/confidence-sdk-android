@@ -1,24 +1,23 @@
 public final class com/spotify/confidence/openfeature/ConfidenceFeatureProvider : dev/openfeature/sdk/FeatureProvider {
 	public static final field Companion Lcom/spotify/confidence/openfeature/ConfidenceFeatureProvider$Companion;
-	public synthetic fun <init> (Ljava/util/List;Ldev/openfeature/sdk/ProviderMetadata;Lcom/spotify/confidence/openfeature/InitialisationStrategy;Ldev/openfeature/sdk/events/EventHandler;Lcom/spotify/confidence/Confidence;Lkotlinx/coroutines/CoroutineDispatcher;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/util/List;Ldev/openfeature/sdk/ProviderMetadata;Lcom/spotify/confidence/openfeature/InitialisationStrategy;Lcom/spotify/confidence/Confidence;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun getBooleanEvaluation (Ljava/lang/String;ZLdev/openfeature/sdk/EvaluationContext;)Ldev/openfeature/sdk/ProviderEvaluation;
 	public fun getDoubleEvaluation (Ljava/lang/String;DLdev/openfeature/sdk/EvaluationContext;)Ldev/openfeature/sdk/ProviderEvaluation;
 	public fun getHooks ()Ljava/util/List;
 	public fun getIntegerEvaluation (Ljava/lang/String;ILdev/openfeature/sdk/EvaluationContext;)Ldev/openfeature/sdk/ProviderEvaluation;
 	public fun getMetadata ()Ldev/openfeature/sdk/ProviderMetadata;
 	public fun getObjectEvaluation (Ljava/lang/String;Ldev/openfeature/sdk/Value;Ldev/openfeature/sdk/EvaluationContext;)Ldev/openfeature/sdk/ProviderEvaluation;
-	public fun getProviderStatus ()Ldev/openfeature/sdk/events/OpenFeatureEvents;
 	public fun getStringEvaluation (Ljava/lang/String;Ljava/lang/String;Ldev/openfeature/sdk/EvaluationContext;)Ldev/openfeature/sdk/ProviderEvaluation;
-	public fun initialize (Ldev/openfeature/sdk/EvaluationContext;)V
+	public fun initialize (Ldev/openfeature/sdk/EvaluationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun observe ()Lkotlinx/coroutines/flow/Flow;
-	public fun onContextSet (Ldev/openfeature/sdk/EvaluationContext;Ldev/openfeature/sdk/EvaluationContext;)V
+	public fun onContextSet (Ldev/openfeature/sdk/EvaluationContext;Ldev/openfeature/sdk/EvaluationContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun shutdown ()V
 	public fun track (Ljava/lang/String;Ldev/openfeature/sdk/EvaluationContext;Ldev/openfeature/sdk/TrackingEventDetails;)V
 }
 
 public final class com/spotify/confidence/openfeature/ConfidenceFeatureProvider$Companion {
-	public final fun create (Lcom/spotify/confidence/Confidence;Lcom/spotify/confidence/openfeature/InitialisationStrategy;Ljava/util/List;Ldev/openfeature/sdk/ProviderMetadata;Ldev/openfeature/sdk/events/EventHandler;Lkotlinx/coroutines/CoroutineDispatcher;)Lcom/spotify/confidence/openfeature/ConfidenceFeatureProvider;
-	public static synthetic fun create$default (Lcom/spotify/confidence/openfeature/ConfidenceFeatureProvider$Companion;Lcom/spotify/confidence/Confidence;Lcom/spotify/confidence/openfeature/InitialisationStrategy;Ljava/util/List;Ldev/openfeature/sdk/ProviderMetadata;Ldev/openfeature/sdk/events/EventHandler;Lkotlinx/coroutines/CoroutineDispatcher;ILjava/lang/Object;)Lcom/spotify/confidence/openfeature/ConfidenceFeatureProvider;
+	public final fun create (Lcom/spotify/confidence/Confidence;Lcom/spotify/confidence/openfeature/InitialisationStrategy;Ljava/util/List;Ldev/openfeature/sdk/ProviderMetadata;)Lcom/spotify/confidence/openfeature/ConfidenceFeatureProvider;
+	public static synthetic fun create$default (Lcom/spotify/confidence/openfeature/ConfidenceFeatureProvider$Companion;Lcom/spotify/confidence/Confidence;Lcom/spotify/confidence/openfeature/InitialisationStrategy;Ljava/util/List;Ldev/openfeature/sdk/ProviderMetadata;ILjava/lang/Object;)Lcom/spotify/confidence/openfeature/ConfidenceFeatureProvider;
 }
 
 public final class com/spotify/confidence/openfeature/ConfidenceFeatureProviderKt {

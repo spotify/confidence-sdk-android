@@ -46,6 +46,9 @@ android {
             withSourcesJar()
         }
     }
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
