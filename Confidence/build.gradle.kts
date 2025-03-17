@@ -3,8 +3,8 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("maven-publish")
     id("org.jlleitschuh.gradle.ktlint")
+    id("org.jetbrains.kotlin.plugin.serialization") apply true
     id("signing")
-    kotlin("plugin.serialization").version("1.8.10").apply(true)
     id("org.jetbrains.kotlinx.binary-compatibility-validator")
     id("org.jetbrains.kotlinx.kover")
 }
@@ -52,16 +52,15 @@ android {
 }
 
 dependencies {
-    implementation("com.squareup.okhttp3:okhttp:${Versions.okHttp}")
-    implementation(
-        "org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}"
-    )
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
-    testImplementation("junit:junit:${Versions.junit}")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.coroutines}")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:${Versions.kotlinMockito}")
-    testImplementation("com.squareup.okhttp3:mockwebserver:${Versions.mockWebServer}")
-    testImplementation("io.mockk:mockk:1.13.11")
+    implementation(libs.okHttp)
+    implementation(libs.kotlinxSerialization)
+    implementation(libs.coroutines)
+    testImplementation(libs.junit)
+    testImplementation(libs.coroutines)
+    testImplementation(libs.kotlinMockito)
+    testImplementation(libs.mockWebServer)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinxCoroutinesTest)
 }
 
 publishing {

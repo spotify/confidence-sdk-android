@@ -1,23 +1,13 @@
 // ktlint-disable max-line-length
 plugins {
-    id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.kotlinAndroid)
     id("maven-publish")
-    id("org.jlleitschuh.gradle.ktlint")
-    kotlin("plugin.serialization")
+    alias(libs.plugins.ktlint)
+    alias(libs.plugins.kotlinSerialization) apply true
     id("signing")
-    id("org.jetbrains.kotlinx.binary-compatibility-validator")
-    id("org.jetbrains.kotlinx.kover")
-}
-
-object Versions {
-    const val openFeatureSDK = "0.4.1"
-    const val okHttp = "4.10.0"
-    const val kotlinxSerialization = "1.6.0"
-    const val coroutines = "1.7.3"
-    const val junit = "4.13.2"
-    const val kotlinMockito = "4.1.0"
-    const val mockWebServer = "4.9.1"
+    alias(libs.plugins.binaryCompatibilityValidation)
+    alias(libs.plugins.kover)
 }
 
 val providerVersion = project.extra["version"].toString()
@@ -54,18 +44,17 @@ android {
 }
 
 dependencies {
-    api("dev.openfeature:android-sdk:${Versions.openFeatureSDK}")
-    implementation("com.squareup.okhttp3:okhttp:${Versions.okHttp}")
-    implementation(
-        "org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.kotlinxSerialization}"
-    )
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
+    api(libs.openFeatureSDK)
+    implementation(libs.okHttp)
+    implementation(libs.kotlinxSerialization)
+    implementation(libs.coroutines)
     api(project(":Confidence"))
-    testImplementation("junit:junit:${Versions.junit}")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.coroutines}")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:${Versions.kotlinMockito}")
-    testImplementation("com.squareup.okhttp3:mockwebserver:${Versions.mockWebServer}")
-    testImplementation("io.mockk:mockk:1.13.9")
+    testImplementation(libs.junit)
+    testImplementation(libs.coroutines)
+    testImplementation(libs.kotlinMockito)
+    testImplementation(libs.mockWebServer)
+    testImplementation(libs.kotlinxCoroutinesTest)
+    testImplementation(libs.mockk)
 }
 
 publishing {

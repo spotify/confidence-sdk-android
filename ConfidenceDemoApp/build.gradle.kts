@@ -2,26 +2,8 @@ import java.io.File
 import java.util.Properties
 
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-}
-
-object Versions {
-    const val coroutines = "1.7.1"
-    const val liveData = "1.2.0"
-    const val core = "1.7.0"
-    const val lifecycleRuntime = "2.6.1"
-    const val activityCompose = "1.3.1"
-    const val kotlinxSerialization = "1.6.0"
-    const val composeUi = "1.2.0"
-    const val composeUiToolingPreview = "1.2.0"
-    const val composeMaterial = "1.2.0"
-    const val jUnit = "4.13.2"
-    const val jUnitTest = "1.1.3"
-    const val espresso = "3.4.0"
-    const val jUnitUiTest = "1.2.0"
-    const val composeUiTooling = "1.2.0"
-    const val uiTestManifest = "1.2.0"
+    alias(libs.plugins.androidApplication)
+    alias(libs.plugins.kotlinAndroid)
 }
 
 val localPropertiesFile = File(rootProject.projectDir, "local.properties")
@@ -73,7 +55,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.1"
+        kotlinCompilerExtensionVersion = "1.4.2"
     }
     packagingOptions {
         resources {
@@ -84,19 +66,19 @@ android {
 
 dependencies {
     implementation(project(":Confidence"))
-    implementation("androidx.lifecycle:lifecycle-process:2.6.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
-    implementation( "androidx.compose.runtime:runtime-livedata:${Versions.liveData}")
-    implementation( "androidx.core:core-ktx:${Versions.core}")
-    implementation( "androidx.lifecycle:lifecycle-runtime-ktx:${Versions.lifecycleRuntime}")
-    implementation( "androidx.activity:activity-compose:${Versions.activityCompose}")
-    implementation( "androidx.compose.ui:ui:${Versions.composeUi}")
-    implementation( "androidx.compose.ui:ui-tooling-preview:${Versions.composeUiToolingPreview}")
-    implementation( "androidx.compose.material:material:${Versions.composeMaterial}")
-    testImplementation( "junit:junit:${Versions.jUnit}")
-    androidTestImplementation( "androidx.test.ext:junit:${Versions.jUnitTest}")
-    androidTestImplementation( "androidx.test.espresso:espresso-core:${Versions.espresso}")
-    androidTestImplementation( "androidx.compose.ui:ui-test-junit4:${Versions.jUnitUiTest}")
-    debugImplementation("androidx.compose.ui:ui-tooling:${Versions.composeUiTooling}")
-    debugImplementation("androidx.compose.ui:ui-test-manifest:${Versions.uiTestManifest}")
+    implementation(libs.lifecycleProcess)
+    implementation(libs.coroutines)
+    implementation(libs.liveData)
+    implementation(libs.core)
+    implementation(libs.lifecycleRuntime)
+    implementation(libs.activityCompose)
+    implementation(libs.composeUi)
+    implementation(libs.composeUiToolingPreview)
+    implementation(libs.composeMaterial)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.jUnitTest)
+    androidTestImplementation(libs.espresso)
+    androidTestImplementation(libs.jUnitUiTest)
+    debugImplementation(libs.composeUiTooling)
+    debugImplementation(libs.uiTestManifest)
 }
