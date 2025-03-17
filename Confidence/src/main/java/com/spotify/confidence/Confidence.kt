@@ -306,6 +306,7 @@ class Confidence internal constructor(
                             eventSenderEngine.flush()
                         }
                     }
+
                     is Update.ContextUpdate -> putContext(update.context)
                 }
             }

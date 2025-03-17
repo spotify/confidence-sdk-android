@@ -11,7 +11,7 @@ plugins {
 }
 
 object Versions {
-    const val openFeatureSDK = "0.3.3"
+    const val openFeatureSDK = "0.4.1"
     const val okHttp = "4.10.0"
     const val kotlinxSerialization = "1.6.0"
     const val coroutines = "1.7.3"
@@ -47,7 +47,9 @@ android {
             withSourcesJar()
         }
     }
-
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
     buildFeatures.buildConfig = false
 }
 
@@ -63,6 +65,7 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.coroutines}")
     testImplementation("org.mockito.kotlin:mockito-kotlin:${Versions.kotlinMockito}")
     testImplementation("com.squareup.okhttp3:mockwebserver:${Versions.mockWebServer}")
+    testImplementation("io.mockk:mockk:1.13.9")
 }
 
 publishing {
