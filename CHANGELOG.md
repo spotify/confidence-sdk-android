@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.5.0](https://github.com/spotify/confidence-sdk-android/compare/0.4.0...0.5.0) (2025-03-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* **Provider:** update to OF SDK 0.4.1 ([#197](https://github.com/spotify/confidence-sdk-android/issues/197))
+
+### 🐛 Bug Fixes
+
+* skip extra resolve when initialising ConfidenceProvider ([#199](https://github.com/spotify/confidence-sdk-android/issues/199)) ([b074b8b](https://github.com/spotify/confidence-sdk-android/commit/b074b8b06727e44768382faebb06c6300b3e69c7))
+
+
+### ✨ New Features
+
+* **Provider:** update to OF SDK 0.4.1 ([#197](https://github.com/spotify/confidence-sdk-android/issues/197)) ([21e3302](https://github.com/spotify/confidence-sdk-android/commit/21e3302237073dae6559335835f489f580707815))
+
 ## [0.4.0](https://github.com/spotify/confidence-sdk-android/compare/0.3.6...0.4.0) (2025-02-18)
 
 
