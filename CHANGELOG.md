@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/spotify/confidence-sdk-android/compare/0.5.0...0.5.1) (2025-04-11)
+
+
+### 🧹 Chore
+
+* move to toml for version catalog ([#200](https://github.com/spotify/confidence-sdk-android/issues/200)) ([ca26a67](https://github.com/spotify/confidence-sdk-android/commit/ca26a67ca69773f5302e3f76168eca9b52df6e67))
+
 ## [0.5.0](https://github.com/spotify/confidence-sdk-android/compare/0.4.0...0.5.0) (2025-03-17)
 
 
