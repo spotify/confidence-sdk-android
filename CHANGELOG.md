@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.1](https://github.com/spotify/confidence-sdk-android/compare/0.5.0...0.5.1) (2025-04-28)
+
+
+### 🐛 Bug Fixes
+
+* change how we log resolve tester hints ([#203](https://github.com/spotify/confidence-sdk-android/issues/203)) ([6cdbc41](https://github.com/spotify/confidence-sdk-android/commit/6cdbc4117e7b11dc1294d3cda45b2d6f72f2ff52))
+
+
+### 🧹 Chore
+
+* move to toml for version catalog ([#200](https://github.com/spotify/confidence-sdk-android/issues/200)) ([ca26a67](https://github.com/spotify/confidence-sdk-android/commit/ca26a67ca69773f5302e3f76168eca9b52df6e67))
+
 ## [0.5.0](https://github.com/spotify/confidence-sdk-android/compare/0.4.0...0.5.0) (2025-03-17)
 
 
