@@ -1,8 +1,10 @@
 package com.spotify.confidence
 
+import android.util.Base64
 import android.util.Log
 import kotlinx.serialization.json.JsonElement
-import java.net.URLEncoder
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 internal interface DebugLogger {
     fun logEvent(action: String, event: EngineEvent)
@@ -17,10 +19,6 @@ internal interface DebugLogger {
 }
 
 internal class DebugLoggerImpl(private val filterLevel: LoggingLevel, private val clientKey: String) : DebugLogger {
-    private val JsonElement.urlEncoded
-        get() = URLEncoder.encode(this.toString(), "UTF-8")
-    private val String.urlEncoded
-        get() = URLEncoder.encode(this, "UTF-8")
 
     override fun logEvent(action: String, event: EngineEvent) {
         debug("[$action] $event")
@@ -45,11 +43,16 @@ internal class DebugLoggerImpl(private val filterLevel: LoggingLevel, private va
     }
 
     override fun logResolve(flag: String, context: JsonElement) {
-        debug(
-            "See resolves for $flag in Confidence: " +
-                "https://app.confidence.spotify.com/flags/resolver-test?client-key=$clientKey&flag=flags/" +
-                "${flag.urlEncoded}&context=${context.urlEncoded}"
-        )
+        buildJsonObject {
+            put("flag", "flags/$flag")
+            put("context", context)
+            put("clientKey", clientKey)
+        }.let { json ->
+            val base64 = Base64.encodeToString(json.toString().toByteArray(), Base64.DEFAULT)
+            debug(
+                "Check your flag evaluation for '$flag' by copy pasting the payload to the Resolve tester '$base64'"
+            )
+        }
     }
 
     override fun logError(message: String, throwable: Throwable?) {
