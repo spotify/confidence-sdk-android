@@ -217,6 +217,149 @@ internal class ConfidenceEvaluationTest {
     }
 
     @Test
+    fun testMatchingStructSuccess() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val context = mapOf("targeting_key" to ConfidenceValue.String("foo"))
+        val mockConfidence = getConfidence(
+            testDispatcher,
+            initialContext = context
+        )
+        whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
+        whenever(
+            flagResolverClient.resolve(
+                eq(listOf()),
+                eq(context)
+            )
+        ).thenReturn(
+            Result.Success(
+                FlagResolution(
+                    context,
+                    resolvedFlags.list,
+                    "token1"
+                )
+            )
+        )
+        mockConfidence.fetchAndActivate()
+        advanceUntilIdle()
+        verify(flagResolverClient, times(1))
+            .resolve(
+                any(),
+                eq(context)
+            )
+
+        // CASE 1: Evaluation has type map, but the value inside has type Struct
+        val evalObject: Evaluation<Map<String, String>> = mockConfidence.getFlag(
+            "test-kotlin-flag-1.mystruct",
+            mapOf("test" to "value")
+        )
+        try {
+            // This doesn't complain at compile time...
+            val v: Map<String, String> = evalObject.value
+            TestCase.fail()
+        } catch (e: ClassCastException) {}
+
+        advanceUntilIdle()
+        // ... Yet this is still correct
+        TestCase.assertEquals(
+            ConfidenceValue.Struct(mapOf("innerString" to ConfidenceValue.String("innerValue"))),
+            evalObject.value
+        )
+
+        // CASE 2: Value returns type map, but the value inside has type ConfidenceStruct
+        try {
+            // This fails at runtime
+            val value: Map<String, String> = mockConfidence.getValue(
+                "test-kotlin-flag-1.mystruct",
+                mapOf("test" to "value"))
+                TestCase.fail()
+        } catch (e: ClassCastException) {
+            //
+        }
+
+        // CASE 3: All types are ConfidenceStruct, this works
+        val evalObject2: Evaluation<ConfidenceValue.Struct> = mockConfidence.getFlag(
+            "test-kotlin-flag-1.mystruct",
+            ConfidenceValue.Struct(mapOf())
+        )
+        advanceUntilIdle()
+        TestCase.assertEquals(
+            ConfidenceValue.Struct(mapOf("innerString" to ConfidenceValue.String("innerValue"))),
+            evalObject2.value
+        )
+
+        val value2: ConfidenceValue.Struct = mockConfidence.getValue(
+            "test-kotlin-flag-1.mystruct",
+            ConfidenceValue.Struct(mapOf())
+        )
+        advanceUntilIdle()
+        TestCase.assertEquals(
+            ConfidenceValue.Struct(mapOf("innerString" to ConfidenceValue.String("innerValue"))),
+            value2
+        )
+    }
+
+    @Test
+    fun testMatchingStructFail() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val context = mapOf("targeting_key" to ConfidenceValue.String("foo"))
+        val mockConfidence = getConfidence(
+            testDispatcher,
+            initialContext = context
+        )
+        whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
+        whenever(
+            flagResolverClient.resolve(
+                eq(listOf()),
+                eq(context)
+            )
+        ).thenReturn(
+            Result.Failure()
+        )
+        mockConfidence.fetchAndActivate()
+        advanceUntilIdle()
+        verify(flagResolverClient, times(1))
+            .resolve(
+                any(),
+                eq(context)
+            )
+
+        val evalObject: Evaluation<Map<String, String>> = mockConfidence.getFlag(
+            "test-kotlin-flag-1.mystruct",
+            mapOf("test" to "value")
+        )
+        val evalObject2: Evaluation<ConfidenceValue.Struct> = mockConfidence.getFlag(
+            "test-kotlin-flag-1.mystruct",
+            ConfidenceValue.Struct(mapOf("test" to ConfidenceValue.Integer(1)))
+        )
+        val value: Map<String, String> = mockConfidence.getValue(
+            "test-kotlin-flag-1.mystruct",
+            mapOf("test" to "value")
+        )
+        val value2: ConfidenceValue.Struct = mockConfidence.getValue(
+            "test-kotlin-flag-1.mystruct",
+            ConfidenceValue.Struct(mapOf("test" to ConfidenceValue.Integer(1)))
+        )
+        advanceUntilIdle()
+
+        TestCase.assertEquals(
+            mapOf("test" to "value"),
+            evalObject.value
+        )
+        TestCase.assertEquals(
+            ConfidenceValue.Struct(mapOf("test" to ConfidenceValue.Integer(1))),
+            evalObject2.value
+        )
+        TestCase.assertEquals(
+            mapOf("test" to "value"),
+            value
+        )
+        TestCase.assertEquals(
+            ConfidenceValue.Struct(mapOf("test" to ConfidenceValue.Integer(1))),
+            value2
+        )
+    }
+
+    @Test
     fun testDelayedApply() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val context = mapOf("targeting_key" to ConfidenceValue.String("foo"))
