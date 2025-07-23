@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/spotify/confidence-sdk-android/compare/0.5.1...0.5.2) (2025-07-23)
+
+
+### 📚 Documentation
+
+* on dot notation ([#205](https://github.com/spotify/confidence-sdk-android/issues/205)) ([ff0a05c](https://github.com/spotify/confidence-sdk-android/commit/ff0a05c492467d4316f2038a7c345aded049d19c))
+
 ## [0.5.1](https://github.com/spotify/confidence-sdk-android/compare/0.5.0...0.5.1) (2025-04-28)
 
 
