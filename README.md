@@ -1,4 +1,3 @@
-[![](https://jitpack.io/v/spotify/confidence-sdk-android.svg)](https://jitpack.io/#spotify/confidence-sdk-android)
 <a href="https://maven-badges.herokuapp.com/maven-central/com.spotify.confidence/confidence-sdk-android">
 <img alt="Maven Central" src="https://maven-badges.herokuapp.com/maven-central/com.spotify.confidence/confidence-sdk-android/badge.svg" />
 </a>
@@ -84,6 +83,11 @@ val messageFlag: Evaluation<String> = confidence.getFlag("flag-name.message", "d
 val messageValue = messageFlag.value
 // message and messageValue are the same
 ```
+
+> [!IMPORTANT]
+> You should note that all feature flags in Confidence are complex objects implemented by the `ConfidenceValue.Struct` class but fear not! 
+> You can use a dot-notation to access properties within your flag object for ease of use.
+> Above we show how to access a string property from a flag. In that example the actual flag object is called `flag-name` and we access the string property `message` using the dot notation: `flag-name.message`.
 
 ### Tracking an event
 Events are defined by a `name` and a `message` where the message is a key-value map of type `<String, ConfidenceValue>`. You can track an event using the `track` method.
