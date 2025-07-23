@@ -1,4 +1,3 @@
-[![](https://jitpack.io/v/spotify/confidence-sdk-android.svg)](https://jitpack.io/#spotify/confidence-sdk-android)
 <a href="https://maven-badges.herokuapp.com/maven-central/com.spotify.confidence/confidence-sdk-android">
 <img alt="Maven Central" src="https://maven-badges.herokuapp.com/maven-central/com.spotify.confidence/confidence-sdk-android/badge.svg" />
 </a>
