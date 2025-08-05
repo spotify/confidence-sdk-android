@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.5.2](https://github.com/spotify/confidence-sdk-android/compare/0.5.1...0.5.2) (2025-08-05)
+
+
+### 🧹 Chore
+
+* Bump OpenFeature SDK to 0.5.3 ([#207](https://github.com/spotify/confidence-sdk-android/issues/207)) ([17187e3](https://github.com/spotify/confidence-sdk-android/commit/17187e3240574d208bc0f49476cf15f269f82f9e))
+* change credentials to central ([d6936eb](https://github.com/spotify/confidence-sdk-android/commit/d6936ebf7d7fbcd0a9ccc595e2eae57c1075fd01))
+* support maven central deployment ([#208](https://github.com/spotify/confidence-sdk-android/issues/208)) ([d6936eb](https://github.com/spotify/confidence-sdk-android/commit/d6936ebf7d7fbcd0a9ccc595e2eae57c1075fd01))
+
+
+### 📚 Documentation
+
+* on dot notation ([#205](https://github.com/spotify/confidence-sdk-android/issues/205)) ([ff0a05c](https://github.com/spotify/confidence-sdk-android/commit/ff0a05c492467d4316f2038a7c345aded049d19c))
+
 ## [0.5.1](https://github.com/spotify/confidence-sdk-android/compare/0.5.0...0.5.1) (2025-04-28)
 
 
