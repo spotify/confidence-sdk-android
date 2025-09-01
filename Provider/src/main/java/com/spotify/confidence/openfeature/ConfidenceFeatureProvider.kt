@@ -57,6 +57,7 @@ class ConfidenceFeatureProvider private constructor(
         val context = newContext.toConfidenceContext()
         val removedKeys = oldContext?.asMap()?.keys?.minus(newContext.asMap().keys) ?: emptySet()
         confidence.putContext(context.map, removedKeys.toList())
+        confidence.awaitReconciliation()
     }
 
     override fun getBooleanEvaluation(
