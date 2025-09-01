@@ -65,7 +65,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":Confidence"))
+    implementation(project(":Provider"))
     implementation(libs.lifecycleProcess)
     implementation(libs.coroutines)
     implementation(libs.liveData)
