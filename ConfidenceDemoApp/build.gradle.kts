@@ -20,6 +20,10 @@ android {
     namespace = "com.example.confidencedemoapp"
     compileSdk = 33
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         buildConfigField("String","CLIENT_SECRET", "\"$clientSecret\"")
         applicationId = "com.example.confidencedemoapp"
@@ -57,7 +61,7 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.4.2"
     }
-    packagingOptions {
+    packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }

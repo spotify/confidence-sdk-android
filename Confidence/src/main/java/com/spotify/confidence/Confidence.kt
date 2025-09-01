@@ -27,6 +27,7 @@ import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
 internal const val SDK_ID = "SDK_ID_KOTLIN_CONFIDENCE"
+internal const val SDK_VERSION = "0.5.2" // x-release-please-version
 
 class Confidence internal constructor(
     private val clientSecret: String,
@@ -359,13 +360,13 @@ object ConfidenceFactory {
             context,
             clientSecret,
             flushPolicies = listOf(minBatchSizeFlushPolicy),
-            sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
+            sdkMetadata = SdkMetadata(SDK_ID, SDK_VERSION),
             dispatcher = dispatcher,
             debugLogger = debugLogger
         )
         val flagApplierClient = FlagApplierClientImpl(
             clientSecret,
-            SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
+            SdkMetadata(SDK_ID, SDK_VERSION),
             region,
             dispatcher
         )
@@ -377,7 +378,7 @@ object ConfidenceFactory {
                 .callTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
                 .build(),
             dispatcher = dispatcher,
-            sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
+            sdkMetadata = SdkMetadata(SDK_ID, SDK_VERSION),
             debugLogger = debugLogger
         )
         val visitorId = ConfidenceValue.String(VisitorUtil.getId(context))
