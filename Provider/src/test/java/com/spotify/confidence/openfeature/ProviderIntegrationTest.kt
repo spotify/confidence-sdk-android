@@ -211,9 +211,9 @@ class ProviderIntegrationTest {
         }
 
         val evaluationDetails = OpenFeatureAPI.getClient()
-            .getObjectDetails(
-                "kotlin-test-flag",
-                Value.Structure(emptyMap())
+            .getIntegerDetails(
+                "kotlin-test-flag.my-integer",
+                -1
             )
         assertNull(evaluationDetails.errorCode)
         assertNull(evaluationDetails.errorMessage)
@@ -221,7 +221,7 @@ class ProviderIntegrationTest {
         assertEquals(Reason.TARGETING_MATCH.name, evaluationDetails.reason)
         assertNotNull(evaluationDetails.variant)
 
-        assertEquals(4, evaluationDetails.value.asStructure()?.getOrDefault("my-integer", Value.Integer(-1))?.asInteger())
+        assertEquals(1337, evaluationDetails.value)
     }
 
     @Test
