@@ -197,9 +197,16 @@ class Confidence internal constructor(
 
     @Synchronized
     override fun removeContext(key: String) {
+        removeContext(listOf(key))
+    }
+
+    @Synchronized
+    override fun removeContext(keys: Collection<String>) {
         val map = contextMap.value.toMutableMap()
-        map.remove(key)
-        removedKeys.add(key)
+        for (key in keys) {
+            map.remove(key)
+        }
+        removedKeys.addAll(keys)
         contextMap.value = map
         triggerNewFlagFetch()
         debugLogger?.logContext("RemoveContext", contextMap.value)

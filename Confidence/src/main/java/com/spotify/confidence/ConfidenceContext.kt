@@ -34,4 +34,10 @@ interface Contextual : ConfidenceContextProvider {
      * @param key key of the context to be removed.
      */
     fun removeContext(key: String)
+
+    /**
+     * Remove entries from context
+     * @param keys keys of the context to be removed.
+     */
+    fun removeContext(keys: Collection<String>)
 }
