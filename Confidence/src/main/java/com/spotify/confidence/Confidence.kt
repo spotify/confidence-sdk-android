@@ -347,6 +347,7 @@ object ConfidenceFactory {
      * @param dispatcher coroutine dispatcher.
      * @param loggingLevel allows to print warnings or debugging information to the local console.
      * @param timeoutMillis sets a timeout for completing an HTTP call. Defaults to 10 seconds
+     * @param visitorIdContextKey key to use for the visitor id in the context. Defaults to "visitor_id".
      */
     fun create(
         context: Context,
@@ -355,7 +356,8 @@ object ConfidenceFactory {
         region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
         loggingLevel: LoggingLevel = LoggingLevel.WARN,
-        timeoutMillis: Long = 10000
+        timeoutMillis: Long = 10000,
+        visitorIdContextKey: String = VISITOR_ID_CONTEXT_KEY
     ): Confidence {
         val debugLogger: DebugLogger? = if (loggingLevel == LoggingLevel.NONE) {
             null
@@ -387,9 +389,12 @@ object ConfidenceFactory {
             sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
             debugLogger = debugLogger
         )
-        val visitorId = ConfidenceValue.String(VisitorUtil.getId(context))
+
         val initContext = initialContext.toMutableMap()
-        initContext[VISITOR_ID_CONTEXT_KEY] = visitorId
+        if (!initContext.containsKey(visitorIdContextKey)) {
+            debugLogger?.logMessage("Adding visitor id to context with key: $visitorIdContextKey")
+            initContext[visitorIdContextKey] = ConfidenceValue.String(VisitorUtil.getId(context))
+        }
         debugLogger?.logContext("InitialContext", initContext)
 
         return Confidence(
