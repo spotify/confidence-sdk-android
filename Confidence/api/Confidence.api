@@ -23,6 +23,7 @@ public final class com/spotify/confidence/Confidence : com/spotify/confidence/Co
 	public final fun putContext (Ljava/util/Map;Ljava/util/List;)V
 	public final fun putContextLocal (Ljava/util/Map;)V
 	public fun removeContext (Ljava/lang/String;)V
+	public fun removeContext (Ljava/util/Collection;)V
 	public fun stop ()V
 	public fun track (Lcom/spotify/confidence/Producer;)V
 	public fun track (Ljava/lang/String;Ljava/util/Map;)V
@@ -103,8 +104,8 @@ public final class com/spotify/confidence/ConfidenceError$ParseError : java/lang
 
 public final class com/spotify/confidence/ConfidenceFactory {
 	public static final field INSTANCE Lcom/spotify/confidence/ConfidenceFactory;
-	public final fun create (Landroid/content/Context;Ljava/lang/String;Ljava/util/Map;Lcom/spotify/confidence/ConfidenceRegion;Lkotlinx/coroutines/CoroutineDispatcher;Lcom/spotify/confidence/LoggingLevel;J)Lcom/spotify/confidence/Confidence;
-	public static synthetic fun create$default (Lcom/spotify/confidence/ConfidenceFactory;Landroid/content/Context;Ljava/lang/String;Ljava/util/Map;Lcom/spotify/confidence/ConfidenceRegion;Lkotlinx/coroutines/CoroutineDispatcher;Lcom/spotify/confidence/LoggingLevel;JILjava/lang/Object;)Lcom/spotify/confidence/Confidence;
+	public final fun create (Landroid/content/Context;Ljava/lang/String;Ljava/util/Map;Lcom/spotify/confidence/ConfidenceRegion;Lkotlinx/coroutines/CoroutineDispatcher;Lcom/spotify/confidence/LoggingLevel;JLjava/lang/String;)Lcom/spotify/confidence/Confidence;
+	public static synthetic fun create$default (Lcom/spotify/confidence/ConfidenceFactory;Landroid/content/Context;Ljava/lang/String;Ljava/util/Map;Lcom/spotify/confidence/ConfidenceRegion;Lkotlinx/coroutines/CoroutineDispatcher;Lcom/spotify/confidence/LoggingLevel;JLjava/lang/String;ILjava/lang/Object;)Lcom/spotify/confidence/Confidence;
 }
 
 public final class com/spotify/confidence/ConfidenceFlagEvaluationKt {
@@ -384,6 +385,7 @@ public abstract interface class com/spotify/confidence/Contextual : com/spotify/
 	public abstract fun putContext (Ljava/lang/String;Lcom/spotify/confidence/ConfidenceValue;)V
 	public abstract fun putContext (Ljava/util/Map;)V
 	public abstract fun removeContext (Ljava/lang/String;)V
+	public abstract fun removeContext (Ljava/util/Collection;)V
 	public abstract fun withContext (Ljava/util/Map;)Lcom/spotify/confidence/Contextual;
 }
 

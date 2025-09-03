@@ -139,9 +139,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
 
     fun clear() {
         Log.d(TAG, "clearing confidence")
-        for (key in confidence.getContext()) {
-            confidence.removeContext(key.key)
-        }
+        confidence.removeContext(confidence.getContext().keys)
         Log.d(TAG, "confidence context: ${confidence.getContext()}")
     }
 }
