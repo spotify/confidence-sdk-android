@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.5.3](https://github.com/spotify/confidence-sdk-android/compare/0.5.2...0.5.3) (2025-09-03)
+
+
+### 🐛 Bug Fixes
+
+* await reconciliation on context set ([#209](https://github.com/spotify/confidence-sdk-android/issues/209)) ([aff9812](https://github.com/spotify/confidence-sdk-android/commit/aff981212dddea19698c4d05319c88ec84af81d2))
+
+
+### ✨ New Features
+
+* configurable visitor id key ([#215](https://github.com/spotify/confidence-sdk-android/issues/215)) ([d084685](https://github.com/spotify/confidence-sdk-android/commit/d084685917337a511b909256c1fc8c8a1e56595c))
+* removeContext(multiple) - remove multiple context keys in one change ([#214](https://github.com/spotify/confidence-sdk-android/issues/214)) ([4f50836](https://github.com/spotify/confidence-sdk-android/commit/4f508366f18b107ae88f20242a4ed7dabfd6d540))
+* removeContext(multiple) - remove multiple keys in one change ([4f50836](https://github.com/spotify/confidence-sdk-android/commit/4f508366f18b107ae88f20242a4ed7dabfd6d540))
+
 ## [0.5.2](https://github.com/spotify/confidence-sdk-android/compare/0.5.1...0.5.2) (2025-08-05)
 
 
