@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.4](https://github.com/spotify/confidence-sdk-android/compare/0.5.3...0.5.4) (2025-09-04)
+
+
+### 📚 Documentation
+
+* openfeature first focused docs ([#210](https://github.com/spotify/confidence-sdk-android/issues/210)) ([4d817a5](https://github.com/spotify/confidence-sdk-android/commit/4d817a589c23267c07167bf90dcf43781820d6b3))
+
 ## [0.5.3](https://github.com/spotify/confidence-sdk-android/compare/0.5.2...0.5.3) (2025-09-03)
 
 
