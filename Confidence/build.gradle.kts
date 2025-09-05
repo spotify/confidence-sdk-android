@@ -9,8 +9,6 @@ plugins {
     id("org.jetbrains.kotlinx.kover")
 }
 
-val providerVersion = project.extra["version"].toString()
-
 object Versions {
     const val okHttp = "4.10.0"
     const val kotlinxSerialization = "1.6.0"
@@ -29,7 +27,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
-        buildConfigField("String", "SDK_VERSION", "\"" + providerVersion + "\"")
     }
 
     compileOptions {
@@ -68,7 +65,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = project.extra["groupId"].toString()
             artifactId = "confidence-sdk-android"
-            version = providerVersion
+            version = project.extra["version"].toString()
 
             pom {
                 name.set("Confidence SDK Android")
