@@ -40,7 +40,6 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
-    buildFeatures.buildConfig = false
 }
 
 dependencies {

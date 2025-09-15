@@ -21,7 +21,6 @@ android {
     compileSdk = 33
 
     defaultConfig {
-        buildConfigField("String","CLIENT_SECRET", "\"$clientSecret\"")
         applicationId = "com.example.confidencedemoapp"
         minSdk = 21
         targetSdk = 33
@@ -32,6 +31,8 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        
+        manifestPlaceholders["CLIENT_SECRET"] = clientSecret
     }
 
     buildTypes {
