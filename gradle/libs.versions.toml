@@ -2,15 +2,15 @@
 
 #Tools
 binaryCompatibilityValidation = "0.11.0"
-nexusPublish = "1.3.0"
+nexusPublish = "2.0.0"
 kover = "0.8.2"
-androidGradlePlugin = "7.4.2"
+androidGradlePlugin = "8.9.3"
 kotlinAndroid = "1.8.10"
 
 # Core
 core = "1.7.0"
 coroutines = "1.7.3"
-okHttp = "4.10.0"
+okHttp = "4.12.0"
 kotlinxSerialization = "1.6.0"
 
 # Provider
@@ -63,4 +63,4 @@ kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlinAndr
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlinxSerialization" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
-nexusPublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexusPublish" } 
+nexusPublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexusPublish" }
