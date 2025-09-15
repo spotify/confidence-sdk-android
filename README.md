@@ -43,6 +43,7 @@ val provider = ConfidenceFeatureProvider.create(ConfidenceFactory.create(
     loggingLevel = LoggingLevel.VERBOSE
 ),  initialisationStrategy = InitialisationStrategy.FetchAndActivate)
 
+OpenFeatureAPI.setProviderAndWait(provider)
 ```
 Where `MY_SECRET` is an API key that can be generated in the [Confidence UI](https://confidence.spotify.com/console).
 The `loggingLevel` sets the verbosity level for logging to console. This can be useful while testing your integration with the Confidence SDK.
