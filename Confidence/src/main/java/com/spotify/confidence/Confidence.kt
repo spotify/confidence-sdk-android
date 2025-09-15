@@ -27,6 +27,7 @@ import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
 internal const val SDK_ID = "SDK_ID_KOTLIN_CONFIDENCE"
+internal const val SDK_VERSION = "0.5.3" // x-release-please-version
 
 class Confidence internal constructor(
     private val clientSecret: String,
@@ -364,17 +365,18 @@ object ConfidenceFactory {
         } else {
             DebugLoggerImpl(loggingLevel, clientSecret)
         }
+        val sdkMetadata = SdkMetadata(SDK_ID, SDK_VERSION)
         val engine = EventSenderEngineImpl.instance(
             context,
             clientSecret,
             flushPolicies = listOf(minBatchSizeFlushPolicy),
-            sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
+            sdkMetadata = sdkMetadata,
             dispatcher = dispatcher,
             debugLogger = debugLogger
         )
         val flagApplierClient = FlagApplierClientImpl(
             clientSecret,
-            SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
+            sdkMetadata,
             region,
             dispatcher
         )
@@ -386,7 +388,7 @@ object ConfidenceFactory {
                 .callTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
                 .build(),
             dispatcher = dispatcher,
-            sdkMetadata = SdkMetadata(SDK_ID, BuildConfig.SDK_VERSION),
+            sdkMetadata = sdkMetadata,
             debugLogger = debugLogger
         )
 

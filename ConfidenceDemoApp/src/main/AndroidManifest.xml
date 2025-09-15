@@ -10,6 +10,10 @@
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:theme="@style/Theme.Provider">
+        
+        <meta-data
+            android:name="CLIENT_SECRET"
+            android:value="${CLIENT_SECRET}" />
         <activity
                 android:name=".MainActivity"
                 android:exported="true"

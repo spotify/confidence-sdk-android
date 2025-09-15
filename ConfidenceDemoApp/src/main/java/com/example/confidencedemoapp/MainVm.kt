@@ -32,7 +32,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
 
     init {
         val start = System.currentTimeMillis()
-        val clientSecret = ClientSecretProvider.clientSecret()
+        val clientSecret = ClientSecretProvider.clientSecret(app.applicationContext)
 
 
         val mutableMap = mutableMapOf<String, ConfidenceValue>()
