@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.nexusPublish) apply true
     alias(libs.plugins.binaryCompatibilityValidation) apply false
     alias(libs.plugins.kover) apply true
+    alias(libs.plugins.composeCompiler) apply false
 }
 
 allprojects {

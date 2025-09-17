@@ -1,3 +1,4 @@
+@file:OptIn(ExperimentalTime::class)
 
 package com.spotify.confidence.openfeature
 
@@ -8,15 +9,18 @@ import com.spotify.confidence.ConfidenceError.ParseError
 import com.spotify.confidence.ConfidenceValue
 import com.spotify.confidence.Evaluation
 import com.spotify.confidence.ResolveReason
-import dev.openfeature.sdk.EvaluationContext
-import dev.openfeature.sdk.FeatureProvider
-import dev.openfeature.sdk.Hook
-import dev.openfeature.sdk.ProviderEvaluation
-import dev.openfeature.sdk.ProviderMetadata
-import dev.openfeature.sdk.Reason
-import dev.openfeature.sdk.TrackingEventDetails
-import dev.openfeature.sdk.Value
-import dev.openfeature.sdk.exceptions.OpenFeatureError
+import dev.openfeature.kotlin.sdk.EvaluationContext
+import dev.openfeature.kotlin.sdk.FeatureProvider
+import dev.openfeature.kotlin.sdk.Hook
+import dev.openfeature.kotlin.sdk.ProviderEvaluation
+import dev.openfeature.kotlin.sdk.ProviderMetadata
+import dev.openfeature.kotlin.sdk.Reason
+import dev.openfeature.kotlin.sdk.TrackingEventDetails
+import dev.openfeature.kotlin.sdk.Value
+import dev.openfeature.kotlin.sdk.exceptions.OpenFeatureError
+import java.util.Date
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 internal const val PROVIDER_ID = "SDK_ID_KOTLIN_CONFIDENCE"
 
@@ -156,7 +160,6 @@ private fun Number.toConfidenceValue(): ConfidenceValue = when (this) {
 internal fun Value.toConfidenceValue(): ConfidenceValue = when (this) {
     is Value.Structure -> ConfidenceValue.Struct(structure.mapValues { it.value.toConfidenceValue() })
     is Value.Boolean -> ConfidenceValue.Boolean(this.boolean)
-    is Value.Date -> ConfidenceValue.Timestamp(this.date)
     is Value.Double -> ConfidenceValue.Double(this.double)
     is Value.Integer -> ConfidenceValue.Integer(this.integer)
     is Value.List -> {
@@ -169,18 +172,29 @@ internal fun Value.toConfidenceValue(): ConfidenceValue = when (this) {
     }
     Value.Null -> ConfidenceValue.Null
     is Value.String -> ConfidenceValue.String(this.string)
+    is Value.Instant -> ConfidenceValue.Timestamp(
+        Date(this.instant.epochSeconds * 1000 + this.instant.nanosecondsOfSecond / 1_000_000)
+    )
 }
 
 internal fun ConfidenceValue.toValue(): Value = when (this) {
     is ConfidenceValue.Boolean -> Value.Boolean(this.boolean)
-    is ConfidenceValue.Date -> Value.Date(this.date)
     is ConfidenceValue.Double -> Value.Double(this.double)
     is ConfidenceValue.Integer -> Value.Integer(this.integer)
     is ConfidenceValue.List -> Value.List(this.list.map { it.toValue() })
     ConfidenceValue.Null -> Value.Null
     is ConfidenceValue.String -> Value.String(this.string)
     is ConfidenceValue.Struct -> Value.Structure(this.map.mapValues { it.value.toValue() })
-    is ConfidenceValue.Timestamp -> Value.Date(this.dateTime)
+    is ConfidenceValue.Timestamp -> Value.Instant(this.dateTime.toKotlinInstant())
+    is ConfidenceValue.Date -> Value.Instant(this.date.toKotlinInstant())
+}
+
+private fun Date.toKotlinInstant(): Instant {
+    val epochSeconds = time / 1000
+
+    return Instant.fromEpochSeconds(
+        epochSeconds = epochSeconds
+    )
 }
 
 private fun <T> Evaluation<T>.toProviderEvaluation() = ProviderEvaluation(
@@ -202,9 +216,9 @@ private fun ResolveReason.toOFReason(): Reason = when (this) {
 
 private fun ErrorCode?.toOFErrorCode() = when (this) {
     null -> null
-    ErrorCode.FLAG_NOT_FOUND -> dev.openfeature.sdk.exceptions.ErrorCode.FLAG_NOT_FOUND
-    ErrorCode.INVALID_CONTEXT -> dev.openfeature.sdk.exceptions.ErrorCode.INVALID_CONTEXT
-    else -> dev.openfeature.sdk.exceptions.ErrorCode.PROVIDER_NOT_READY
+    ErrorCode.FLAG_NOT_FOUND -> dev.openfeature.kotlin.sdk.exceptions.ErrorCode.FLAG_NOT_FOUND
+    ErrorCode.INVALID_CONTEXT -> dev.openfeature.kotlin.sdk.exceptions.ErrorCode.INVALID_CONTEXT
+    else -> dev.openfeature.kotlin.sdk.exceptions.ErrorCode.PROVIDER_NOT_READY
 }
 
 sealed interface InitialisationStrategy {

@@ -1,7 +1,7 @@
 package com.spotify.confidence.openfeature
 
 import com.spotify.confidence.ConfidenceValue
-import dev.openfeature.sdk.Value
+import dev.openfeature.kotlin.sdk.Value
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
