@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.6.0](https://github.com/spotify/confidence-sdk-android/compare/0.5.3...0.6.0) (2025-09-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** The SDK now requires AGP 8.x and a compatible Gradle version to be built. Consumers will need to update their project's build environment accordingly.
+* no more buildconfig ([#219](https://github.com/spotify/confidence-sdk-android/issues/219))
+
+### 🐛 Bug Fixes
+
+* no more buildconfig ([#219](https://github.com/spotify/confidence-sdk-android/issues/219)) ([1db2cfe](https://github.com/spotify/confidence-sdk-android/commit/1db2cfe61fa71fa5c4ea93b8d90b3d697a09c6e2))
+
+
+### ✨ New Features
+
+* update to openFeature 0.6 ([1a10f54](https://github.com/spotify/confidence-sdk-android/commit/1a10f54a4de83e4371dfc264675042b1ac398972))
+
+
+### 🧹 Chore
+
+* **deps:** update to openFeature 0.6 ([#221](https://github.com/spotify/confidence-sdk-android/issues/221)) ([1a10f54](https://github.com/spotify/confidence-sdk-android/commit/1a10f54a4de83e4371dfc264675042b1ac398972))
+* use correct the serialization version ([#218](https://github.com/spotify/confidence-sdk-android/issues/218)) ([767738c](https://github.com/spotify/confidence-sdk-android/commit/767738c864f2b06b4062f29741400a738d126baa))
+
+
+### 📚 Documentation
+
+* openfeature first focused docs ([#210](https://github.com/spotify/confidence-sdk-android/issues/210)) ([4d817a5](https://github.com/spotify/confidence-sdk-android/commit/4d817a589c23267c07167bf90dcf43781820d6b3))
+* update part on openfeature set provider ([#217](https://github.com/spotify/confidence-sdk-android/issues/217)) ([751607c](https://github.com/spotify/confidence-sdk-android/commit/751607c1ce8b1d48aa1686e0e114a67edebc3cbd))
+
+
+### 🛠️ Build
+
+* **deps:** upgrade Android Gradle Plugin to 8.9.3 ([#220](https://github.com/spotify/confidence-sdk-android/issues/220)) ([537ede6](https://github.com/spotify/confidence-sdk-android/commit/537ede6144594f808925101f581bd7ac5d1da66d))
+
 ## [0.5.3](https://github.com/spotify/confidence-sdk-android/compare/0.5.2...0.5.3) (2025-09-03)
 
 
