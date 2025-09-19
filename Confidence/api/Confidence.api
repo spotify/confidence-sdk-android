@@ -59,6 +59,7 @@ public final class com/spotify/confidence/ConfidenceError$ErrorCode : java/lang/
 	public static final field PARSE_ERROR Lcom/spotify/confidence/ConfidenceError$ErrorCode;
 	public static final field PROVIDER_NOT_READY Lcom/spotify/confidence/ConfidenceError$ErrorCode;
 	public static final field RESOLVE_STALE Lcom/spotify/confidence/ConfidenceError$ErrorCode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lcom/spotify/confidence/ConfidenceError$ErrorCode;
 	public static fun values ()[Lcom/spotify/confidence/ConfidenceError$ErrorCode;
 }
@@ -113,6 +114,7 @@ public final class com/spotify/confidence/ConfidenceRegion : java/lang/Enum {
 	public static final field EUROPE Lcom/spotify/confidence/ConfidenceRegion;
 	public static final field GLOBAL Lcom/spotify/confidence/ConfidenceRegion;
 	public static final field USA Lcom/spotify/confidence/ConfidenceRegion;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lcom/spotify/confidence/ConfidenceRegion;
 	public static fun values ()[Lcom/spotify/confidence/ConfidenceRegion;
 }
@@ -123,7 +125,6 @@ public abstract interface class com/spotify/confidence/ConfidenceValue {
 
 public final class com/spotify/confidence/ConfidenceValue$Boolean : com/spotify/confidence/ConfidenceValue {
 	public static final field Companion Lcom/spotify/confidence/ConfidenceValue$Boolean$Companion;
-	public synthetic fun <init> (IZLkotlinx/serialization/internal/SerializationConstructorMarker;)V
 	public fun <init> (Z)V
 	public final fun component1 ()Z
 	public final fun copy (Z)Lcom/spotify/confidence/ConfidenceValue$Boolean;
@@ -132,16 +133,15 @@ public final class com/spotify/confidence/ConfidenceValue$Boolean : com/spotify/
 	public final fun getBoolean ()Z
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-	public static final fun write$Self (Lcom/spotify/confidence/ConfidenceValue$Boolean;Lkotlinx/serialization/encoding/CompositeEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)V
 }
 
-public final class com/spotify/confidence/ConfidenceValue$Boolean$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+public synthetic class com/spotify/confidence/ConfidenceValue$Boolean$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
 	public static final field INSTANCE Lcom/spotify/confidence/ConfidenceValue$Boolean$$serializer;
-	public fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/ConfidenceValue$Boolean;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/ConfidenceValue$Boolean;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/ConfidenceValue$Boolean;)V
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/ConfidenceValue$Boolean;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
@@ -162,7 +162,6 @@ public final class com/spotify/confidence/ConfidenceValue$Companion {
 
 public final class com/spotify/confidence/ConfidenceValue$Date : com/spotify/confidence/ConfidenceValue {
 	public static final field Companion Lcom/spotify/confidence/ConfidenceValue$Date$Companion;
-	public synthetic fun <init> (ILjava/util/Date;Lkotlinx/serialization/internal/SerializationConstructorMarker;)V
 	public fun <init> (Ljava/util/Date;)V
 	public final fun component1 ()Ljava/util/Date;
 	public final fun copy (Ljava/util/Date;)Lcom/spotify/confidence/ConfidenceValue$Date;
@@ -171,16 +170,15 @@ public final class com/spotify/confidence/ConfidenceValue$Date : com/spotify/con
 	public final fun getDate ()Ljava/util/Date;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-	public static final fun write$Self (Lcom/spotify/confidence/ConfidenceValue$Date;Lkotlinx/serialization/encoding/CompositeEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)V
 }
 
-public final class com/spotify/confidence/ConfidenceValue$Date$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+public synthetic class com/spotify/confidence/ConfidenceValue$Date$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
 	public static final field INSTANCE Lcom/spotify/confidence/ConfidenceValue$Date$$serializer;
-	public fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/ConfidenceValue$Date;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/ConfidenceValue$Date;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/ConfidenceValue$Date;)V
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/ConfidenceValue$Date;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
@@ -192,7 +190,6 @@ public final class com/spotify/confidence/ConfidenceValue$Date$Companion {
 public final class com/spotify/confidence/ConfidenceValue$Double : com/spotify/confidence/ConfidenceValue {
 	public static final field Companion Lcom/spotify/confidence/ConfidenceValue$Double$Companion;
 	public fun <init> (D)V
-	public synthetic fun <init> (IDLkotlinx/serialization/internal/SerializationConstructorMarker;)V
 	public final fun component1 ()D
 	public final fun copy (D)Lcom/spotify/confidence/ConfidenceValue$Double;
 	public static synthetic fun copy$default (Lcom/spotify/confidence/ConfidenceValue$Double;DILjava/lang/Object;)Lcom/spotify/confidence/ConfidenceValue$Double;
@@ -200,16 +197,15 @@ public final class com/spotify/confidence/ConfidenceValue$Double : com/spotify/c
 	public final fun getDouble ()D
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-	public static final fun write$Self (Lcom/spotify/confidence/ConfidenceValue$Double;Lkotlinx/serialization/encoding/CompositeEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)V
 }
 
-public final class com/spotify/confidence/ConfidenceValue$Double$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+public synthetic class com/spotify/confidence/ConfidenceValue$Double$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
 	public static final field INSTANCE Lcom/spotify/confidence/ConfidenceValue$Double$$serializer;
-	public fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/ConfidenceValue$Double;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/ConfidenceValue$Double;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/ConfidenceValue$Double;)V
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/ConfidenceValue$Double;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
@@ -221,7 +217,6 @@ public final class com/spotify/confidence/ConfidenceValue$Double$Companion {
 public final class com/spotify/confidence/ConfidenceValue$Integer : com/spotify/confidence/ConfidenceValue {
 	public static final field Companion Lcom/spotify/confidence/ConfidenceValue$Integer$Companion;
 	public fun <init> (I)V
-	public synthetic fun <init> (IILkotlinx/serialization/internal/SerializationConstructorMarker;)V
 	public final fun component1 ()I
 	public final fun copy (I)Lcom/spotify/confidence/ConfidenceValue$Integer;
 	public static synthetic fun copy$default (Lcom/spotify/confidence/ConfidenceValue$Integer;IILjava/lang/Object;)Lcom/spotify/confidence/ConfidenceValue$Integer;
@@ -229,16 +224,15 @@ public final class com/spotify/confidence/ConfidenceValue$Integer : com/spotify/
 	public final fun getInteger ()I
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-	public static final fun write$Self (Lcom/spotify/confidence/ConfidenceValue$Integer;Lkotlinx/serialization/encoding/CompositeEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)V
 }
 
-public final class com/spotify/confidence/ConfidenceValue$Integer$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+public synthetic class com/spotify/confidence/ConfidenceValue$Integer$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
 	public static final field INSTANCE Lcom/spotify/confidence/ConfidenceValue$Integer$$serializer;
-	public fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/ConfidenceValue$Integer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/ConfidenceValue$Integer;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/ConfidenceValue$Integer;)V
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/ConfidenceValue$Integer;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
@@ -249,7 +243,6 @@ public final class com/spotify/confidence/ConfidenceValue$Integer$Companion {
 
 public final class com/spotify/confidence/ConfidenceValue$List : com/spotify/confidence/ConfidenceValue {
 	public static final field Companion Lcom/spotify/confidence/ConfidenceValue$List$Companion;
-	public synthetic fun <init> (ILjava/util/List;Lkotlinx/serialization/internal/SerializationConstructorMarker;)V
 	public fun <init> (Ljava/util/List;)V
 	public final fun component1 ()Ljava/util/List;
 	public final fun copy (Ljava/util/List;)Lcom/spotify/confidence/ConfidenceValue$List;
@@ -258,16 +251,15 @@ public final class com/spotify/confidence/ConfidenceValue$List : com/spotify/con
 	public final fun getList ()Ljava/util/List;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-	public static final fun write$Self (Lcom/spotify/confidence/ConfidenceValue$List;Lkotlinx/serialization/encoding/CompositeEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)V
 }
 
-public final class com/spotify/confidence/ConfidenceValue$List$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+public synthetic class com/spotify/confidence/ConfidenceValue$List$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
 	public static final field INSTANCE Lcom/spotify/confidence/ConfidenceValue$List$$serializer;
-	public fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/ConfidenceValue$List;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/ConfidenceValue$List;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/ConfidenceValue$List;)V
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/ConfidenceValue$List;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
@@ -284,7 +276,6 @@ public final class com/spotify/confidence/ConfidenceValue$Null : com/spotify/con
 
 public final class com/spotify/confidence/ConfidenceValue$String : com/spotify/confidence/ConfidenceValue {
 	public static final field Companion Lcom/spotify/confidence/ConfidenceValue$String$Companion;
-	public synthetic fun <init> (ILjava/lang/String;Lkotlinx/serialization/internal/SerializationConstructorMarker;)V
 	public fun <init> (Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun copy (Ljava/lang/String;)Lcom/spotify/confidence/ConfidenceValue$String;
@@ -293,16 +284,15 @@ public final class com/spotify/confidence/ConfidenceValue$String : com/spotify/c
 	public final fun getString ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-	public static final fun write$Self (Lcom/spotify/confidence/ConfidenceValue$String;Lkotlinx/serialization/encoding/CompositeEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)V
 }
 
-public final class com/spotify/confidence/ConfidenceValue$String$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+public synthetic class com/spotify/confidence/ConfidenceValue$String$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
 	public static final field INSTANCE Lcom/spotify/confidence/ConfidenceValue$String$$serializer;
-	public fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/ConfidenceValue$String;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/ConfidenceValue$String;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/ConfidenceValue$String;)V
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/ConfidenceValue$String;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
@@ -313,7 +303,6 @@ public final class com/spotify/confidence/ConfidenceValue$String$Companion {
 
 public final class com/spotify/confidence/ConfidenceValue$Struct : com/spotify/confidence/ConfidenceValue {
 	public static final field Companion Lcom/spotify/confidence/ConfidenceValue$Struct$Companion;
-	public synthetic fun <init> (ILjava/util/Map;Lkotlinx/serialization/internal/SerializationConstructorMarker;)V
 	public fun <init> (Ljava/util/Map;)V
 	public final fun component1 ()Ljava/util/Map;
 	public final fun copy (Ljava/util/Map;)Lcom/spotify/confidence/ConfidenceValue$Struct;
@@ -322,16 +311,15 @@ public final class com/spotify/confidence/ConfidenceValue$Struct : com/spotify/c
 	public final fun getMap ()Ljava/util/Map;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-	public static final fun write$Self (Lcom/spotify/confidence/ConfidenceValue$Struct;Lkotlinx/serialization/encoding/CompositeEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)V
 }
 
-public final class com/spotify/confidence/ConfidenceValue$Struct$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+public synthetic class com/spotify/confidence/ConfidenceValue$Struct$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
 	public static final field INSTANCE Lcom/spotify/confidence/ConfidenceValue$Struct$$serializer;
-	public fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/ConfidenceValue$Struct;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/ConfidenceValue$Struct;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/ConfidenceValue$Struct;)V
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/ConfidenceValue$Struct;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
@@ -342,7 +330,6 @@ public final class com/spotify/confidence/ConfidenceValue$Struct$Companion {
 
 public final class com/spotify/confidence/ConfidenceValue$Timestamp : com/spotify/confidence/ConfidenceValue {
 	public static final field Companion Lcom/spotify/confidence/ConfidenceValue$Timestamp$Companion;
-	public synthetic fun <init> (ILjava/util/Date;Lkotlinx/serialization/internal/SerializationConstructorMarker;)V
 	public fun <init> (Ljava/util/Date;)V
 	public final fun component1 ()Ljava/util/Date;
 	public final fun copy (Ljava/util/Date;)Lcom/spotify/confidence/ConfidenceValue$Timestamp;
@@ -351,16 +338,15 @@ public final class com/spotify/confidence/ConfidenceValue$Timestamp : com/spotif
 	public final fun getDateTime ()Ljava/util/Date;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-	public static final fun write$Self (Lcom/spotify/confidence/ConfidenceValue$Timestamp;Lkotlinx/serialization/encoding/CompositeEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)V
 }
 
-public final class com/spotify/confidence/ConfidenceValue$Timestamp$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+public synthetic class com/spotify/confidence/ConfidenceValue$Timestamp$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
 	public static final field INSTANCE Lcom/spotify/confidence/ConfidenceValue$Timestamp$$serializer;
-	public fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/ConfidenceValue$Timestamp;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/ConfidenceValue$Timestamp;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/ConfidenceValue$Timestamp;)V
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/ConfidenceValue$Timestamp;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
@@ -415,7 +401,6 @@ public final class com/spotify/confidence/EventSender$DefaultImpls {
 
 public final class com/spotify/confidence/FlagResolution {
 	public static final field Companion Lcom/spotify/confidence/FlagResolution$Companion;
-	public synthetic fun <init> (ILjava/util/Map;Ljava/util/List;Ljava/lang/String;Lkotlinx/serialization/internal/SerializationConstructorMarker;)V
 	public fun <init> (Ljava/util/Map;Ljava/util/List;Ljava/lang/String;)V
 	public final fun component1 ()Ljava/util/Map;
 	public final fun component2 ()Ljava/util/List;
@@ -428,16 +413,15 @@ public final class com/spotify/confidence/FlagResolution {
 	public final fun getResolveToken ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-	public static final fun write$Self (Lcom/spotify/confidence/FlagResolution;Lkotlinx/serialization/encoding/CompositeEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)V
 }
 
-public final class com/spotify/confidence/FlagResolution$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+public synthetic class com/spotify/confidence/FlagResolution$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
 	public static final field INSTANCE Lcom/spotify/confidence/FlagResolution$$serializer;
-	public fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/FlagResolution;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/FlagResolution;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/FlagResolution;)V
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/FlagResolution;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
@@ -459,6 +443,7 @@ public final class com/spotify/confidence/LoggingLevel : java/lang/Enum {
 	public static final field NONE Lcom/spotify/confidence/LoggingLevel;
 	public static final field VERBOSE Lcom/spotify/confidence/LoggingLevel;
 	public static final field WARN Lcom/spotify/confidence/LoggingLevel;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lcom/spotify/confidence/LoggingLevel;
 	public static fun values ()[Lcom/spotify/confidence/LoggingLevel;
 }
@@ -483,6 +468,7 @@ public final class com/spotify/confidence/ResolveReason : java/lang/Enum {
 	public static final field RESOLVE_REASON_STALE Lcom/spotify/confidence/ResolveReason;
 	public static final field RESOLVE_REASON_TARGETING_KEY_ERROR Lcom/spotify/confidence/ResolveReason;
 	public static final field RESOLVE_REASON_UNSPECIFIED Lcom/spotify/confidence/ResolveReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lcom/spotify/confidence/ResolveReason;
 	public static fun values ()[Lcom/spotify/confidence/ResolveReason;
 }
@@ -546,7 +532,6 @@ public final class com/spotify/confidence/Update$Event : com/spotify/confidence/
 
 public final class com/spotify/confidence/apply/ApplyInstance {
 	public static final field Companion Lcom/spotify/confidence/apply/ApplyInstance$Companion;
-	public synthetic fun <init> (ILjava/util/Date;Lcom/spotify/confidence/apply/EventStatus;Lkotlinx/serialization/internal/SerializationConstructorMarker;)V
 	public fun <init> (Ljava/util/Date;Lcom/spotify/confidence/apply/EventStatus;)V
 	public final fun component1 ()Ljava/util/Date;
 	public final fun component2 ()Lcom/spotify/confidence/apply/EventStatus;
@@ -557,16 +542,15 @@ public final class com/spotify/confidence/apply/ApplyInstance {
 	public final fun getTime ()Ljava/util/Date;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-	public static final fun write$Self (Lcom/spotify/confidence/apply/ApplyInstance;Lkotlinx/serialization/encoding/CompositeEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)V
 }
 
-public final class com/spotify/confidence/apply/ApplyInstance$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+public synthetic class com/spotify/confidence/apply/ApplyInstance$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
 	public static final field INSTANCE Lcom/spotify/confidence/apply/ApplyInstance$$serializer;
-	public fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/apply/ApplyInstance;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/apply/ApplyInstance;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/apply/ApplyInstance;)V
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/apply/ApplyInstance;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
@@ -589,6 +573,7 @@ public final class com/spotify/confidence/apply/EventStatus : java/lang/Enum {
 	public static final field CREATED Lcom/spotify/confidence/apply/EventStatus;
 	public static final field SENDING Lcom/spotify/confidence/apply/EventStatus;
 	public static final field SENT Lcom/spotify/confidence/apply/EventStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lcom/spotify/confidence/apply/EventStatus;
 	public static fun values ()[Lcom/spotify/confidence/apply/EventStatus;
 }
@@ -644,7 +629,6 @@ public abstract interface class com/spotify/confidence/cache/DiskStorage {
 
 public final class com/spotify/confidence/client/AppliedFlag {
 	public static final field Companion Lcom/spotify/confidence/client/AppliedFlag$Companion;
-	public synthetic fun <init> (ILjava/lang/String;Ljava/util/Date;Lkotlinx/serialization/internal/SerializationConstructorMarker;)V
 	public fun <init> (Ljava/lang/String;Ljava/util/Date;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/util/Date;
@@ -655,16 +639,15 @@ public final class com/spotify/confidence/client/AppliedFlag {
 	public final fun getFlag ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-	public static final fun write$Self (Lcom/spotify/confidence/client/AppliedFlag;Lkotlinx/serialization/encoding/CompositeEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)V
 }
 
-public final class com/spotify/confidence/client/AppliedFlag$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+public synthetic class com/spotify/confidence/client/AppliedFlag$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
 	public static final field INSTANCE Lcom/spotify/confidence/client/AppliedFlag$$serializer;
-	public fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/client/AppliedFlag;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/client/AppliedFlag;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/client/AppliedFlag;)V
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/client/AppliedFlag;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
@@ -708,7 +691,6 @@ public final class com/spotify/confidence/client/Flags$Companion {
 
 public final class com/spotify/confidence/client/ResolveFlags {
 	public static final field Companion Lcom/spotify/confidence/client/ResolveFlags$Companion;
-	public synthetic fun <init> (ILcom/spotify/confidence/client/Flags;Ljava/lang/String;Lkotlinx/serialization/internal/SerializationConstructorMarker;)V
 	public fun <init> (Lcom/spotify/confidence/client/Flags;Ljava/lang/String;)V
 	public final fun component1 ()Lcom/spotify/confidence/client/Flags;
 	public final fun component2 ()Ljava/lang/String;
@@ -719,16 +701,15 @@ public final class com/spotify/confidence/client/ResolveFlags {
 	public final fun getResolvedFlags ()Lcom/spotify/confidence/client/Flags;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-	public static final fun write$Self (Lcom/spotify/confidence/client/ResolveFlags;Lkotlinx/serialization/encoding/CompositeEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)V
 }
 
-public final class com/spotify/confidence/client/ResolveFlags$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+public synthetic class com/spotify/confidence/client/ResolveFlags$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
 	public static final field INSTANCE Lcom/spotify/confidence/client/ResolveFlags$$serializer;
-	public fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/client/ResolveFlags;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/client/ResolveFlags;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/client/ResolveFlags;)V
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/client/ResolveFlags;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
@@ -757,7 +738,6 @@ public final class com/spotify/confidence/client/ResolveResponse$Resolved : com/
 
 public final class com/spotify/confidence/client/ResolvedFlag {
 	public static final field Companion Lcom/spotify/confidence/client/ResolvedFlag$Companion;
-	public synthetic fun <init> (ILjava/lang/String;Ljava/lang/String;Ljava/util/Map;Lcom/spotify/confidence/ResolveReason;ZLkotlinx/serialization/internal/SerializationConstructorMarker;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Lcom/spotify/confidence/ResolveReason;Z)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;Lcom/spotify/confidence/ResolveReason;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
@@ -775,16 +755,15 @@ public final class com/spotify/confidence/client/ResolvedFlag {
 	public final fun getVariant ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-	public static final fun write$Self (Lcom/spotify/confidence/client/ResolvedFlag;Lkotlinx/serialization/encoding/CompositeEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)V
 }
 
-public final class com/spotify/confidence/client/ResolvedFlag$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+public synthetic class com/spotify/confidence/client/ResolvedFlag$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
 	public static final field INSTANCE Lcom/spotify/confidence/client/ResolvedFlag$$serializer;
-	public fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/client/ResolvedFlag;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/client/ResolvedFlag;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/client/ResolvedFlag;)V
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/client/ResolvedFlag;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }
@@ -826,7 +805,6 @@ public final class com/spotify/confidence/client/SchemaType$StringSchema : com/s
 
 public final class com/spotify/confidence/client/Sdk {
 	public static final field Companion Lcom/spotify/confidence/client/Sdk$Companion;
-	public synthetic fun <init> (ILjava/lang/String;Ljava/lang/String;Lkotlinx/serialization/internal/SerializationConstructorMarker;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/String;
@@ -837,16 +815,15 @@ public final class com/spotify/confidence/client/Sdk {
 	public final fun getVersion ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-	public static final fun write$Self (Lcom/spotify/confidence/client/Sdk;Lkotlinx/serialization/encoding/CompositeEncoder;Lkotlinx/serialization/descriptors/SerialDescriptor;)V
 }
 
-public final class com/spotify/confidence/client/Sdk$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+public synthetic class com/spotify/confidence/client/Sdk$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
 	public static final field INSTANCE Lcom/spotify/confidence/client/Sdk$$serializer;
-	public fun childSerializers ()[Lkotlinx/serialization/KSerializer;
-	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/client/Sdk;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/spotify/confidence/client/Sdk;
 	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
-	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
-	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/client/Sdk;)V
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/spotify/confidence/client/Sdk;)V
 	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
 	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
 }

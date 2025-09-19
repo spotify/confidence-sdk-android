@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package com.example.confidencedemoapp
 
 import android.app.Application
@@ -10,12 +12,11 @@ import androidx.lifecycle.viewModelScope
 import com.spotify.confidence.*
 import com.spotify.confidence.openfeature.ConfidenceFeatureProvider
 import com.spotify.confidence.openfeature.InitialisationStrategy
-import dev.openfeature.sdk.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
+import dev.openfeature.kotlin.sdk.*
 import kotlinx.coroutines.launch
 import java.util.UUID
-import kotlin.system.measureTimeMillis
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 class MainVm(app: Application) : AndroidViewModel(app) {
 
@@ -66,8 +67,8 @@ class MainVm(app: Application) : AndroidViewModel(app) {
     fun refreshUi() {
         val client = OpenFeatureAPI.getClient()
         Log.d(TAG, "refreshing UI")
-        val flagMessageKey = "hawkflag.message"
-        val flagMessageDefault = "default"
+        val flagMessageKey = "flaggy.str"
+        val flagMessageDefault = "client side default"
 
         val messageValue = client.getStringValue(flagMessageKey, flagMessageDefault)
         val flagColorKey = "hawkflag.color"
@@ -91,7 +92,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         val visitorId = UUID.randomUUID().toString()
         val ctx = mapOf(
             "visitor_id" to Value.String(visitorId),
-            "picture" to Value.String("hej"),
+            "something_timestamp" to Value.Instant(Clock.System.now()),
             "region" to Value.String("eu")
         )
         viewModelScope.launch {
@@ -133,7 +134,7 @@ private fun Value.friendlyString(): String {
         is Value.Integer -> this.integer.toString()
         is Value.Double -> this.double.toString()
         is Value.Boolean -> this.boolean.toString()
-        is Value.Date -> this.date.toString()
+        is Value.Instant -> this.instant.toString()
         is Value.Structure -> this.structure.entries.joinToString(
             prefix = "{",
             postfix = "}"
