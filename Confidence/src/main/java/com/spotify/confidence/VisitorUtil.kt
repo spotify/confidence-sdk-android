@@ -19,4 +19,12 @@ internal object VisitorUtil {
             }
         }
     }
+
+    fun resetId(context: Context): String {
+        return with(context.getSharedPreferences(SHARED_PREFS_NAME, Context.MODE_PRIVATE)) {
+            val newVisitorId = UUID.randomUUID().toString()
+            edit().putString(VISITOR_ID_SHARED_PREFS_KEY, newVisitorId).apply()
+            newVisitorId
+        }
+    }
 }

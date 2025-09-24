@@ -13,6 +13,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.nio.file.Files
+import java.util.UUID
 
 class ConfidenceContextualTests {
 
@@ -121,5 +122,86 @@ class ConfidenceContextualTests {
         Assert.assertTrue(eventSender.getContext().containsKey("screen"))
         eventSender.removeContext("screen")
         Assert.assertTrue(!eventSender.getContext().containsKey("screen"))
+    }
+
+    @Test
+    fun resetVisitorId_updates_context_with_new_visitor_id() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val confidence = ConfidenceFactory.create(
+            mockContext,
+            "clientSecret",
+            dispatcher = testDispatcher
+        )
+
+        val originalContext = confidence.getContext()
+        val originalVisitorId = originalContext[VISITOR_ID_CONTEXT_KEY]?.toString()
+        Assert.assertNotNull(originalVisitorId)
+
+        confidence.resetVisitorId()
+
+        val newContext = confidence.getContext()
+        val newVisitorId = newContext[VISITOR_ID_CONTEXT_KEY]?.toString()
+        Assert.assertNotNull(newVisitorId)
+        Assert.assertNotEquals(originalVisitorId, newVisitorId)
+
+        // Verify it's a valid UUID format
+        Assert.assertNotNull(UUID.fromString(newVisitorId))
+    }
+
+    @Test
+    fun resetVisitorId_with_custom_visitor_id_key() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val customKey = "custom_visitor_id"
+        val confidence = ConfidenceFactory.create(
+            mockContext,
+            "clientSecret",
+            dispatcher = testDispatcher,
+            visitorIdContextKey = customKey
+        )
+
+        val originalContext = confidence.getContext()
+        val originalVisitorId = originalContext[customKey]?.toString()
+        Assert.assertNotNull(originalVisitorId)
+        Assert.assertFalse(originalContext.containsKey(VISITOR_ID_CONTEXT_KEY))
+
+        confidence.resetVisitorId()
+
+        val newContext = confidence.getContext()
+        val newVisitorId = newContext[customKey]?.toString()
+        Assert.assertNotNull(newVisitorId)
+        Assert.assertNotEquals(originalVisitorId, newVisitorId)
+        Assert.assertFalse(newContext.containsKey(VISITOR_ID_CONTEXT_KEY))
+
+        // Verify it's a valid UUID format
+        Assert.assertNotNull(UUID.fromString(newVisitorId))
+    }
+
+    @Test
+    fun resetVisitorId_without_android_context_logs_warning() = runTest {
+        val debugLogger = DebugLoggerFake()
+        val confidence = Confidence(
+            "",
+            Dispatchers.IO,
+            mock(),
+            mock(),
+            mock(),
+            mock(),
+            mapOf(),
+            mock(),
+            mock(),
+            ConfidenceRegion.EUROPE,
+            debugLogger,
+            null, // No Android context
+            VISITOR_ID_CONTEXT_KEY
+        )
+
+        confidence.resetVisitorId()
+
+        // Verify warning was logged
+        Assert.assertTrue(
+            debugLogger.messagesLogged.any {
+                it.message.contains("Cannot reset visitor ID: Android context is not available")
+            }
+        )
     }
 }

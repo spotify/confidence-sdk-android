@@ -40,7 +40,9 @@ class Confidence internal constructor(
     private val flagApplierClient: FlagApplierClient,
     private val parent: ConfidenceContextProvider? = null,
     private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
-    private val debugLogger: DebugLogger?
+    private val debugLogger: DebugLogger?,
+    private val androidContext: Context? = null,
+    private val visitorIdContextKey: String = VISITOR_ID_CONTEXT_KEY
 ) : Contextual, EventSender {
     private val removedKeys = mutableListOf<String>()
     private val contextMap = MutableStateFlow(initialContext)
@@ -229,7 +231,9 @@ class Confidence internal constructor(
         flagApplierClient,
         this,
         region,
-        debugLogger
+        debugLogger,
+        androidContext,
+        visitorIdContextKey
     ).also {
         it.putContext(context)
     }
@@ -322,6 +326,21 @@ class Confidence internal constructor(
         }
     }
 
+    /**
+     * Resets the stored visitor ID and updates the evaluation context with the new visitor ID.
+     * This function will generate a new UUID for the visitor ID, store it, and trigger a new flag fetch.
+     */
+    suspend fun resetVisitorId() {
+        androidContext?.let { context ->
+            val newVisitorId = VisitorUtil.resetId(context)
+            putContext(mapOf(visitorIdContextKey to ConfidenceValue.String(newVisitorId)))
+            awaitReconciliation()
+            debugLogger?.logMessage("Visitor ID reset to: $newVisitorId")
+        } ?: run {
+            debugLogger?.logMessage("Cannot reset visitor ID: Android context is not available", isWarning = true)
+        }
+    }
+
     override fun stop() {
         for (producer in producers) {
             producer.stop()
@@ -403,12 +422,16 @@ object ConfidenceFactory {
             clientSecret,
             dispatcher,
             engine,
-            initialContext = initContext,
-            region = region,
-            flagResolver = flagResolver,
-            diskStorage = FileDiskStorage.create(context),
-            flagApplierClient = flagApplierClient,
-            debugLogger = debugLogger
+            FileDiskStorage.create(context),
+            flagResolver,
+            InMemoryCache(),
+            initContext,
+            flagApplierClient,
+            null,
+            region,
+            debugLogger,
+            context,
+            visitorIdContextKey
         )
     }
 }
