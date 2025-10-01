@@ -20,9 +20,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToJsonElement
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
@@ -124,9 +124,10 @@ class Confidence internal constructor(
             }
         }
         // we are using a custom serializer so that the Json is serialized correctly in the logs
-        val newMap: Map<String, @Serializable(NetworkConfidenceValueSerializer::class) ConfidenceValue> =
+        val contextJson = Json.encodeToJsonElement(
+            MapSerializer(String.serializer(), NetworkConfidenceValueSerializer),
             evaluationContext
-        val contextJson = Json.encodeToJsonElement(newMap)
+        )
         val flag = key.splitToSequence(".").first()
         debugLogger?.logResolve(flag, contextJson)
         return eval
