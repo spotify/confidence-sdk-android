@@ -27,7 +27,7 @@ import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
 internal const val SDK_ID = "SDK_ID_KOTLIN_CONFIDENCE"
-internal const val SDK_VERSION = "0.5.3" // x-release-please-version
+internal const val SDK_VERSION = "0.6.0" // x-release-please-version
 
 class Confidence internal constructor(
     private val clientSecret: String,

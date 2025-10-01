@@ -10,7 +10,8 @@
             "commit-search-depth": 1000,
             "extra-files": [
                 "README.md",
-                "build.gradle.kts"
+                "build.gradle.kts",
+                "confidence/src/main/java/com/spotify/confidence/Confidence.kt"
             ]
         }
     },
