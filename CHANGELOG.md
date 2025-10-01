@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.1](https://github.com/spotify/confidence-sdk-android/compare/0.6.0...0.6.1) (2025-10-01)
+
+
+### 🐛 Bug Fixes
+
+* add missing release version location ([#222](https://github.com/spotify/confidence-sdk-android/issues/222)) ([297f5c6](https://github.com/spotify/confidence-sdk-android/commit/297f5c6d862684c7a3d1c52116721298da52a8aa))
+* correct format on resolve tester base64 encoded json ([#223](https://github.com/spotify/confidence-sdk-android/issues/223)) ([bfab5e0](https://github.com/spotify/confidence-sdk-android/commit/bfab5e0e2606e09991e27b1be6f2d86067993c04))
+
 ## [0.6.0](https://github.com/spotify/confidence-sdk-android/compare/0.5.3...0.6.0) (2025-09-19)
 
 
