@@ -6,6 +6,9 @@ import com.spotify.confidence.apply.ApplyInstance
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
+import kotlin.concurrent.write
 
 internal const val FLAGS_FILE_NAME = "confidence_flags_cache.json"
 internal const val APPLY_FILE_NAME = "confidence_apply_cache.json"
@@ -14,13 +17,16 @@ internal class FileDiskStorage internal constructor(
     private val flagsFile: File,
     private val applyFile: File
 ) : DiskStorage {
+    private val lock = ReentrantReadWriteLock()
 
     override fun store(flagResolution: FlagResolution) {
         write(Json.encodeToString(flagResolution))
     }
 
     override fun clear() {
-        flagsFile.delete()
+        lock.write {
+            flagsFile.delete()
+        }
     }
 
     override fun writeApplyData(applyData: Map<String, MutableMap<String, ApplyInstance>>) {
@@ -42,11 +48,11 @@ internal class FileDiskStorage internal constructor(
         }
     }
 
-    private fun write(data: String) {
+    private fun write(data: String) = lock.write {
         flagsFile.writeText(data)
     }
 
-    override fun read(): FlagResolution {
+    override fun read(): FlagResolution = lock.read {
         if (!flagsFile.exists()) return FlagResolution.EMPTY
         val fileText: String = flagsFile.bufferedReader().use { it.readText() }
         return if (fileText.isEmpty()) {
@@ -55,6 +61,8 @@ internal class FileDiskStorage internal constructor(
             try {
                 Json.decodeFromString(fileText)
             } catch (e: Throwable) {
+                // Delete corrupted file - safe to do while holding read lock
+                // since we're the only thread accessing it
                 flagsFile.delete()
                 FlagResolution.EMPTY
             }
