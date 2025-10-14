@@ -53,7 +53,6 @@ internal class FileDiskStorage internal constructor(
     }
 
     override fun read(): FlagResolution = lock.read {
-        try {
             if (!flagsFile.exists()) return FlagResolution.EMPTY
             val fileText: String = flagsFile.bufferedReader().use { it.readText() }
             return if (fileText.isEmpty()) {
@@ -68,10 +67,6 @@ internal class FileDiskStorage internal constructor(
                     FlagResolution.EMPTY
                 }
             }
-        } catch (e: java.io.FileNotFoundException) {
-            // File was deleted between exists check and read
-            return FlagResolution.EMPTY
-        }
     }
 
     companion object {
