@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.2](https://github.com/spotify/confidence-sdk-android/compare/0.6.1...0.6.2) (2025-10-14)
+
+
+### 🐛 Bug Fixes
+
+* apply read write lock for file disk storage ([#225](https://github.com/spotify/confidence-sdk-android/issues/225)) ([0f131d9](https://github.com/spotify/confidence-sdk-android/commit/0f131d96b57c2b4d13884d7c8832f58b7b25c180))
+
 ## [0.6.1](https://github.com/spotify/confidence-sdk-android/compare/0.6.0...0.6.1) (2025-10-01)
 
 
