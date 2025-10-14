@@ -53,20 +53,20 @@ internal class FileDiskStorage internal constructor(
     }
 
     override fun read(): FlagResolution = lock.read {
-            if (!flagsFile.exists()) return FlagResolution.EMPTY
-            val fileText: String = flagsFile.bufferedReader().use { it.readText() }
-            return if (fileText.isEmpty()) {
+        if (!flagsFile.exists()) return FlagResolution.EMPTY
+        val fileText: String = flagsFile.bufferedReader().use { it.readText() }
+        return if (fileText.isEmpty()) {
+            FlagResolution.EMPTY
+        } else {
+            try {
+                Json.decodeFromString(fileText)
+            } catch (e: Throwable) {
+                // Delete corrupted file - safe to do while holding read lock
+                // since we're the only thread accessing it
+                flagsFile.delete()
                 FlagResolution.EMPTY
-            } else {
-                try {
-                    Json.decodeFromString(fileText)
-                } catch (e: Throwable) {
-                    // Delete corrupted file - safe to do while holding read lock
-                    // since we're the only thread accessing it
-                    flagsFile.delete()
-                    FlagResolution.EMPTY
-                }
             }
+        }
     }
 
     companion object {

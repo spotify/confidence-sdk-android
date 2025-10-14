@@ -91,39 +91,43 @@ class FileDiskStorageTest {
 
         // Reader threads - continuously read
         repeat(readerCount) {
-            threads.add(thread {
-                try {
-                    barrier.await() // Start all threads at the same time
-                    repeat(iterations) {
-                        diskStorage.read() // This used to throw FileNotFoundException
-                    }
-                } catch (e: Throwable) {
-                    synchronized(exceptions) {
-                        exceptions.add(e)
+            threads.add(
+                thread {
+                    try {
+                        barrier.await() // Start all threads at the same time
+                        repeat(iterations) {
+                            diskStorage.read() // This used to throw FileNotFoundException
+                        }
+                    } catch (e: Throwable) {
+                        synchronized(exceptions) {
+                            exceptions.add(e)
+                        }
                     }
                 }
-            })
+            )
         }
 
         // Writer threads - continuously write
         repeat(writerCount) { writerId ->
-            threads.add(thread {
-                try {
-                    barrier.await() // Start all threads at the same time
-                    repeat(iterations) { iteration ->
-                        val testData = FlagResolution(
-                            mapOf("writer" to ConfidenceValue.String("$writerId-$iteration")),
-                            listOf(),
-                            "token-$writerId-$iteration"
-                        )
-                        diskStorage.store(testData)
-                    }
-                } catch (e: Throwable) {
-                    synchronized(exceptions) {
-                        exceptions.add(e)
+            threads.add(
+                thread {
+                    try {
+                        barrier.await() // Start all threads at the same time
+                        repeat(iterations) { iteration ->
+                            val testData = FlagResolution(
+                                mapOf("writer" to ConfidenceValue.String("$writerId-$iteration")),
+                                listOf(),
+                                "token-$writerId-$iteration"
+                            )
+                            diskStorage.store(testData)
+                        }
+                    } catch (e: Throwable) {
+                        synchronized(exceptions) {
+                            exceptions.add(e)
+                        }
                     }
                 }
-            })
+            )
         }
 
         // Then: No FileNotFoundException or other exceptions should occur
