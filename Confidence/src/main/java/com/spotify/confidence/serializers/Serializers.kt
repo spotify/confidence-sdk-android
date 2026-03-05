@@ -184,14 +184,23 @@ private fun JsonElement.convertToValue(key: String, schemaType: SchemaType): Con
         toString().toDoubleOrNull()?.let(ConfidenceValue::Double) ?: ConfidenceValue.Null
     }
     is SchemaType.IntSchema -> {
-        // passing double number to an integer schema
-        if (toString().contains(".")) {
-            throw ParseError(
-                "Incompatible value \"$key\" for schema",
-                listOf(key)
-            )
+        val str = toString()
+        if (str.contains(".")) {
+            // backend may send whole numbers as 400.0 — accept if fractional part is zero
+            val doubleVal = str.toDoubleOrNull()
+            if (doubleVal != null && doubleVal % 1.0 == 0.0) {
+                ConfidenceValue.Integer(doubleVal.toInt())
+            } else if (doubleVal != null) {
+                throw ParseError(
+                    "Incompatible value \"$key\" for schema",
+                    listOf(key)
+                )
+            } else {
+                ConfidenceValue.Null
+            }
+        } else {
+            str.toIntOrNull()?.let { ConfidenceValue.Integer(it) } ?: ConfidenceValue.Null
         }
-        toString().toIntOrNull()?.let { ConfidenceValue.Integer(it) } ?: ConfidenceValue.Null
     }
     is SchemaType.SchemaStruct -> {
         if (jsonObject.isEmpty()) {

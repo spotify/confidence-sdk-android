@@ -42,3 +42,4 @@ render.experimental.xml
 
 # Other
 *.DS_Store
+.java-version
