@@ -431,6 +431,221 @@ internal class ConfidenceRemoteClientTests {
     }
 
     @Test
+    fun testIntSchemaWithWholeNumberDouble() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val jsonPayload = """
+        {
+          "resolvedFlags": [
+            {
+              "flag": "flags/test-flag",
+              "variant": "flags/test-flag/variants/variant-1",
+              "value": {
+                "myinteger": 400.0
+              },
+              "flagSchema": {
+                "schema": {
+                  "myinteger": {
+                    "intSchema": {}
+                  }
+                }
+              },
+              "reason": "RESOLVE_REASON_MATCH",
+              "shouldApply": true
+            }
+          ],
+          "resolveToken": "token1"
+        }
+        """.trimIndent()
+
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody(jsonPayload)
+        )
+        val parsedResponse = RemoteFlagResolver(
+            clientSecret = "",
+            region = ConfidenceRegion.EUROPE,
+            baseUrl = mockWebServer.url("/v1/flags:resolve"),
+            dispatcher = testDispatcher,
+            httpClient = OkHttpClient(),
+            sdkMetadata = SdkMetadata("", "")
+        ).resolve(listOf(), mapOf("targeting_key" to ConfidenceValue.String("user1")))
+        val flags = (parsedResponse as Result.Success<FlagResolution>).data.flags
+        assertEquals(ConfidenceValue.Integer(400), flags[0].value["myinteger"])
+    }
+
+    @Test
+    fun testIntSchemaWithNegativeWholeNumberDouble() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val jsonPayload = """
+        {
+          "resolvedFlags": [
+            {
+              "flag": "flags/test-flag",
+              "variant": "flags/test-flag/variants/variant-1",
+              "value": {
+                "myinteger": -5.0
+              },
+              "flagSchema": {
+                "schema": {
+                  "myinteger": {
+                    "intSchema": {}
+                  }
+                }
+              },
+              "reason": "RESOLVE_REASON_MATCH",
+              "shouldApply": true
+            }
+          ],
+          "resolveToken": "token1"
+        }
+        """.trimIndent()
+
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody(jsonPayload)
+        )
+        val parsedResponse = RemoteFlagResolver(
+            clientSecret = "",
+            region = ConfidenceRegion.EUROPE,
+            baseUrl = mockWebServer.url("/v1/flags:resolve"),
+            dispatcher = testDispatcher,
+            httpClient = OkHttpClient(),
+            sdkMetadata = SdkMetadata("", "")
+        ).resolve(listOf(), mapOf("targeting_key" to ConfidenceValue.String("user1")))
+        val flags = (parsedResponse as Result.Success<FlagResolution>).data.flags
+        assertEquals(ConfidenceValue.Integer(-5), flags[0].value["myinteger"])
+    }
+
+    @Test
+    fun testIntSchemaWithZeroDouble() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val jsonPayload = """
+        {
+          "resolvedFlags": [
+            {
+              "flag": "flags/test-flag",
+              "variant": "flags/test-flag/variants/variant-1",
+              "value": {
+                "myinteger": 0.0
+              },
+              "flagSchema": {
+                "schema": {
+                  "myinteger": {
+                    "intSchema": {}
+                  }
+                }
+              },
+              "reason": "RESOLVE_REASON_MATCH",
+              "shouldApply": true
+            }
+          ],
+          "resolveToken": "token1"
+        }
+        """.trimIndent()
+
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody(jsonPayload)
+        )
+        val parsedResponse = RemoteFlagResolver(
+            clientSecret = "",
+            region = ConfidenceRegion.EUROPE,
+            baseUrl = mockWebServer.url("/v1/flags:resolve"),
+            dispatcher = testDispatcher,
+            httpClient = OkHttpClient(),
+            sdkMetadata = SdkMetadata("", "")
+        ).resolve(listOf(), mapOf("targeting_key" to ConfidenceValue.String("user1")))
+        val flags = (parsedResponse as Result.Success<FlagResolution>).data.flags
+        assertEquals(ConfidenceValue.Integer(0), flags[0].value["myinteger"])
+    }
+
+    @Test
+    fun testAllSchemaTypesWithMixedValues() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val jsonPayload = """
+        {
+          "resolvedFlags": [
+            {
+              "flag": "flags/test-flag",
+              "variant": "flags/test-flag/variants/variant-1",
+              "value": {
+                "my_string": "hello",
+                "my_bool_true": true,
+                "my_bool_false": false,
+                "my_int": 42,
+                "my_int_as_double": 100.0,
+                "my_double": 3.14,
+                "my_double_whole": 7.0,
+                "my_null_string": null,
+                "my_null_int": null,
+                "my_struct": {
+                  "nested_str": "inner",
+                  "nested_int": 10.0
+                }
+              },
+              "flagSchema": {
+                "schema": {
+                  "my_string": { "stringSchema": {} },
+                  "my_bool_true": { "boolSchema": {} },
+                  "my_bool_false": { "boolSchema": {} },
+                  "my_int": { "intSchema": {} },
+                  "my_int_as_double": { "intSchema": {} },
+                  "my_double": { "doubleSchema": {} },
+                  "my_double_whole": { "doubleSchema": {} },
+                  "my_null_string": { "stringSchema": {} },
+                  "my_null_int": { "intSchema": {} },
+                  "my_struct": {
+                    "structSchema": {
+                      "schema": {
+                        "nested_str": { "stringSchema": {} },
+                        "nested_int": { "intSchema": {} }
+                      }
+                    }
+                  }
+                }
+              },
+              "reason": "RESOLVE_REASON_MATCH",
+              "shouldApply": true
+            }
+          ],
+          "resolveToken": "token1"
+        }
+        """.trimIndent()
+
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody(jsonPayload)
+        )
+        val parsedResponse = RemoteFlagResolver(
+            clientSecret = "",
+            region = ConfidenceRegion.EUROPE,
+            baseUrl = mockWebServer.url("/v1/flags:resolve"),
+            dispatcher = testDispatcher,
+            httpClient = OkHttpClient(),
+            sdkMetadata = SdkMetadata("", "")
+        ).resolve(listOf(), mapOf("targeting_key" to ConfidenceValue.String("user1")))
+
+        val values = (parsedResponse as Result.Success<FlagResolution>).data.flags[0].value
+        assertEquals(ConfidenceValue.String("hello"), values["my_string"])
+        assertEquals(ConfidenceValue.Boolean(true), values["my_bool_true"])
+        assertEquals(ConfidenceValue.Boolean(false), values["my_bool_false"])
+        assertEquals(ConfidenceValue.Integer(42), values["my_int"])
+        assertEquals(ConfidenceValue.Integer(100), values["my_int_as_double"])
+        assertEquals(ConfidenceValue.Double(3.14), values["my_double"])
+        assertEquals(ConfidenceValue.Double(7.0), values["my_double_whole"])
+        assertEquals(ConfidenceValue.Null, values["my_null_string"])
+        assertEquals(ConfidenceValue.Null, values["my_null_int"])
+
+        val struct = values["my_struct"] as ConfidenceValue.Struct
+        assertEquals(ConfidenceValue.String("inner"), struct.map["nested_str"])
+        assertEquals(ConfidenceValue.Integer(10), struct.map["nested_int"])
+    }
+
+    @Test
     fun testSerializeResolveRequest() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val date = Date.from(Instant.parse("2023-03-01T14:01:46.123Z"))
