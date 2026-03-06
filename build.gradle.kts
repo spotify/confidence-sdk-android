@@ -14,7 +14,7 @@ plugins {
 allprojects {
     extra["groupId"] = "com.spotify.confidence"
 // x-release-please-start-version
-    ext["version"] = "0.6.2"
+    ext["version"] = "0.6.3"
 // x-release-please-end
 }
 group = project.extra["groupId"].toString()
