@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.3](https://github.com/spotify/confidence-sdk-android/compare/0.6.2...0.6.3) (2026-03-06)
+
+
+### 🐛 Bug Fixes
+
+* accept whole-number doubles for intSchema deserialization ([#229](https://github.com/spotify/confidence-sdk-android/issues/229)) ([7f95fd0](https://github.com/spotify/confidence-sdk-android/commit/7f95fd073c0ad504ee93a5c6613acd4d5144913b))
+
+
+### 📚 Documentation
+
+* add getting involved section to contribution guidelines ([#227](https://github.com/spotify/confidence-sdk-android/issues/227)) ([e63a026](https://github.com/spotify/confidence-sdk-android/commit/e63a0260bf7cf2b811239a33c647193f5446c082))
+
 ## [0.6.2](https://github.com/spotify/confidence-sdk-android/compare/0.6.1...0.6.2) (2025-10-14)
 
 
