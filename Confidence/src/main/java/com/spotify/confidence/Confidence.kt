@@ -259,7 +259,17 @@ class Confidence internal constructor(
             if (resolveResponse is Result.Success) {
                 // we store the flag anyways except when the response was not modified
                 if (resolveResponse.data != FlagResolution.EMPTY) {
-                    diskStorage.store(resolveResponse.data)
+                    // Discard stale responses: if context changed during the
+                    // in-flight request, the response is for an outdated context
+                    if (resolveResponse.data.context == getContext()) {
+                        diskStorage.store(resolveResponse.data)
+                    } else {
+                        debugLogger?.logMessage(
+                            "Discarding stale resolve response: " +
+                                "context changed during in-flight request",
+                            isWarning = true
+                        )
+                    }
                 }
             }
         } catch (e: ParseError) {

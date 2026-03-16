@@ -672,8 +672,8 @@ internal class ConfidenceEvaluationTest {
 
         whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Failure())
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-        val mockConfidence = getConfidence(testDispatcher)
         val context = mapOf("key" to ConfidenceValue.String("foo"))
+        val mockConfidence = getConfidence(testDispatcher, initialContext = context)
 
         whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
             Result.Success(

@@ -6,6 +6,7 @@ interface ProviderCache {
 }
 
 class InMemoryCache : ProviderCache {
+    @Volatile
     private var flagResolution: FlagResolution? = null
     override fun refresh(flagResolution: FlagResolution) {
         this.flagResolution = flagResolution
