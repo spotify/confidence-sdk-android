@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.4](https://github.com/spotify/confidence-sdk-android/compare/0.6.3...0.6.4) (2026-03-16)
+
+
+### 🐛 Bug Fixes
+
+* discard stale resolve responses and add @Volatile to InMemoryCache ([#230](https://github.com/spotify/confidence-sdk-android/issues/230)) ([8fa647b](https://github.com/spotify/confidence-sdk-android/commit/8fa647b5813d9dfcbcabf7c2d9df74f1c6a53dca))
+
 ## [0.6.3](https://github.com/spotify/confidence-sdk-android/compare/0.6.2...0.6.3) (2026-03-06)
 
 
