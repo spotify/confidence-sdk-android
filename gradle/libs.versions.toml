@@ -23,6 +23,10 @@ composeUi = "1.2.0"
 liveData = "1.2.0"
 lifecycle = "2.6.1"
 
+# Protobuf
+protobuf = "4.29.3"
+protobufPlugin = "0.9.4"
+
 # Test libs
 androidXJunitTest = "1.1.3"
 mockWebServer = "4.9.1"
@@ -55,6 +59,8 @@ okHttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okHtt
 openFeatureSDK = { group = "dev.openfeature", name = "kotlin-sdk", version.ref = "openFeatureSDK" }
 uiTestManifest = { group = "androidx.compose.ui", name = "ui-test-manifest", version.ref = "composeUi" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+protobufJava = { group = "com.google.protobuf", name = "protobuf-java", version.ref = "protobuf" }
+protoc = { group = "com.google.protobuf", name = "protoc", version.ref = "protobuf" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "androidGradlePlugin" }
@@ -66,3 +72,4 @@ kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", versio
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 nexusPublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexusPublish" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "composeCompiler" }
+protobuf = { id = "com.google.protobuf", version.ref = "protobufPlugin" }

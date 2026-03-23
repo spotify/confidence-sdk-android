@@ -2,6 +2,7 @@
 
 package com.spotify.confidence
 
+import android.util.Base64
 import com.spotify.confidence.ConfidenceError.ParseError
 import com.spotify.confidence.client.AppliedFlag
 import com.spotify.confidence.client.Clock
@@ -9,7 +10,9 @@ import com.spotify.confidence.client.FlagApplierClientImpl
 import com.spotify.confidence.client.Flags
 import com.spotify.confidence.client.ResolveFlags
 import com.spotify.confidence.client.ResolvedFlag
-import com.spotify.confidence.client.SdkMetadata
+import io.mockk.every
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -31,16 +34,21 @@ import java.util.Date
 
 internal class ConfidenceRemoteClientTests {
     private val mockWebServer = MockWebServer()
-    private val sdkMetadata = SdkMetadata(SDK_ID + "_TEST", "")
+    private val testTelemetry = Telemetry(SDK_ID + "_TEST", Telemetry.Library.CONFIDENCE, "")
 
     @Before
     fun setup() {
+        mockkStatic(Base64::class)
+        every { Base64.encodeToString(any(), any()) } answers {
+            java.util.Base64.getEncoder().encodeToString(firstArg<ByteArray>())
+        }
         mockWebServer.start()
     }
 
     @After
     fun tearDown() {
         mockWebServer.shutdown()
+        unmockkStatic(Base64::class)
     }
 
     @Test
@@ -112,7 +120,7 @@ internal class ConfidenceRemoteClientTests {
             baseUrl = mockWebServer.url("/v1/flags:resolve"),
             dispatcher = testDispatcher,
             httpClient = OkHttpClient(),
-            sdkMetadata = SdkMetadata("", "")
+            telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
         )
             .resolve(listOf(), mapOf("targeting_key" to ConfidenceValue.String("user1")))
         val expectedFlags = Flags(
@@ -174,7 +182,7 @@ internal class ConfidenceRemoteClientTests {
                 baseUrl = mockWebServer.url("/v1/flags:resolve"),
                 dispatcher = testDispatcher,
                 httpClient = OkHttpClient(),
-                sdkMetadata = SdkMetadata("", "")
+                telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
             ).resolve(listOf(), mapOf("targeting_key" to ConfidenceValue.String("user1")))
         val expectedParsed = ResolveFlags(
             Flags(
@@ -230,7 +238,7 @@ internal class ConfidenceRemoteClientTests {
                 baseUrl = mockWebServer.url("/v1/flags:resolve"),
                 dispatcher = testDispatcher,
                 httpClient = OkHttpClient(),
-                sdkMetadata = SdkMetadata("", "")
+                telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
             )
                 .resolve(listOf(), mapOf("targeting_key" to ConfidenceValue.String("user1")))
         val expectedParsed = ResolveFlags(
@@ -290,7 +298,7 @@ internal class ConfidenceRemoteClientTests {
                     baseUrl = mockWebServer.url("/v1/flags:resolve"),
                     dispatcher = testDispatcher,
                     httpClient = OkHttpClient(),
-                    sdkMetadata = SdkMetadata("", "")
+                    telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
                 )
                     .resolve(listOf(), mapOf("targeting_key" to ConfidenceValue.String("user1")))
             }
@@ -336,7 +344,7 @@ internal class ConfidenceRemoteClientTests {
                     baseUrl = mockWebServer.url("/v1/flags:resolve"),
                     dispatcher = testDispatcher,
                     httpClient = OkHttpClient(),
-                    sdkMetadata = SdkMetadata("", "")
+                    telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
                 )
                     .resolve(listOf(), mapOf("targeting_key" to ConfidenceValue.String("user1")))
             }
@@ -378,7 +386,7 @@ internal class ConfidenceRemoteClientTests {
                     baseUrl = mockWebServer.url("/v1/flags:resolve"),
                     dispatcher = testDispatcher,
                     httpClient = OkHttpClient(),
-                    sdkMetadata = SdkMetadata("", "")
+                    telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
                 )
                     .resolve(listOf(), mapOf("targeting_key" to ConfidenceValue.String("user1")))
             }
@@ -422,7 +430,7 @@ internal class ConfidenceRemoteClientTests {
                     baseUrl = mockWebServer.url("/v1/flags:resolve"),
                     dispatcher = testDispatcher,
                     httpClient = OkHttpClient(),
-                    sdkMetadata = SdkMetadata("", "")
+                    telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
                 )
                     .resolve(listOf(), mapOf("targeting_key" to ConfidenceValue.String("user1")))
             }
@@ -468,7 +476,7 @@ internal class ConfidenceRemoteClientTests {
             baseUrl = mockWebServer.url("/v1/flags:resolve"),
             dispatcher = testDispatcher,
             httpClient = OkHttpClient(),
-            sdkMetadata = SdkMetadata("", "")
+            telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
         ).resolve(listOf(), mapOf("targeting_key" to ConfidenceValue.String("user1")))
         val flags = (parsedResponse as Result.Success<FlagResolution>).data.flags
         assertEquals(ConfidenceValue.Integer(400), flags[0].value["myinteger"])
@@ -512,7 +520,7 @@ internal class ConfidenceRemoteClientTests {
             baseUrl = mockWebServer.url("/v1/flags:resolve"),
             dispatcher = testDispatcher,
             httpClient = OkHttpClient(),
-            sdkMetadata = SdkMetadata("", "")
+            telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
         ).resolve(listOf(), mapOf("targeting_key" to ConfidenceValue.String("user1")))
         val flags = (parsedResponse as Result.Success<FlagResolution>).data.flags
         assertEquals(ConfidenceValue.Integer(-5), flags[0].value["myinteger"])
@@ -556,7 +564,7 @@ internal class ConfidenceRemoteClientTests {
             baseUrl = mockWebServer.url("/v1/flags:resolve"),
             dispatcher = testDispatcher,
             httpClient = OkHttpClient(),
-            sdkMetadata = SdkMetadata("", "")
+            telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
         ).resolve(listOf(), mapOf("targeting_key" to ConfidenceValue.String("user1")))
         val flags = (parsedResponse as Result.Success<FlagResolution>).data.flags
         assertEquals(ConfidenceValue.Integer(0), flags[0].value["myinteger"])
@@ -626,7 +634,7 @@ internal class ConfidenceRemoteClientTests {
             baseUrl = mockWebServer.url("/v1/flags:resolve"),
             dispatcher = testDispatcher,
             httpClient = OkHttpClient(),
-            sdkMetadata = SdkMetadata("", "")
+            telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
         ).resolve(listOf(), mapOf("targeting_key" to ConfidenceValue.String("user1")))
 
         val values = (parsedResponse as Result.Success<FlagResolution>).data.flags[0].value
@@ -700,8 +708,9 @@ internal class ConfidenceRemoteClientTests {
             baseUrl = mockWebServer.url("/v1/flags:resolve"),
             dispatcher = testDispatcher,
             httpClient = OkHttpClient(),
-            sdkMetadata = SdkMetadata(
+            telemetry = Telemetry(
                 "SDK_ID_KOTLIN_PROVIDER_TEST",
+                Telemetry.Library.CONFIDENCE,
                 ""
             )
         )
@@ -761,12 +770,83 @@ internal class ConfidenceRemoteClientTests {
         }
         FlagApplierClientImpl(
             "secret1",
-            sdkMetadata,
+            Telemetry(SDK_ID + "_TEST", Telemetry.Library.CONFIDENCE, ""),
             mockWebServer.url("/v1/flags:apply"),
             mockClock,
             dispatcher = testDispatcher
         )
             .apply(listOf(AppliedFlag("flag1", applyDate)), "token1")
+    }
+
+    @Test
+    fun testApplyRequestIncludesTelemetryHeader() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val applyDate = Date.from(Instant.parse("2023-03-01T14:01:46.123Z"))
+        val sendDate = Date.from(Instant.parse("2023-03-01T14:03:46.124Z"))
+        val mockClock: Clock = mock()
+        whenever(mockClock.currentTime()).thenReturn(sendDate)
+
+        val telemetry = Telemetry(SDK_ID + "_TEST", Telemetry.Library.CONFIDENCE, "1.0.0")
+        // Pre-populate telemetry so the header will be present
+        telemetry.trackEvaluation(
+            Telemetry.EvaluationReason.TARGETING_MATCH,
+            Telemetry.EvaluationErrorCode.UNSPECIFIED
+        )
+
+        var recordedRequest: RecordedRequest? = null
+        mockWebServer.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                recordedRequest = request
+                return MockResponse().setResponseCode(200)
+            }
+        }
+
+        FlagApplierClientImpl(
+            "secret1",
+            telemetry,
+            mockWebServer.url("/v1/flags:apply"),
+            mockClock,
+            dispatcher = testDispatcher
+        ).apply(listOf(AppliedFlag("flag1", applyDate)), "token1")
+
+        val header = recordedRequest?.getHeader(Telemetry.HEADER_NAME)
+        assertTrue(
+            "Expected ${Telemetry.HEADER_NAME} header on apply request",
+            header != null && header.isNotEmpty()
+        )
+    }
+
+    @Test
+    fun testApplyRequestOmitsHeaderWhenNoTelemetry() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val applyDate = Date.from(Instant.parse("2023-03-01T14:01:46.123Z"))
+        val sendDate = Date.from(Instant.parse("2023-03-01T14:03:46.124Z"))
+        val mockClock: Clock = mock()
+        whenever(mockClock.currentTime()).thenReturn(sendDate)
+
+        val telemetry = Telemetry(SDK_ID + "_TEST", Telemetry.Library.CONFIDENCE, "1.0.0")
+        // No events tracked
+
+        var recordedRequest: RecordedRequest? = null
+        mockWebServer.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                recordedRequest = request
+                return MockResponse().setResponseCode(200)
+            }
+        }
+
+        FlagApplierClientImpl(
+            "secret1",
+            telemetry,
+            mockWebServer.url("/v1/flags:apply"),
+            mockClock,
+            dispatcher = testDispatcher
+        ).apply(listOf(AppliedFlag("flag1", applyDate)), "token1")
+
+        assertTrue(
+            "No telemetry header expected when no events tracked",
+            recordedRequest?.getHeader(Telemetry.HEADER_NAME) == null
+        )
     }
 
     @Test
@@ -784,7 +864,7 @@ internal class ConfidenceRemoteClientTests {
         }
         val result = FlagApplierClientImpl(
             "secret1",
-            sdkMetadata,
+            testTelemetry,
             mockWebServer.url("/v1/flags:apply"),
             mockClock,
             dispatcher = testDispatcher
@@ -809,7 +889,7 @@ internal class ConfidenceRemoteClientTests {
         }
         val result = FlagApplierClientImpl(
             "secret1",
-            sdkMetadata,
+            testTelemetry,
             mockWebServer.url("/v1/flags:apply"),
             mockClock,
             dispatcher = testDispatcher

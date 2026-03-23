@@ -7,6 +7,7 @@ plugins {
     id("signing")
     id("org.jetbrains.kotlinx.binary-compatibility-validator")
     id("org.jetbrains.kotlinx.kover")
+    alias(libs.plugins.protobuf)
 }
 
 val providerVersion = project.extra["version"].toString()
@@ -60,6 +61,20 @@ dependencies {
     testImplementation(libs.mockWebServer)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinxCoroutinesTest)
+    testImplementation(libs.protobufJava)
+}
+
+protobuf {
+    protoc {
+        artifact = libs.protoc.get().toString()
+    }
+    generateProtoTasks {
+        all().configureEach {
+            builtins {
+                create("java")
+            }
+        }
+    }
 }
 
 publishing {
