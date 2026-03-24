@@ -226,8 +226,7 @@ class Confidence internal constructor(
             it.getContext().filterKeys { key -> !removedKeys.contains(key) } + contextMap.value
         } ?: contextMap.value
 
-    @Suppress("unused")
-    private fun setTelemetryLibraryOpenFeature() {
+    fun setTelemetryLibraryOpenFeature() {
         telemetry.library = Telemetry.Library.OPEN_FEATURE
     }
 

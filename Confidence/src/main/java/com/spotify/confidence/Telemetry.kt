@@ -31,67 +31,67 @@ internal class Telemetry(
         }
     }
 
-    fun encodedHeaderValue(): String? {
-        val (evalSnapshot, resolveSnapshot) = synchronized(lock) {
-            val evals = evaluationTraces.toList()
-            val resolves = resolveLatencyTraces.toList()
+    fun encodedHeaderValue(): String {
+        val snapshot = synchronized(lock) {
+            val s = Snapshot(
+                evaluations = evaluationTraces.toList(),
+                resolveTraces = resolveLatencyTraces.toList(),
+                library = library
+            )
             evaluationTraces.clear()
             resolveLatencyTraces.clear()
-            Pair(evals, resolves)
+            s
         }
 
-        if (evalSnapshot.isEmpty() && resolveSnapshot.isEmpty()) return null
-
-        val bytes = encodeMonitoring(evalSnapshot, resolveSnapshot)
+        val bytes = encodeMonitoring(snapshot)
         return Base64.encodeToString(bytes, Base64.NO_WRAP)
     }
 
-    private fun encodeMonitoring(
-        evals: List<EvaluationTrace>,
-        resolves: List<ResolveLatencyTrace>
-    ): ByteArray {
+    private data class Snapshot(
+        val evaluations: List<EvaluationTrace>,
+        val resolveTraces: List<ResolveLatencyTrace>,
+        val library: Library
+    )
+
+    private fun encodeMonitoring(snapshot: Snapshot): ByteArray {
         val out = ByteArrayOutputStream()
 
-        // field 1: LibraryTraces (length-delimited)
-        val libraryTracesBytes = encodeLibraryTraces(evals, resolves)
+        val libraryTracesBytes = encodeLibraryTraces(snapshot)
         out.writeTag(1, WIRE_TYPE_LENGTH_DELIMITED)
-        out.writeVarint(libraryTracesBytes.size)
+        out.writeVarint(libraryTracesBytes.size.toLong())
         out.write(libraryTracesBytes)
 
-        // field 2: platform (varint) - KOTLIN = 2
-        out.writeTag(2, WIRE_TYPE_VARINT)
-        out.writeVarint(Platform.KOTLIN.value)
+        if (Platform.KOTLIN.value != 0) {
+            out.writeTag(2, WIRE_TYPE_VARINT)
+            out.writeVarint(Platform.KOTLIN.value.toLong())
+        }
 
         return out.toByteArray()
     }
 
-    private fun encodeLibraryTraces(
-        evals: List<EvaluationTrace>,
-        resolves: List<ResolveLatencyTrace>
-    ): ByteArray {
+    private fun encodeLibraryTraces(snapshot: Snapshot): ByteArray {
         val out = ByteArrayOutputStream()
 
-        // field 1: library (varint)
-        out.writeTag(1, WIRE_TYPE_VARINT)
-        out.writeVarint(library.value)
+        if (snapshot.library.value != 0) {
+            out.writeTag(1, WIRE_TYPE_VARINT)
+            out.writeVarint(snapshot.library.value.toLong())
+        }
 
-        // field 2: library_version (string)
-        out.writeTag(2, WIRE_TYPE_LENGTH_DELIMITED)
         val versionBytes = sdkVersion.toByteArray(Charsets.UTF_8)
-        out.writeVarint(versionBytes.size)
+        out.writeTag(2, WIRE_TYPE_LENGTH_DELIMITED)
+        out.writeVarint(versionBytes.size.toLong())
         out.write(versionBytes)
 
-        // field 3: traces (repeated)
-        for (resolve in resolves) {
+        for (resolve in snapshot.resolveTraces) {
             val traceBytes = encodeResolveLatencyTrace(resolve)
             out.writeTag(3, WIRE_TYPE_LENGTH_DELIMITED)
-            out.writeVarint(traceBytes.size)
+            out.writeVarint(traceBytes.size.toLong())
             out.write(traceBytes)
         }
-        for (eval in evals) {
+        for (eval in snapshot.evaluations) {
             val traceBytes = encodeEvaluationTrace(eval)
             out.writeTag(3, WIRE_TYPE_LENGTH_DELIMITED)
-            out.writeVarint(traceBytes.size)
+            out.writeVarint(traceBytes.size.toLong())
             out.write(traceBytes)
         }
 
@@ -101,14 +101,12 @@ internal class Telemetry(
     private fun encodeResolveLatencyTrace(trace: ResolveLatencyTrace): ByteArray {
         val out = ByteArrayOutputStream()
 
-        // field 1: id (varint) - RESOLVE_LATENCY = 1
         out.writeTag(1, WIRE_TYPE_VARINT)
-        out.writeVarint(TraceId.RESOLVE_LATENCY.value)
+        out.writeVarint(TraceId.RESOLVE_LATENCY.value.toLong())
 
-        // field 3: request_trace (length-delimited) - oneof field 3
         val requestTraceBytes = encodeRequestTrace(trace)
         out.writeTag(3, WIRE_TYPE_LENGTH_DELIMITED)
-        out.writeVarint(requestTraceBytes.size)
+        out.writeVarint(requestTraceBytes.size.toLong())
         out.write(requestTraceBytes)
 
         return out.toByteArray()
@@ -117,13 +115,15 @@ internal class Telemetry(
     private fun encodeRequestTrace(trace: ResolveLatencyTrace): ByteArray {
         val out = ByteArrayOutputStream()
 
-        // field 1: latency_ms (varint)
-        out.writeTag(1, WIRE_TYPE_VARINT)
-        out.writeVarint(trace.durationMs.toInt())
+        if (trace.durationMs != 0L) {
+            out.writeTag(1, WIRE_TYPE_VARINT)
+            out.writeVarint(trace.durationMs)
+        }
 
-        // field 2: status (varint)
-        out.writeTag(2, WIRE_TYPE_VARINT)
-        out.writeVarint(trace.status.value)
+        if (trace.status.value != 0) {
+            out.writeTag(2, WIRE_TYPE_VARINT)
+            out.writeVarint(trace.status.value.toLong())
+        }
 
         return out.toByteArray()
     }
@@ -131,15 +131,15 @@ internal class Telemetry(
     private fun encodeEvaluationTrace(trace: EvaluationTrace): ByteArray {
         val out = ByteArrayOutputStream()
 
-        // field 1: id (varint) - FLAG_EVALUATION = 3
         out.writeTag(1, WIRE_TYPE_VARINT)
-        out.writeVarint(TraceId.FLAG_EVALUATION.value)
+        out.writeVarint(TraceId.FLAG_EVALUATION.value.toLong())
 
-        // field 5: evaluation_trace (length-delimited) - oneof field 5
         val evalTraceBytes = encodeEvalTraceBody(trace)
-        out.writeTag(5, WIRE_TYPE_LENGTH_DELIMITED)
-        out.writeVarint(evalTraceBytes.size)
-        out.write(evalTraceBytes)
+        if (evalTraceBytes.isNotEmpty()) {
+            out.writeTag(5, WIRE_TYPE_LENGTH_DELIMITED)
+            out.writeVarint(evalTraceBytes.size.toLong())
+            out.write(evalTraceBytes)
+        }
 
         return out.toByteArray()
     }
@@ -147,13 +147,15 @@ internal class Telemetry(
     private fun encodeEvalTraceBody(trace: EvaluationTrace): ByteArray {
         val out = ByteArrayOutputStream()
 
-        // field 1: reason (varint)
-        out.writeTag(1, WIRE_TYPE_VARINT)
-        out.writeVarint(trace.reason.value)
+        if (trace.reason.value != 0) {
+            out.writeTag(1, WIRE_TYPE_VARINT)
+            out.writeVarint(trace.reason.value.toLong())
+        }
 
-        // field 2: error_code (varint)
-        out.writeTag(2, WIRE_TYPE_VARINT)
-        out.writeVarint(trace.errorCode.value)
+        if (trace.errorCode.value != 0) {
+            out.writeTag(2, WIRE_TYPE_VARINT)
+            out.writeVarint(trace.errorCode.value.toLong())
+        }
 
         return out.toByteArray()
     }
@@ -204,16 +206,16 @@ internal class Telemetry(
         }
 
         private fun ByteArrayOutputStream.writeTag(fieldNumber: Int, wireType: Int) {
-            writeVarint((fieldNumber shl 3) or wireType)
+            writeVarint(((fieldNumber shl 3) or wireType).toLong())
         }
 
-        private fun ByteArrayOutputStream.writeVarint(value: Int) {
+        private fun ByteArrayOutputStream.writeVarint(value: Long) {
             var v = value
-            while (v and 0x7F.inv() != 0) {
-                write((v and 0x7F) or 0x80)
+            while (v and 0x7FL.inv() != 0L) {
+                write(((v and 0x7F) or 0x80).toInt())
                 v = v ushr 7
             }
-            write(v)
+            write(v.toInt())
         }
     }
 
@@ -244,6 +246,9 @@ internal class Telemetry(
         DEFAULT(2),
         STALE(3),
         DISABLED(4),
+        CACHED(5),
+        STATIC(6),
+        SPLIT(7),
         ERROR(8)
     }
 
@@ -252,8 +257,10 @@ internal class Telemetry(
         PROVIDER_NOT_READY(1),
         FLAG_NOT_FOUND(2),
         PARSE_ERROR(3),
+        TYPE_MISMATCH(4),
         TARGETING_KEY_MISSING(5),
         INVALID_CONTEXT(6),
+        PROVIDER_FATAL(7),
         GENERAL(8)
     }
 

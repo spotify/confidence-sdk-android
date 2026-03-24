@@ -137,13 +137,7 @@ class ConfidenceFeatureProvider private constructor(
             hooks: List<Hook<*>> = listOf(),
             metadata: ProviderMetadata = ConfidenceMetadata()
         ): ConfidenceFeatureProvider {
-            try {
-                val method = confidence.javaClass.getDeclaredMethod("setTelemetryLibraryOpenFeature")
-                method.isAccessible = true
-                method.invoke(confidence)
-            } catch (_: Exception) {
-                // Best effort - telemetry will default to CONFIDENCE library
-            }
+            confidence.setTelemetryLibraryOpenFeature()
             return ConfidenceFeatureProvider(
                 hooks = hooks,
                 metadata = metadata,

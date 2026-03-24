@@ -89,10 +89,7 @@ internal class FlagApplierClientImpl : FlagApplierClient {
             sdk
         )
 
-        val extraHeaders = mutableMapOf<String, String>()
-        telemetry.encodedHeaderValue()?.let { headerValue ->
-            extraHeaders[Telemetry.HEADER_NAME] = headerValue
-        }
+        val extraHeaders = mapOf(Telemetry.HEADER_NAME to telemetry.encodedHeaderValue())
 
         val result = applyInteractor.invoke(request, extraHeaders).runCatching {
             if (isSuccessful) {
