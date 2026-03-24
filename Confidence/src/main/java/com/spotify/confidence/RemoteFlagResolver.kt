@@ -48,7 +48,9 @@ internal class RemoteFlagResolver(
                 .headers(headers)
                 .post(jsonRequest.toRequestBody())
 
-            requestBuilder.addHeader(Telemetry.HEADER_NAME, telemetry.encodedHeaderValue())
+            telemetry.encodedHeaderValue()?.let { headerValue ->
+                requestBuilder.addHeader(Telemetry.HEADER_NAME, headerValue)
+            }
 
             val httpRequest = requestBuilder.build()
 

@@ -17,7 +17,7 @@ import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -196,12 +196,9 @@ class TelemetryTest {
     // --- Snapshot and clear ---
 
     @Test
-    fun testEncodedHeaderValueReturnsEmptyMonitoringWhenNoTraces() {
+    fun testEncodedHeaderValueReturnsNullWhenEmpty() {
         val telemetry = Telemetry("test-sdk", Telemetry.Library.CONFIDENCE, "1.0.0")
-        val monitoring = decodeMonitoring(telemetry.encodedHeaderValue())
-        assertEquals(ProtoPlatform.PLATFORM_KOTLIN, monitoring.platform)
-        assertEquals(1, monitoring.libraryTracesCount)
-        assertEquals(0, monitoring.getLibraryTraces(0).tracesCount)
+        assertNull(telemetry.encodedHeaderValue())
     }
 
     @Test
@@ -213,11 +210,8 @@ class TelemetryTest {
         )
         telemetry.trackResolveLatency(150, Telemetry.RequestStatus.SUCCESS)
 
-        val first = decodeMonitoring(telemetry.encodedHeaderValue())
-        assertEquals(2, first.getLibraryTraces(0).tracesCount)
-
-        val second = decodeMonitoring(telemetry.encodedHeaderValue())
-        assertEquals(0, second.getLibraryTraces(0).tracesCount)
+        assertNotNull(telemetry.encodedHeaderValue())
+        assertNull(telemetry.encodedHeaderValue())
     }
 
     // --- Protobuf round-trip: encode then parse with generated code ---
@@ -474,7 +468,7 @@ class TelemetryTest {
     }
 
     @Test
-    fun testSetTelemetryLibraryOpenFeature() {
+    fun testSetTelemetryLibraryOpenFeatureViaReflection() {
         val confidence = Confidence(
             clientSecret = "",
             dispatcher = kotlinx.coroutines.Dispatchers.Unconfined,
@@ -487,7 +481,9 @@ class TelemetryTest {
 
         assertEquals(Telemetry.Library.CONFIDENCE, confidence.telemetry.library)
 
-        confidence.setTelemetryLibraryOpenFeature()
+        val method = confidence.javaClass.getDeclaredMethod("setTelemetryLibraryOpenFeature")
+        method.isAccessible = true
+        method.invoke(confidence)
 
         assertEquals(Telemetry.Library.OPEN_FEATURE, confidence.telemetry.library)
 
@@ -495,7 +491,7 @@ class TelemetryTest {
             Telemetry.EvaluationReason.DEFAULT,
             Telemetry.EvaluationErrorCode.UNSPECIFIED
         )
-        val monitoring = decodeMonitoring(confidence.telemetry.encodedHeaderValue())
+        val monitoring = decodeMonitoring(confidence.telemetry.encodedHeaderValue()!!)
         assertEquals(
             LibraryTraces.Library.LIBRARY_OPEN_FEATURE,
             monitoring.getLibraryTraces(0).library
@@ -569,8 +565,7 @@ class TelemetryTest {
         assertTrue("Traces should be capped at 200", traces.size <= 200)
         assertTrue("Should have some traces", traces.size > 0)
 
-        val afterFlush = decodeMonitoring(telemetry.encodedHeaderValue())
-        assertEquals(0, afterFlush.getLibraryTraces(0).tracesCount)
+        assertNull(telemetry.encodedHeaderValue())
     }
 
     @Test
@@ -691,7 +686,7 @@ class TelemetryTest {
     }
 
     @Test
-    fun testResolveRequestSendsEmptyTelemetryWhenNoTraces() = runTest {
+    fun testResolveRequestOmitsHeaderWhenNoTelemetry() = runTest {
         val mockWebServer = MockWebServer()
         mockWebServer.start()
         try {
@@ -709,10 +704,7 @@ class TelemetryTest {
                 telemetry = telemetry
             ).resolve(listOf(), mapOf("targeting_key" to ConfidenceValue.String("user1")))
 
-            val header = mockWebServer.takeRequest().getHeader(Telemetry.HEADER_NAME)
-            assertNotNull("Header should always be present", header)
-            val monitoring = decodeMonitoring(header!!)
-            assertEquals(0, monitoring.getLibraryTraces(0).tracesCount)
+            assertNull(mockWebServer.takeRequest().getHeader(Telemetry.HEADER_NAME))
         } finally {
             mockWebServer.shutdown()
         }

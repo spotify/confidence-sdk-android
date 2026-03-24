@@ -817,7 +817,7 @@ internal class ConfidenceRemoteClientTests {
     }
 
     @Test
-    fun testApplyRequestSendsEmptyTelemetryWhenNoTraces() = runTest {
+    fun testApplyRequestOmitsHeaderWhenNoTelemetry() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val applyDate = Date.from(Instant.parse("2023-03-01T14:01:46.123Z"))
         val sendDate = Date.from(Instant.parse("2023-03-01T14:03:46.124Z"))
@@ -842,10 +842,9 @@ internal class ConfidenceRemoteClientTests {
             dispatcher = testDispatcher
         ).apply(listOf(AppliedFlag("flag1", applyDate)), "token1")
 
-        val header = recordedRequest?.getHeader(Telemetry.HEADER_NAME)
         assertTrue(
-            "Telemetry header should always be present",
-            header != null && header.isNotEmpty()
+            "No telemetry header expected when no events tracked",
+            recordedRequest?.getHeader(Telemetry.HEADER_NAME) == null
         )
     }
 

@@ -31,7 +31,7 @@ internal class Telemetry(
         }
     }
 
-    fun encodedHeaderValue(): String {
+    fun encodedHeaderValue(): String? {
         val snapshot = synchronized(lock) {
             val s = Snapshot(
                 evaluations = evaluationTraces.toList(),
@@ -42,6 +42,8 @@ internal class Telemetry(
             resolveLatencyTraces.clear()
             s
         }
+
+        if (snapshot.evaluations.isEmpty() && snapshot.resolveTraces.isEmpty()) return null
 
         val bytes = encodeMonitoring(snapshot)
         return Base64.encodeToString(bytes, Base64.NO_WRAP)
