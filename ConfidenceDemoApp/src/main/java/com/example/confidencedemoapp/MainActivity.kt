@@ -49,9 +49,6 @@ class MainActivity : ComponentActivity() {
                             Text("Re-apply evaluationContext")
                         }
 
-                        Button(onClick = { vm.testTelemetry() }) {
-                            Text("Test Telemetry (match + error)")
-                        }
                         Button(onClick = { vm.clear() }) {
                             Text(text = "Clear out for re-fetching")
                         }
