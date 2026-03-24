@@ -31,6 +31,8 @@ class MainVm(app: Application) : AndroidViewModel(app) {
     val color: LiveData<Color> = _color
     val surfaceText: LiveData<String> = _surfaceText
 
+    private lateinit var confidence: Confidence
+
     init {
         val start = System.currentTimeMillis()
         val clientSecret = ClientSecretProvider.clientSecret(app.applicationContext)
@@ -43,7 +45,7 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         mutableMap["list"] = ConfidenceValue.stringList(listOf(""))
         mutableMap["my_struct"] = ConfidenceValue.Struct(mapOf("x" to ConfidenceValue.Double(2.0)))
 
-        val confidence = ConfidenceFactory.create(
+        confidence = ConfidenceFactory.create(
             app.applicationContext,
             clientSecret,
             initialContext = mapOf("targeting_key" to ConfidenceValue.String("a98a4291-53b0-49d9-bae8-73d3f5da2070")),
@@ -108,6 +110,32 @@ class MainVm(app: Application) : AndroidViewModel(app) {
                 "set new EvaluationContext took ${System.currentTimeMillis() - start} ms"
             )
             refreshUi()
+        }
+    }
+
+    fun testTelemetry() {
+        val client = OpenFeatureAPI.getClient()
+        Log.d(TAG, "--- Telemetry test: generating match + error evaluations ---")
+
+        val matchResult = client.getStringDetails("hawkflag.color", "default")
+        Log.d(TAG, "Match eval: value=${matchResult.value}, reason=${matchResult.reason}")
+
+        val errorResult = client.getStringDetails("nonexistent-flag.value", "fallback")
+        Log.d(TAG, "Error eval: value=${errorResult.value}, reason=${errorResult.reason}, " +
+            "errorCode=${errorResult.errorCode}")
+
+        val matchResult2 = client.getIntegerDetails("hawkflag.size", 0)
+        Log.d(TAG, "Match eval 2: value=${matchResult2.value}, reason=${matchResult2.reason}")
+
+        val errorResult2 = client.getBooleanDetails("also-does-not-exist.enabled", false)
+        Log.d(TAG, "Error eval 2: value=${errorResult2.value}, reason=${errorResult2.reason}, " +
+            "errorCode=${errorResult2.errorCode}")
+
+        Log.d(TAG, "Triggering fetch to flush telemetry header...")
+        viewModelScope.launch {
+            confidence.fetchAndActivate()
+            Log.d(TAG, "Fetch complete — telemetry header sent with 2 match + 2 error evaluations")
+            _message.postValue("Telemetry flushed: 2 match + 2 error evals")
         }
     }
 
