@@ -825,7 +825,6 @@ internal class ConfidenceRemoteClientTests {
         whenever(mockClock.currentTime()).thenReturn(sendDate)
 
         val telemetry = Telemetry(SDK_ID + "_TEST", Telemetry.Library.CONFIDENCE, "1.0.0")
-        // No events tracked
 
         var recordedRequest: RecordedRequest? = null
         mockWebServer.dispatcher = object : Dispatcher() {
