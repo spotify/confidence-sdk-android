@@ -13,17 +13,21 @@ internal class Telemetry(
     private val evaluationTraces = mutableListOf<EvaluationTrace>()
     private val resolveLatencyTraces = mutableListOf<ResolveLatencyTrace>()
 
-    val sdk: Sdk get() = Sdk(sdkId, sdkVersion)
+    val sdk: Sdk = Sdk(sdkId, sdkVersion)
 
     fun trackEvaluation(reason: EvaluationReason, errorCode: EvaluationErrorCode) {
         synchronized(lock) {
-            evaluationTraces.add(EvaluationTrace(reason, errorCode))
+            if (evaluationTraces.size < MAX_TRACES) {
+                evaluationTraces.add(EvaluationTrace(reason, errorCode))
+            }
         }
     }
 
     fun trackResolveLatency(durationMs: Long, status: RequestStatus) {
         synchronized(lock) {
-            resolveLatencyTraces.add(ResolveLatencyTrace(durationMs, status))
+            if (resolveLatencyTraces.size < MAX_TRACES) {
+                resolveLatencyTraces.add(ResolveLatencyTrace(durationMs, status))
+            }
         }
     }
 
@@ -156,6 +160,7 @@ internal class Telemetry(
 
     companion object {
         const val HEADER_NAME = "X-CONFIDENCE-TELEMETRY"
+        private const val MAX_TRACES = 100
 
         private const val WIRE_TYPE_VARINT = 0
         private const val WIRE_TYPE_LENGTH_DELIMITED = 2

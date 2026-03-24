@@ -534,9 +534,36 @@ class TelemetryTest {
 
         val monitoring = decodeMonitoring(telemetry.encodedHeaderValue()!!)
         val traces = monitoring.getLibraryTraces(0).tracesList
-        assertEquals(threadCount * iterationsPerThread * 2, traces.size)
+        // Each list is capped at 100, so max 200 total (100 eval + 100 latency)
+        assertTrue("Traces should be capped at 200", traces.size <= 200)
+        assertTrue("Should have some traces", traces.size > 0)
 
         assertNull(telemetry.encodedHeaderValue())
+    }
+
+    @Test
+    fun testTracesAreCappedAt100() {
+        val telemetry = Telemetry("test-sdk", Telemetry.Library.CONFIDENCE, "1.0.0")
+        repeat(150) {
+            telemetry.trackEvaluation(
+                Telemetry.EvaluationReason.TARGETING_MATCH,
+                Telemetry.EvaluationErrorCode.UNSPECIFIED
+            )
+        }
+        repeat(150) {
+            telemetry.trackResolveLatency(50, Telemetry.RequestStatus.SUCCESS)
+        }
+
+        val monitoring = decodeMonitoring(telemetry.encodedHeaderValue()!!)
+        val traces = monitoring.getLibraryTraces(0).tracesList
+        val evalTraces = traces.filter {
+            it.id == LibraryTraces.TraceId.TRACE_ID_FLAG_EVALUATION
+        }
+        val latencyTraces = traces.filter {
+            it.id == LibraryTraces.TraceId.TRACE_ID_RESOLVE_LATENCY
+        }
+        assertEquals("Evaluation traces capped at 100", 100, evalTraces.size)
+        assertEquals("Latency traces capped at 100", 100, latencyTraces.size)
     }
 
     @Test

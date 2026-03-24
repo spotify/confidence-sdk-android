@@ -55,19 +55,19 @@ internal class RemoteFlagResolver(
             val httpRequest = requestBuilder.build()
 
             val startTime = System.nanoTime()
+            var status = Telemetry.RequestStatus.SUCCESS
             try {
                 val result = httpClient.newCall(httpRequest).await()
-                val elapsedMs = (System.nanoTime() - startTime) / 1_000_000
-                telemetry.trackResolveLatency(elapsedMs, Telemetry.RequestStatus.SUCCESS)
                 result.toResolveFlags()
             } catch (e: SocketTimeoutException) {
-                val elapsedMs = (System.nanoTime() - startTime) / 1_000_000
-                telemetry.trackResolveLatency(elapsedMs, Telemetry.RequestStatus.TIMEOUT)
+                status = Telemetry.RequestStatus.TIMEOUT
                 throw e
             } catch (e: Exception) {
-                val elapsedMs = (System.nanoTime() - startTime) / 1_000_000
-                telemetry.trackResolveLatency(elapsedMs, Telemetry.RequestStatus.ERROR)
+                status = Telemetry.RequestStatus.ERROR
                 throw e
+            } finally {
+                val elapsedMs = (System.nanoTime() - startTime) / 1_000_000
+                telemetry.trackResolveLatency(elapsedMs, status)
             }
         }
 
