@@ -2,6 +2,7 @@ package com.spotify.confidence.client
 
 import com.spotify.confidence.ConfidenceRegion
 import com.spotify.confidence.Result
+import com.spotify.confidence.Telemetry
 import com.spotify.confidence.client.network.ApplyFlagsInteractor
 import com.spotify.confidence.client.network.ApplyFlagsInteractorImpl
 import com.spotify.confidence.client.network.ApplyFlagsRequest
@@ -13,7 +14,7 @@ import okhttp3.OkHttpClient
 
 internal class FlagApplierClientImpl : FlagApplierClient {
     private val clientSecret: String
-    private val sdkMetadata: SdkMetadata
+    private val telemetry: Telemetry
     private val okHttpClient: OkHttpClient
     private val baseUrl: String
     private val headers: Headers
@@ -23,12 +24,12 @@ internal class FlagApplierClientImpl : FlagApplierClient {
 
     constructor(
         clientSecret: String,
-        sdkMetadata: SdkMetadata,
+        telemetry: Telemetry,
         region: ConfidenceRegion,
         dispatcher: CoroutineDispatcher = Dispatchers.IO
     ) {
         this.clientSecret = clientSecret
-        this.sdkMetadata = sdkMetadata
+        this.telemetry = telemetry
         this.okHttpClient = OkHttpClient()
         this.headers = Headers.headersOf(
             "Content-Type",
@@ -53,13 +54,13 @@ internal class FlagApplierClientImpl : FlagApplierClient {
 
     internal constructor(
         clientSecret: String = "",
-        sdkMetadata: SdkMetadata = SdkMetadata("", ""),
+        telemetry: Telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, ""),
         baseUrl: HttpUrl,
         clock: Clock = Clock.CalendarBacked.systemUTC(),
         dispatcher: CoroutineDispatcher = Dispatchers.IO
     ) {
         this.clientSecret = clientSecret
-        this.sdkMetadata = sdkMetadata
+        this.telemetry = telemetry
         this.okHttpClient = OkHttpClient()
         this.headers = Headers.headersOf(
             "Content-Type",
@@ -79,14 +80,21 @@ internal class FlagApplierClientImpl : FlagApplierClient {
     }
 
     override suspend fun apply(flags: List<AppliedFlag>, resolveToken: String): Result<Unit> {
+        val sdk = telemetry.sdk
         val request = ApplyFlagsRequest(
             flags.map { AppliedFlag("flags/${it.flag}", it.applyTime) },
             clock.currentTime(),
             clientSecret,
             resolveToken,
-            Sdk(sdkMetadata.sdkId, sdkMetadata.sdkVersion)
+            sdk
         )
-        val result = applyInteractor(request).runCatching {
+
+        val extraHeaders = mutableMapOf<String, String>()
+        telemetry.encodedHeaderValue()?.let { headerValue ->
+            extraHeaders[Telemetry.HEADER_NAME] = headerValue
+        }
+
+        val result = applyInteractor.invoke(request, extraHeaders).runCatching {
             if (isSuccessful) {
                 Result.Success(Unit)
             } else {

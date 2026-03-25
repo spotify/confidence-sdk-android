@@ -2,7 +2,6 @@ package com.spotify.confidence
 
 import com.spotify.confidence.client.ResolveResponse
 import com.spotify.confidence.client.Sdk
-import com.spotify.confidence.client.SdkMetadata
 import com.spotify.confidence.client.await
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -17,6 +16,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
+import java.net.SocketTimeoutException
 
 internal interface FlagResolver {
     suspend fun resolve(flags: List<String>, context: Map<String, ConfidenceValue>): Result<FlagResolution>
@@ -26,7 +26,7 @@ internal class RemoteFlagResolver(
     private val clientSecret: String,
     private val region: ConfidenceRegion,
     private val httpClient: OkHttpClient,
-    private val sdkMetadata: SdkMetadata,
+    private val telemetry: Telemetry,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val baseUrl: HttpUrl? = null,
     private val debugLogger: DebugLogger? = null
@@ -38,18 +38,37 @@ internal class RemoteFlagResolver(
         "application/json"
     )
     override suspend fun resolve(flags: List<String>, context: Map<String, ConfidenceValue>): Result<FlagResolution> {
-        val sdk = Sdk(sdkMetadata.sdkId, sdkMetadata.sdkVersion)
+        val sdk = telemetry.sdk
         val request = ResolveFlagsRequest(flags.map { "flags/$it" }, context, clientSecret, false, sdk)
 
         val response = withContext(dispatcher) {
             val jsonRequest = Json.encodeToString(request)
-            val httpRequest = Request.Builder()
+            val requestBuilder = Request.Builder()
                 .url("${baseUrl()}/v1/flags:resolve")
                 .headers(headers)
                 .post(jsonRequest.toRequestBody())
-                .build()
 
-            httpClient.newCall(httpRequest).await().toResolveFlags()
+            telemetry.encodedHeaderValue()?.let { headerValue ->
+                requestBuilder.addHeader(Telemetry.HEADER_NAME, headerValue)
+            }
+
+            val httpRequest = requestBuilder.build()
+
+            val startTime = System.nanoTime()
+            var status = Telemetry.RequestStatus.SUCCESS
+            try {
+                val result = httpClient.newCall(httpRequest).await()
+                result.toResolveFlags()
+            } catch (e: SocketTimeoutException) {
+                status = Telemetry.RequestStatus.TIMEOUT
+                throw e
+            } catch (e: Exception) {
+                status = Telemetry.RequestStatus.ERROR
+                throw e
+            } finally {
+                val elapsedMs = (System.nanoTime() - startTime) / 1_000_000
+                telemetry.trackResolveLatency(elapsedMs, status)
+            }
         }
 
         return when (response) {

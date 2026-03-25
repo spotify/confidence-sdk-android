@@ -40,7 +40,8 @@ class Confidence internal constructor(
     private val flagApplierClient: FlagApplierClient,
     private val parent: ConfidenceContextProvider? = null,
     private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
-    private val debugLogger: DebugLogger?
+    private val debugLogger: DebugLogger?,
+    internal val telemetry: Telemetry = Telemetry(SDK_ID, Telemetry.Library.CONFIDENCE, SDK_VERSION)
 ) : Contextual, EventSender {
     private val removedKeys = mutableListOf<String>()
     private val contextMap = MutableStateFlow(initialContext)
@@ -123,6 +124,12 @@ class Confidence internal constructor(
                 apply(flagName, resolveToken)
             }
         }
+        val (telemetryReason, telemetryErrorCode) = Telemetry.mapEvaluationReason(
+            eval.reason,
+            eval.errorCode
+        )
+        telemetry.trackEvaluation(telemetryReason, telemetryErrorCode)
+
         // we are using a custom serializer so that the Json is serialized correctly in the logs
         val contextJson = Json.encodeToJsonElement(
             MapSerializer(String.serializer(), NetworkConfidenceValueSerializer),
@@ -219,6 +226,11 @@ class Confidence internal constructor(
             it.getContext().filterKeys { key -> !removedKeys.contains(key) } + contextMap.value
         } ?: contextMap.value
 
+    @Suppress("unused")
+    private fun setTelemetryLibraryOpenFeature() {
+        telemetry.library = Telemetry.Library.OPEN_FEATURE
+    }
+
     override fun withContext(context: Map<String, ConfidenceValue>): EventSender = Confidence(
         clientSecret,
         dispatcher,
@@ -230,7 +242,8 @@ class Confidence internal constructor(
         flagApplierClient,
         this,
         region,
-        debugLogger
+        debugLogger,
+        telemetry
     ).also {
         it.putContext(context)
     }
@@ -377,6 +390,7 @@ object ConfidenceFactory {
             DebugLoggerImpl(loggingLevel, clientSecret)
         }
         val sdkMetadata = SdkMetadata(SDK_ID, SDK_VERSION)
+        val telemetry = Telemetry(SDK_ID, Telemetry.Library.CONFIDENCE, SDK_VERSION)
         val engine = EventSenderEngineImpl.instance(
             context,
             clientSecret,
@@ -387,7 +401,7 @@ object ConfidenceFactory {
         )
         val flagApplierClient = FlagApplierClientImpl(
             clientSecret,
-            sdkMetadata,
+            telemetry,
             region,
             dispatcher
         )
@@ -399,7 +413,7 @@ object ConfidenceFactory {
                 .callTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
                 .build(),
             dispatcher = dispatcher,
-            sdkMetadata = sdkMetadata,
+            telemetry = telemetry,
             debugLogger = debugLogger
         )
 
@@ -419,7 +433,8 @@ object ConfidenceFactory {
             flagResolver = flagResolver,
             diskStorage = FileDiskStorage.create(context),
             flagApplierClient = flagApplierClient,
-            debugLogger = debugLogger
+            debugLogger = debugLogger,
+            telemetry = telemetry
         )
     }
 }

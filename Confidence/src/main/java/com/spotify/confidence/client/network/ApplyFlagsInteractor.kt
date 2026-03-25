@@ -15,7 +15,9 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.util.Date
 
-internal interface ApplyFlagsInteractor : suspend (ApplyFlagsRequest) -> (Response)
+internal interface ApplyFlagsInteractor {
+    suspend fun invoke(request: ApplyFlagsRequest, extraHeaders: Map<String, String> = emptyMap()): Response
+}
 
 internal class ApplyFlagsInteractorImpl(
     private val httpClient: OkHttpClient,
@@ -31,13 +33,18 @@ internal class ApplyFlagsInteractorImpl(
             "application/json"
         )
     }
-    override suspend fun invoke(request: ApplyFlagsRequest): Response =
+    override suspend fun invoke(request: ApplyFlagsRequest, extraHeaders: Map<String, String>): Response =
         withContext(dispatcher) {
-            val httpRequest = Request.Builder()
+            val requestBuilder = Request.Builder()
                 .url("$baseUrl/v1/flags:apply")
                 .headers(headers)
                 .post(Json.encodeToString(request).toRequestBody())
-                .build()
+
+            for ((key, value) in extraHeaders) {
+                requestBuilder.addHeader(key, value)
+            }
+
+            val httpRequest = requestBuilder.build()
 
             return@withContext httpClient.newCall(httpRequest).await()
         }
