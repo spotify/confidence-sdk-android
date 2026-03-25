@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.5](https://github.com/spotify/confidence-sdk-android/compare/0.6.4...0.6.5) (2026-03-25)
+
+
+### ✨ New Features
+
+* add X-CONFIDENCE-TELEMETRY header ([#234](https://github.com/spotify/confidence-sdk-android/issues/234)) ([5471108](https://github.com/spotify/confidence-sdk-android/commit/5471108cc904ef8649aa115710d2a5ce3af29d1a))
+
 ## [0.6.4](https://github.com/spotify/confidence-sdk-android/compare/0.6.3...0.6.4) (2026-03-16)
 
 
