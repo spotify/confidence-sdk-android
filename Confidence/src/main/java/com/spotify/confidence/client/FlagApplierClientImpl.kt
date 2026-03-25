@@ -94,16 +94,16 @@ internal class FlagApplierClientImpl : FlagApplierClient {
             extraHeaders[Telemetry.HEADER_NAME] = headerValue
         }
 
-        val result = applyInteractor.invoke(request, extraHeaders).runCatching {
-            if (isSuccessful) {
-                Result.Success(Unit)
-            } else {
-                Result.Failure()
+        return try {
+            applyInteractor.invoke(request, extraHeaders).use { response ->
+                if (response.isSuccessful) {
+                    Result.Success(Unit)
+                } else {
+                    Result.Failure()
+                }
             }
-        }.getOrElse {
+        } catch (_: Exception) {
             Result.Failure()
         }
-
-        return result
     }
 }

@@ -65,19 +65,20 @@ internal class EventSenderUploaderImpl(
             .post(networkJson.encodeToString(events).toRequestBody())
             .build()
 
-        val response = httpClient.newCall(httpRequest).await()
-        if (!response.isSuccessful) {
-            debugLogger?.logError(message = "Failed to upload events. http code ${response.code}")
-        }
-        when (response.code) {
-            // clean up in case of success
-            200 -> true
-            // we shouldn't cleanup for rate limiting
-            // TODO("return retry-after")
-            429 -> false
-            // if batch couldn't be processed, we should clean it up
-            in 400..499 -> true
-            else -> false
+        httpClient.newCall(httpRequest).await().use { response ->
+            if (!response.isSuccessful) {
+                debugLogger?.logError(message = "Failed to upload events. http code ${response.code}")
+            }
+            when (response.code) {
+                // clean up in case of success
+                200 -> true
+                // we shouldn't cleanup for rate limiting
+                // TODO("return retry-after")
+                429 -> false
+                // if batch couldn't be processed, we should clean it up
+                in 400..499 -> true
+                else -> false
+            }
         }
     }
 
