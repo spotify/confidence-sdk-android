@@ -1,6 +1,7 @@
 package com.spotify.confidence
 
 import android.content.Context
+import com.spotify.confidence.ConfidenceError.HttpError
 import com.spotify.confidence.ConfidenceError.ParseError
 import com.spotify.confidence.apply.FlagApplierWithRetries
 import com.spotify.confidence.cache.DiskStorage
@@ -287,6 +288,8 @@ class Confidence internal constructor(
             }
         } catch (e: ParseError) {
             throw ParseError(e.message)
+        } catch (e: HttpError) {
+            throw e
         }
     }
 

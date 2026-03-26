@@ -22,5 +22,10 @@ class ConfidenceError {
         val flag: String
     ) : Error(message)
 
+    data class HttpError(
+        val httpCode: Int,
+        override val message: String
+    ) : Error(message)
+
     class InvalidContextInMessage : Error("Field 'context' is not allowed in event's data")
 }

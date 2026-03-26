@@ -91,7 +91,7 @@ internal class RemoteFlagResolver(
     private fun Response.toResolveFlags(): ResolveResponse {
         if (!isSuccessful) {
             debugLogger?.logError("Failed to resolve flags. Http code: $code")
-            throw ConfidenceError.ParseError("Failed to resolve flags. Http code: $code", listOf())
+            throw ConfidenceError.HttpError(code, "Failed to resolve flags. Http code: $code")
         }
         val bodyString = body?.string()
             ?: throw ConfidenceError.ParseError("Response body is null", listOf())
