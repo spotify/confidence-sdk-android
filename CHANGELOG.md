@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.6](https://github.com/spotify/confidence-sdk-android/compare/0.6.5...0.6.6) (2026-03-26)
+
+
+### 🐛 Bug Fixes
+
+* close OkHttp response bodies to prevent connection leaks ([#237](https://github.com/spotify/confidence-sdk-android/issues/237)) ([40d014b](https://github.com/spotify/confidence-sdk-android/commit/40d014b55f588be7bf9144746343afadc54b3c19))
+
 ## [0.6.5](https://github.com/spotify/confidence-sdk-android/compare/0.6.4...0.6.5) (2026-03-25)
 
 
