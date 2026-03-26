@@ -5,6 +5,7 @@ package com.spotify.confidence.openfeature
 import com.spotify.confidence.Confidence
 import com.spotify.confidence.ConfidenceError.ErrorCode
 import com.spotify.confidence.ConfidenceError.FlagNotFoundError
+import com.spotify.confidence.ConfidenceError.HttpError
 import com.spotify.confidence.ConfidenceError.ParseError
 import com.spotify.confidence.ConfidenceValue
 import com.spotify.confidence.Evaluation
@@ -125,6 +126,8 @@ class ConfidenceFeatureProvider private constructor(
             throw OpenFeatureError.ParseError(e.message)
         } catch (e: FlagNotFoundError) {
             throw OpenFeatureError.FlagNotFoundError(e.flag)
+        } catch (e: HttpError) {
+            throw OpenFeatureError.GeneralError(e.message)
         }
     }
     companion object {

@@ -57,8 +57,7 @@ internal class RemoteFlagResolver(
             val startTime = System.nanoTime()
             var status = Telemetry.RequestStatus.SUCCESS
             try {
-                val result = httpClient.newCall(httpRequest).await()
-                result.toResolveFlags()
+                httpClient.newCall(httpRequest).await().use { it.toResolveFlags() }
             } catch (e: SocketTimeoutException) {
                 status = Telemetry.RequestStatus.TIMEOUT
                 throw e
@@ -92,22 +91,16 @@ internal class RemoteFlagResolver(
     private fun Response.toResolveFlags(): ResolveResponse {
         if (!isSuccessful) {
             debugLogger?.logError("Failed to resolve flags. Http code: $code")
+            throw ConfidenceError.HttpError(code, "Failed to resolve flags. Http code: $code")
         }
-        body?.let { body ->
-            val bodyString = body.string()
-
-            // building the json class responsible for serializing the object
-            val networkJson = Json {
-                serializersModule = SerializersModule {
-                    ignoreUnknownKeys = true
-                }
+        val bodyString = body?.string()
+            ?: throw ConfidenceError.ParseError("Response body is null", listOf())
+        val networkJson = Json {
+            serializersModule = SerializersModule {
+                ignoreUnknownKeys = true
             }
-            try {
-                return ResolveResponse.Resolved(networkJson.decodeFromString(bodyString))
-            } finally {
-                body.close()
-            }
-        } ?: throw ConfidenceError.ParseError("Response body is null", listOf())
+        }
+        return ResolveResponse.Resolved(networkJson.decodeFromString(bodyString))
     }
 }
 
