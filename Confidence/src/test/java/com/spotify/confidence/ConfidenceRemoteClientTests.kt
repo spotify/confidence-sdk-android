@@ -654,6 +654,229 @@ internal class ConfidenceRemoteClientTests {
     }
 
     @Test
+    fun testDeserializeMultipleFlagsInOneResponse() = runTest {
+        // Pins the FlagsSerializer.deserialize loop with array.size > 1 — every existing
+        // payload in this file has exactly one flag, so the per-element decode and the
+        // ArrayList(array.size) preallocation are not differentiated otherwise.
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val jsonPayload = """
+        {
+          "resolvedFlags": [
+            {
+              "flag": "flags/flag-a",
+              "variant": "flags/flag-a/variants/v1",
+              "value": { "n": 1 },
+              "flagSchema": { "schema": { "n": { "intSchema": {} } } },
+              "reason": "RESOLVE_REASON_MATCH",
+              "shouldApply": true
+            },
+            {
+              "flag": "flags/flag-b",
+              "variant": "flags/flag-b/variants/v2",
+              "value": { "s": "two" },
+              "flagSchema": { "schema": { "s": { "stringSchema": {} } } },
+              "reason": "RESOLVE_REASON_NO_SEGMENT_MATCH",
+              "shouldApply": false
+            },
+            {
+              "flag": "flags/flag-c",
+              "variant": "",
+              "value": null,
+              "flagSchema": null,
+              "reason": "RESOLVE_REASON_TARGETING_KEY_ERROR",
+              "shouldApply": false
+            }
+          ],
+          "resolveToken": "token1"
+        }
+        """.trimIndent()
+
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody(jsonPayload)
+        )
+        val parsedResponse = RemoteFlagResolver(
+            clientSecret = "",
+            region = ConfidenceRegion.EUROPE,
+            baseUrl = mockWebServer.url("/v1/flags:resolve"),
+            dispatcher = testDispatcher,
+            httpClient = OkHttpClient(),
+            telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
+        ).resolve(listOf(), mapOf("targeting_key" to ConfidenceValue.String("user1")))
+
+        val expected = listOf(
+            ResolvedFlag(
+                flag = "flag-a",
+                variant = "flags/flag-a/variants/v1",
+                value = mutableMapOf("n" to ConfidenceValue.Integer(1)),
+                reason = ResolveReason.RESOLVE_REASON_MATCH,
+                shouldApply = true
+            ),
+            ResolvedFlag(
+                flag = "flag-b",
+                variant = "flags/flag-b/variants/v2",
+                value = mutableMapOf("s" to ConfidenceValue.String("two")),
+                reason = ResolveReason.RESOLVE_REASON_NO_SEGMENT_MATCH,
+                shouldApply = false
+            ),
+            ResolvedFlag(
+                flag = "flag-c",
+                variant = "",
+                reason = ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR,
+                shouldApply = false
+            )
+        )
+        assertEquals(expected, (parsedResponse as Result.Success<FlagResolution>).data.flags)
+    }
+
+    @Test
+    fun testDeserializeAllResolveReasons() = runTest {
+        // Both old (Json.decodeFromString<ResolveReason>) and new (ResolveReason.valueOf)
+        // route through the enum entry name. Pin every declared value so any future divergence
+        // — e.g. someone adding @SerialName to one entry — is caught.
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val reasons = ResolveReason.values()
+        val jsonPayload = buildString {
+            append("{ \"resolvedFlags\": [")
+            reasons.forEachIndexed { i, r ->
+                if (i > 0) append(",")
+                append(
+                    """
+                    {
+                      "flag": "flags/flag-$i",
+                      "variant": "",
+                      "value": null,
+                      "flagSchema": null,
+                      "reason": "${r.name}",
+                      "shouldApply": false
+                    }
+                    """.trimIndent()
+                )
+            }
+            append("], \"resolveToken\": \"t\" }")
+        }
+
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody(jsonPayload)
+        )
+        val parsedResponse = RemoteFlagResolver(
+            clientSecret = "",
+            region = ConfidenceRegion.EUROPE,
+            baseUrl = mockWebServer.url("/v1/flags:resolve"),
+            dispatcher = testDispatcher,
+            httpClient = OkHttpClient(),
+            telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
+        ).resolve(listOf(), mapOf("targeting_key" to ConfidenceValue.String("user1")))
+
+        val flags = (parsedResponse as Result.Success<FlagResolution>).data.flags
+        assertEquals(reasons.size, flags.size)
+        reasons.forEachIndexed { i, r ->
+            assertEquals(r, flags[i].reason)
+        }
+    }
+
+    @Test
+    fun testDeserializeNestedStructSchema() = runTest {
+        // Pins the recursive convertToSchemaTypeValue / decodeFromJsonElement(SchemaTypeSerializer, ...)
+        // path two levels deep. Existing tests only nest structSchema one level.
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val jsonPayload = """
+        {
+          "resolvedFlags": [
+            {
+              "flag": "flags/nested",
+              "variant": "flags/nested/variants/v1",
+              "value": {
+                "outer": {
+                  "leaf_int": 1,
+                  "middle": {
+                    "leaf_str": "deep",
+                    "inner": {
+                      "leaf_bool": true,
+                      "leaf_double": 1.5
+                    }
+                  }
+                }
+              },
+              "flagSchema": {
+                "schema": {
+                  "outer": {
+                    "structSchema": {
+                      "schema": {
+                        "leaf_int": { "intSchema": {} },
+                        "middle": {
+                          "structSchema": {
+                            "schema": {
+                              "leaf_str": { "stringSchema": {} },
+                              "inner": {
+                                "structSchema": {
+                                  "schema": {
+                                    "leaf_bool": { "boolSchema": {} },
+                                    "leaf_double": { "doubleSchema": {} }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "reason": "RESOLVE_REASON_MATCH",
+              "shouldApply": true
+            }
+          ],
+          "resolveToken": "token1"
+        }
+        """.trimIndent()
+
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody(jsonPayload)
+        )
+        val parsedResponse = RemoteFlagResolver(
+            clientSecret = "",
+            region = ConfidenceRegion.EUROPE,
+            baseUrl = mockWebServer.url("/v1/flags:resolve"),
+            dispatcher = testDispatcher,
+            httpClient = OkHttpClient(),
+            telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
+        ).resolve(listOf(), mapOf("targeting_key" to ConfidenceValue.String("user1")))
+
+        val expected = ResolvedFlag(
+            flag = "nested",
+            variant = "flags/nested/variants/v1",
+            value = mutableMapOf(
+                "outer" to ConfidenceValue.Struct(
+                    mapOf(
+                        "leaf_int" to ConfidenceValue.Integer(1),
+                        "middle" to ConfidenceValue.Struct(
+                            mapOf(
+                                "leaf_str" to ConfidenceValue.String("deep"),
+                                "inner" to ConfidenceValue.Struct(
+                                    mapOf(
+                                        "leaf_bool" to ConfidenceValue.Boolean(true),
+                                        "leaf_double" to ConfidenceValue.Double(1.5)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            ),
+            reason = ResolveReason.RESOLVE_REASON_MATCH,
+            shouldApply = true
+        )
+        assertEquals(listOf(expected), (parsedResponse as Result.Success<FlagResolution>).data.flags)
+    }
+
+    @Test
     fun testSerializeResolveRequest() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val date = Date.from(Instant.parse("2023-03-01T14:01:46.123Z"))

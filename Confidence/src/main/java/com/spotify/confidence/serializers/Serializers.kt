@@ -21,6 +21,7 @@ import kotlinx.serialization.json.JsonContentPolymorphicSerializer
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -77,16 +78,12 @@ internal object NetworkResolvedFlagSerializer : KSerializer<ResolvedFlag> {
     override fun deserialize(decoder: Decoder): ResolvedFlag {
         val jsonDecoder = decoder as JsonDecoder
         val json = jsonDecoder.decodeJsonElement().jsonObject
-        val flag = json["flag"].toString().split("/")
-            .last()
-            .replace("\"", "")
-
-        val variant = json["variant"]
-            .toString()
-            .replace("\"", "")
-
-        val resolvedReason = Json.decodeFromString<ResolveReason>(json["reason"].toString())
-        val shouldApply = Json.decodeFromString<Boolean>(json["shouldApply"].toString())
+        // Read primitives via .jsonPrimitive.content rather than JsonElement.toString()
+        // to avoid serialize-then-reparse round trips for every flag.
+        val flag = json["flag"]!!.jsonPrimitive.content.substringAfterLast('/')
+        val variant = json["variant"]!!.jsonPrimitive.content
+        val resolvedReason = ResolveReason.valueOf(json["reason"]!!.jsonPrimitive.content)
+        val shouldApply = json["shouldApply"]!!.jsonPrimitive.boolean
         val flagSchemaJsonElement = json["flagSchema"]
 
         val schemasJson = if (flagSchemaJsonElement != null && flagSchemaJsonElement != JsonNull) {
@@ -97,10 +94,9 @@ internal object NetworkResolvedFlagSerializer : KSerializer<ResolvedFlag> {
 
         return if (schemasJson != null) {
             val flagSchema =
-                Json.decodeFromString(SchemaTypeSerializer, schemasJson.toString())
-            val valueJson = json["value"].toString()
+                Json.decodeFromJsonElement(SchemaTypeSerializer, schemasJson)
             val values: ConfidenceValue.Struct =
-                Json.decodeFromString(FlagValueSerializer(flagSchema), valueJson)
+                Json.decodeFromJsonElement(FlagValueSerializer(flagSchema), json["value"]!!)
 
             if (flagSchema.schema.size != values.map.size) {
                 throw ParseError(
@@ -163,11 +159,11 @@ internal object FlagsSerializer : KSerializer<Flags> {
         get() = ListSerializer(String.serializer()).descriptor
 
     override fun deserialize(decoder: Decoder): Flags {
-        val list = mutableListOf<ResolvedFlag>()
         val jsonDecoder = decoder as JsonDecoder
         val array = jsonDecoder.decodeJsonElement().jsonArray
+        val list = ArrayList<ResolvedFlag>(array.size)
         for (json in array) {
-            list.add(Json.decodeFromString(NetworkResolvedFlagSerializer, json.toString()))
+            list.add(Json.decodeFromJsonElement(NetworkResolvedFlagSerializer, json))
         }
         return Flags(list)
     }
@@ -206,9 +202,9 @@ private fun JsonElement.convertToValue(key: String, schemaType: SchemaType): Con
         if (jsonObject.isEmpty()) {
             ConfidenceValue.Struct(mapOf())
         } else {
-            val serializedMap = Json.decodeFromString(
+            val serializedMap = Json.decodeFromJsonElement(
                 FlagValueSerializer(schemaType),
-                jsonObject.toString()
+                jsonObject
             ).map
 
             ConfidenceValue.Struct(serializedMap)
@@ -227,9 +223,9 @@ private fun JsonElement.convertToSchemaTypeValue(): SchemaType = when {
     jsonObject.keys.contains("intSchema") -> SchemaType.IntSchema
     jsonObject.keys.contains("boolSchema") -> SchemaType.BoolSchema
     jsonObject.keys.contains("structSchema") -> {
-        val value = jsonObject["structSchema"]!!.jsonObject["schema"]
+        val value = jsonObject["structSchema"]!!.jsonObject["schema"]!!
         SchemaType.SchemaStruct(
-            Json.decodeFromString(SchemaTypeSerializer, value.toString()).schema
+            Json.decodeFromJsonElement(SchemaTypeSerializer, value).schema
         )
     }
     else -> error("not a valid schema")
