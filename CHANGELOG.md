@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.7](https://github.com/spotify/confidence-sdk-android/compare/0.6.6...0.6.7) (2026-04-29)
+
+
+### 🚀 Performance
+
+* parse resolve responses without JSON round-trips ([#239](https://github.com/spotify/confidence-sdk-android/issues/239)) ([890879a](https://github.com/spotify/confidence-sdk-android/commit/890879a2d8e4587a71e2b8811f0da00a82299138))
+
 ## [0.6.6](https://github.com/spotify/confidence-sdk-android/compare/0.6.5...0.6.6) (2026-03-26)
 
 
