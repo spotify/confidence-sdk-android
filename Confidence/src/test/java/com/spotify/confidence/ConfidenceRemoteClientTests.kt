@@ -1201,6 +1201,47 @@ internal class ConfidenceRemoteClientTests {
     }
 
     @Test
+    fun testOfflineResolveTracksTelemetryAsOffline() = runTest {
+        val tel = Telemetry("", Telemetry.Library.CONFIDENCE, "")
+
+        val resolver = RemoteFlagResolver(
+            clientSecret = "",
+            region = ConfidenceRegion.EUROPE,
+            baseUrl = okhttp3.HttpUrl.Builder()
+                .scheme("http")
+                .host("host.invalid")
+                .port(1)
+                .build(),
+            dispatcher = Dispatchers.IO,
+            httpClient = OkHttpClient.Builder()
+                .dns(object : okhttp3.Dns {
+                    override fun lookup(hostname: String): List<java.net.InetAddress> {
+                        throw java.net.UnknownHostException(hostname)
+                    }
+                })
+                .build(),
+            telemetry = tel
+        )
+
+        try {
+            resolver.resolve(listOf(), mapOf())
+        } catch (_: java.net.UnknownHostException) {
+            // expected
+        }
+
+        val headerValue = tel.encodedHeaderValue()
+        assertNotNull(
+            "Offline resolve should produce a telemetry trace",
+            headerValue
+        )
+
+        val bytes = java.util.Base64.getDecoder().decode(headerValue!!)
+        val monitoring = Monitoring.parseFrom(bytes)
+        val trace = monitoring.getLibraryTraces(0).tracesList.first()
+        assertEquals(ProtoStatus.STATUS_OFFLINE, trace.requestTrace.status)
+    }
+
+    @Test
     fun testApplyReturnsFailureAfter500() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val applyDate = Date.from(Instant.parse("2023-03-01T14:01:46.123Z"))

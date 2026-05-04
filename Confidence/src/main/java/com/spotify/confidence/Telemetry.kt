@@ -239,7 +239,8 @@ internal class Telemetry(
         UNSPECIFIED(0),
         SUCCESS(1),
         ERROR(2),
-        TIMEOUT(3)
+        TIMEOUT(3),
+        OFFLINE(5)
     }
 
     enum class EvaluationReason(val value: Int) {

@@ -17,7 +17,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
+import java.net.NoRouteToHostException
 import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 internal interface FlagResolver {
     suspend fun resolve(flags: List<String>, context: Map<String, ConfidenceValue>): Result<FlagResolution>
@@ -64,6 +66,12 @@ internal class RemoteFlagResolver(
                 throw e
             } catch (e: SocketTimeoutException) {
                 status = Telemetry.RequestStatus.TIMEOUT
+                throw e
+            } catch (e: UnknownHostException) {
+                status = Telemetry.RequestStatus.OFFLINE
+                throw e
+            } catch (e: NoRouteToHostException) {
+                status = Telemetry.RequestStatus.OFFLINE
                 throw e
             } catch (e: Exception) {
                 status = Telemetry.RequestStatus.ERROR
