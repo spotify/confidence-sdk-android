@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.8](https://github.com/spotify/confidence-sdk-android/compare/0.6.7...0.6.8) (2026-05-04)
+
+
+### 🐛 Bug Fixes
+
+* don't report coroutine cancellations as resolve errors in telemetry ([#242](https://github.com/spotify/confidence-sdk-android/issues/242)) ([9f37e84](https://github.com/spotify/confidence-sdk-android/commit/9f37e84f37f3b057181ba8fbfae382d52f2ec590))
+
 ## [0.6.7](https://github.com/spotify/confidence-sdk-android/compare/0.6.6...0.6.7) (2026-04-29)
 
 
