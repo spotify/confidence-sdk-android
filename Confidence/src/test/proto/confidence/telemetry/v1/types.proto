@@ -50,6 +50,7 @@ message LibraryTraces {
         STATUS_ERROR = 2;
         STATUS_TIMEOUT = 3;
         STATUS_CACHED = 4;
+        STATUS_OFFLINE = 5;
       }
     }
 

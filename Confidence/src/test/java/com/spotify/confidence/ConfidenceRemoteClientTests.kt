@@ -10,11 +10,16 @@ import com.spotify.confidence.client.FlagApplierClientImpl
 import com.spotify.confidence.client.Flags
 import com.spotify.confidence.client.ResolveFlags
 import com.spotify.confidence.client.ResolvedFlag
+import com.spotify.telemetry.v1.Types.Monitoring
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import junit.framework.TestCase.assertEquals
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
@@ -23,6 +28,8 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -31,6 +38,8 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.time.Instant
 import java.util.Date
+import java.util.concurrent.TimeUnit
+import com.spotify.telemetry.v1.Types.LibraryTraces.Trace.RequestTrace.Status as ProtoStatus
 
 internal class ConfidenceRemoteClientTests {
     private val mockWebServer = MockWebServer()
@@ -1094,6 +1103,142 @@ internal class ConfidenceRemoteClientTests {
             .apply(listOf(AppliedFlag("flag1", applyDate)), "token1")
 
         assertEquals(Result.Success(Unit), result)
+    }
+
+    @Test
+    fun testCancelledResolveDoesNotTrackTelemetry() = runTest {
+        val telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBodyDelay(2, TimeUnit.SECONDS)
+                .setBody("""{"resolvedFlags": [], "resolveToken": "t"}""")
+        )
+
+        val resolver = RemoteFlagResolver(
+            clientSecret = "",
+            region = ConfidenceRegion.EUROPE,
+            baseUrl = mockWebServer.url("/v1/flags:resolve"),
+            dispatcher = Dispatchers.IO,
+            httpClient = OkHttpClient(),
+            telemetry = telemetry
+        )
+
+        val job = async(Dispatchers.IO) {
+            resolver.resolve(listOf(), mapOf())
+        }
+
+        delay(200)
+        job.cancel()
+
+        try {
+            job.await()
+        } catch (_: CancellationException) {
+            // expected
+        }
+
+        delay(100)
+        assertNull(
+            "Cancelled resolve should not produce a telemetry trace",
+            telemetry.encodedHeaderValue()
+        )
+    }
+
+    @Test
+    fun testSuccessfulResolveTracksTelemetry() = runTest {
+        val tel = Telemetry("", Telemetry.Library.CONFIDENCE, "")
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody("""{"resolvedFlags": [], "resolveToken": "t"}""")
+        )
+
+        val resolver = RemoteFlagResolver(
+            clientSecret = "",
+            region = ConfidenceRegion.EUROPE,
+            baseUrl = mockWebServer.url("/v1/flags:resolve"),
+            dispatcher = Dispatchers.IO,
+            httpClient = OkHttpClient(),
+            telemetry = tel
+        )
+
+        resolver.resolve(listOf(), mapOf())
+
+        val headerValue = tel.encodedHeaderValue()
+        assertNotNull("Successful resolve should produce a telemetry trace", headerValue)
+        val monitoring = Monitoring.parseFrom(java.util.Base64.getDecoder().decode(headerValue!!))
+        val trace = monitoring.getLibraryTraces(0).getTraces(0)
+        assertEquals(ProtoStatus.STATUS_SUCCESS, trace.requestTrace.status)
+    }
+
+    @Test
+    fun testFailedResolveTracksTelemetryAsError() = runTest {
+        val tel = Telemetry("", Telemetry.Library.CONFIDENCE, "")
+        mockWebServer.enqueue(
+            MockResponse().setResponseCode(500)
+        )
+
+        val resolver = RemoteFlagResolver(
+            clientSecret = "",
+            region = ConfidenceRegion.EUROPE,
+            baseUrl = mockWebServer.url("/v1/flags:resolve"),
+            dispatcher = Dispatchers.IO,
+            httpClient = OkHttpClient(),
+            telemetry = tel
+        )
+
+        try {
+            resolver.resolve(listOf(), mapOf())
+        } catch (_: ConfidenceError.HttpError) {
+            // expected
+        }
+
+        val headerValue = tel.encodedHeaderValue()
+        assertNotNull("Failed resolve should produce a telemetry trace", headerValue)
+        val monitoring = Monitoring.parseFrom(java.util.Base64.getDecoder().decode(headerValue!!))
+        val trace = monitoring.getLibraryTraces(0).getTraces(0)
+        assertEquals(ProtoStatus.STATUS_ERROR, trace.requestTrace.status)
+    }
+
+    @Test
+    fun testOfflineResolveTracksTelemetryAsOffline() = runTest {
+        val tel = Telemetry("", Telemetry.Library.CONFIDENCE, "")
+
+        val resolver = RemoteFlagResolver(
+            clientSecret = "",
+            region = ConfidenceRegion.EUROPE,
+            baseUrl = okhttp3.HttpUrl.Builder()
+                .scheme("http")
+                .host("host.invalid")
+                .port(1)
+                .build(),
+            dispatcher = Dispatchers.IO,
+            httpClient = OkHttpClient.Builder()
+                .dns(object : okhttp3.Dns {
+                    override fun lookup(hostname: String): List<java.net.InetAddress> {
+                        throw java.net.UnknownHostException(hostname)
+                    }
+                })
+                .build(),
+            telemetry = tel
+        )
+
+        try {
+            resolver.resolve(listOf(), mapOf())
+        } catch (_: java.net.UnknownHostException) {
+            // expected
+        }
+
+        val headerValue = tel.encodedHeaderValue()
+        assertNotNull(
+            "Offline resolve should produce a telemetry trace",
+            headerValue
+        )
+
+        val bytes = java.util.Base64.getDecoder().decode(headerValue!!)
+        val monitoring = Monitoring.parseFrom(bytes)
+        val trace = monitoring.getLibraryTraces(0).tracesList.first()
+        assertEquals(ProtoStatus.STATUS_OFFLINE, trace.requestTrace.status)
     }
 
     @Test

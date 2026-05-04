@@ -3,6 +3,7 @@ package com.spotify.confidence
 import com.spotify.confidence.client.ResolveResponse
 import com.spotify.confidence.client.Sdk
 import com.spotify.confidence.client.await
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -16,7 +17,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
+import java.net.NoRouteToHostException
 import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 internal interface FlagResolver {
     suspend fun resolve(flags: List<String>, context: Map<String, ConfidenceValue>): Result<FlagResolution>
@@ -55,18 +58,32 @@ internal class RemoteFlagResolver(
             val httpRequest = requestBuilder.build()
 
             val startTime = System.nanoTime()
-            var status = Telemetry.RequestStatus.SUCCESS
+            var status: Telemetry.RequestStatus? = Telemetry.RequestStatus.SUCCESS
             try {
                 httpClient.newCall(httpRequest).await().use { it.toResolveFlags() }
+            } catch (e: CancellationException) {
+                status = null
+                throw e
             } catch (e: SocketTimeoutException) {
                 status = Telemetry.RequestStatus.TIMEOUT
+                throw e
+            } catch (e: UnknownHostException) {
+                status = Telemetry.RequestStatus.OFFLINE
+                throw e
+            } catch (e: NoRouteToHostException) {
+                status = Telemetry.RequestStatus.OFFLINE
                 throw e
             } catch (e: Exception) {
                 status = Telemetry.RequestStatus.ERROR
                 throw e
+            } catch (e: Error) {
+                status = Telemetry.RequestStatus.ERROR
+                throw e
             } finally {
-                val elapsedMs = (System.nanoTime() - startTime) / 1_000_000
-                telemetry.trackResolveLatency(elapsedMs, status)
+                if (status != null) {
+                    val elapsedMs = (System.nanoTime() - startTime) / 1_000_000
+                    telemetry.trackResolveLatency(elapsedMs, status)
+                }
             }
         }
 
