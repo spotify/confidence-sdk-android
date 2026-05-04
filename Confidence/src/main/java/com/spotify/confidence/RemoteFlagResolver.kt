@@ -68,6 +68,9 @@ internal class RemoteFlagResolver(
             } catch (e: Exception) {
                 status = Telemetry.RequestStatus.ERROR
                 throw e
+            } catch (e: Error) {
+                status = Telemetry.RequestStatus.ERROR
+                throw e
             } finally {
                 if (status != null) {
                     val elapsedMs = (System.nanoTime() - startTime) / 1_000_000

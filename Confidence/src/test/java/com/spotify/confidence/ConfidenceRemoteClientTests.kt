@@ -10,6 +10,7 @@ import com.spotify.confidence.client.FlagApplierClientImpl
 import com.spotify.confidence.client.Flags
 import com.spotify.confidence.client.ResolveFlags
 import com.spotify.confidence.client.ResolvedFlag
+import com.spotify.telemetry.v1.Types.Monitoring
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
@@ -38,6 +39,7 @@ import org.mockito.kotlin.whenever
 import java.time.Instant
 import java.util.Date
 import java.util.concurrent.TimeUnit
+import com.spotify.telemetry.v1.Types.LibraryTraces.Trace.RequestTrace.Status as ProtoStatus
 
 internal class ConfidenceRemoteClientTests {
     private val mockWebServer = MockWebServer()
@@ -1144,7 +1146,7 @@ internal class ConfidenceRemoteClientTests {
 
     @Test
     fun testSuccessfulResolveTracksTelemetry() = runTest {
-        val telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
+        val tel = Telemetry("", Telemetry.Library.CONFIDENCE, "")
         mockWebServer.enqueue(
             MockResponse()
                 .setResponseCode(200)
@@ -1157,20 +1159,21 @@ internal class ConfidenceRemoteClientTests {
             baseUrl = mockWebServer.url("/v1/flags:resolve"),
             dispatcher = Dispatchers.IO,
             httpClient = OkHttpClient(),
-            telemetry = telemetry
+            telemetry = tel
         )
 
         resolver.resolve(listOf(), mapOf())
 
-        assertNotNull(
-            "Successful resolve should produce a telemetry trace",
-            telemetry.encodedHeaderValue()
-        )
+        val headerValue = tel.encodedHeaderValue()
+        assertNotNull("Successful resolve should produce a telemetry trace", headerValue)
+        val monitoring = Monitoring.parseFrom(java.util.Base64.getDecoder().decode(headerValue!!))
+        val trace = monitoring.getLibraryTraces(0).getTraces(0)
+        assertEquals(ProtoStatus.STATUS_SUCCESS, trace.requestTrace.status)
     }
 
     @Test
     fun testFailedResolveTracksTelemetryAsError() = runTest {
-        val telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
+        val tel = Telemetry("", Telemetry.Library.CONFIDENCE, "")
         mockWebServer.enqueue(
             MockResponse().setResponseCode(500)
         )
@@ -1181,7 +1184,7 @@ internal class ConfidenceRemoteClientTests {
             baseUrl = mockWebServer.url("/v1/flags:resolve"),
             dispatcher = Dispatchers.IO,
             httpClient = OkHttpClient(),
-            telemetry = telemetry
+            telemetry = tel
         )
 
         try {
@@ -1190,10 +1193,11 @@ internal class ConfidenceRemoteClientTests {
             // expected
         }
 
-        assertNotNull(
-            "Failed resolve should still produce a telemetry trace",
-            telemetry.encodedHeaderValue()
-        )
+        val headerValue = tel.encodedHeaderValue()
+        assertNotNull("Failed resolve should produce a telemetry trace", headerValue)
+        val monitoring = Monitoring.parseFrom(java.util.Base64.getDecoder().decode(headerValue!!))
+        val trace = monitoring.getLibraryTraces(0).getTraces(0)
+        assertEquals(ProtoStatus.STATUS_ERROR, trace.requestTrace.status)
     }
 
     @Test
