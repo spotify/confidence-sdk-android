@@ -29,7 +29,8 @@ import com.spotify.telemetry.v1.Types.LibraryTraces.Trace.EvaluationTrace.Evalua
 import com.spotify.telemetry.v1.Types.LibraryTraces.Trace.RequestTrace.Status as ProtoStatus
 import com.spotify.telemetry.v1.Types.Platform as ProtoPlatform
 
-private fun decodeMonitoring(headerValue: String): Monitoring {
+private fun decodeMonitoring(headerValue: String?): Monitoring {
+    requireNotNull(headerValue) { "Expected non-null telemetry header value" }
     val bytes = java.util.Base64.getDecoder().decode(headerValue)
     return Monitoring.parseFrom(bytes)
 }

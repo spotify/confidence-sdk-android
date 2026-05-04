@@ -3,6 +3,7 @@ package com.spotify.confidence
 import com.spotify.confidence.client.ResolveResponse
 import com.spotify.confidence.client.Sdk
 import com.spotify.confidence.client.await
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -55,9 +56,12 @@ internal class RemoteFlagResolver(
             val httpRequest = requestBuilder.build()
 
             val startTime = System.nanoTime()
-            var status = Telemetry.RequestStatus.SUCCESS
+            var status: Telemetry.RequestStatus? = Telemetry.RequestStatus.SUCCESS
             try {
                 httpClient.newCall(httpRequest).await().use { it.toResolveFlags() }
+            } catch (e: CancellationException) {
+                status = null
+                throw e
             } catch (e: SocketTimeoutException) {
                 status = Telemetry.RequestStatus.TIMEOUT
                 throw e
@@ -65,8 +69,10 @@ internal class RemoteFlagResolver(
                 status = Telemetry.RequestStatus.ERROR
                 throw e
             } finally {
-                val elapsedMs = (System.nanoTime() - startTime) / 1_000_000
-                telemetry.trackResolveLatency(elapsedMs, status)
+                if (status != null) {
+                    val elapsedMs = (System.nanoTime() - startTime) / 1_000_000
+                    telemetry.trackResolveLatency(elapsedMs, status)
+                }
             }
         }
 

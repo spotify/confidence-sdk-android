@@ -14,15 +14,22 @@ import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import junit.framework.TestCase.assertEquals
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.Dispatchers
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
+import java.util.concurrent.TimeUnit
 import org.junit.After
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -1094,6 +1101,99 @@ internal class ConfidenceRemoteClientTests {
             .apply(listOf(AppliedFlag("flag1", applyDate)), "token1")
 
         assertEquals(Result.Success(Unit), result)
+    }
+
+    @Test
+    fun testCancelledResolveDoesNotTrackTelemetry() = runTest {
+        val telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBodyDelay(2, TimeUnit.SECONDS)
+                .setBody("""{"resolvedFlags": [], "resolveToken": "t"}""")
+        )
+
+        val resolver = RemoteFlagResolver(
+            clientSecret = "",
+            region = ConfidenceRegion.EUROPE,
+            baseUrl = mockWebServer.url("/v1/flags:resolve"),
+            dispatcher = Dispatchers.IO,
+            httpClient = OkHttpClient(),
+            telemetry = telemetry
+        )
+
+        val job = async(Dispatchers.IO) {
+            resolver.resolve(listOf(), mapOf())
+        }
+
+        delay(200)
+        job.cancel()
+
+        try {
+            job.await()
+        } catch (_: CancellationException) {
+            // expected
+        }
+
+        delay(100)
+        assertNull(
+            "Cancelled resolve should not produce a telemetry trace",
+            telemetry.encodedHeaderValue()
+        )
+    }
+
+    @Test
+    fun testSuccessfulResolveTracksTelemetry() = runTest {
+        val telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody("""{"resolvedFlags": [], "resolveToken": "t"}""")
+        )
+
+        val resolver = RemoteFlagResolver(
+            clientSecret = "",
+            region = ConfidenceRegion.EUROPE,
+            baseUrl = mockWebServer.url("/v1/flags:resolve"),
+            dispatcher = Dispatchers.IO,
+            httpClient = OkHttpClient(),
+            telemetry = telemetry
+        )
+
+        resolver.resolve(listOf(), mapOf())
+
+        assertNotNull(
+            "Successful resolve should produce a telemetry trace",
+            telemetry.encodedHeaderValue()
+        )
+    }
+
+    @Test
+    fun testFailedResolveTracksTelemetryAsError() = runTest {
+        val telemetry = Telemetry("", Telemetry.Library.CONFIDENCE, "")
+        mockWebServer.enqueue(
+            MockResponse().setResponseCode(500)
+        )
+
+        val resolver = RemoteFlagResolver(
+            clientSecret = "",
+            region = ConfidenceRegion.EUROPE,
+            baseUrl = mockWebServer.url("/v1/flags:resolve"),
+            dispatcher = Dispatchers.IO,
+            httpClient = OkHttpClient(),
+            telemetry = telemetry
+        )
+
+        try {
+            resolver.resolve(listOf(), mapOf())
+        } catch (_: ConfidenceError.HttpError) {
+            // expected
+        }
+
+        assertNotNull(
+            "Failed resolve should still produce a telemetry trace",
+            telemetry.encodedHeaderValue()
+        )
     }
 
     @Test
