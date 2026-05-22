@@ -10,7 +10,6 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert
-import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.any
@@ -20,7 +19,7 @@ import org.mockito.kotlin.whenever
 import java.io.File
 import java.nio.file.Files
 
-private val clientSecret = System.getenv("CONFIDENCE_CLIENT_SECRET") ?: ""
+private val clientSecret = System.getenv("CONFIDENCE_CLIENT_SECRET")!!
 private val mockContext: Context = mock()
 private val mockSharedPrefs: SharedPreferences = mock()
 private val mockSharedPrefsEdit: SharedPreferences.Editor = mock()
@@ -33,7 +32,6 @@ class EventSenderIntegrationTest {
 
     @Before
     fun setup() {
-        Assume.assumeTrue("CONFIDENCE_CLIENT_SECRET not set, skipping integration tests", clientSecret.isNotEmpty())
         whenever(mockContext.getDir("events", Context.MODE_PRIVATE)).thenReturn(directory)
         whenever(mockContext.getSharedPreferences(SHARED_PREFS_NAME, Context.MODE_PRIVATE)).thenReturn(mockSharedPrefs)
         whenever(mockSharedPrefs.edit()).thenReturn(mockSharedPrefsEdit)
