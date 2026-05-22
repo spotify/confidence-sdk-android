@@ -30,7 +30,6 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -42,7 +41,7 @@ import java.io.File
 import java.nio.file.Files
 import java.util.UUID
 
-private val clientSecret = System.getenv("CONFIDENCE_CLIENT_SECRET") ?: ""
+private val clientSecret = System.getenv("CONFIDENCE_CLIENT_SECRET")!!
 private val mockContext: Context = mock()
 
 class ProviderIntegrationTest {
@@ -54,7 +53,6 @@ class ProviderIntegrationTest {
 
     @Before
     fun setup() = runTest(UnconfinedTestDispatcher()) {
-        Assume.assumeTrue("CONFIDENCE_CLIENT_SECRET not set, skipping integration tests", clientSecret.isNotEmpty())
         mockkStatic(Log::class)
         every { Log.d(any(), any()) } answers {
             println("DEBUG: ${arg<String>(1)}")

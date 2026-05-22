@@ -5,7 +5,6 @@ import android.content.Context
 import com.spotify.confidence.cache.FileDiskStorage
 import com.spotify.confidence.client.ResolvedFlag
 import org.junit.Assert
-import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -16,7 +15,7 @@ import org.mockito.kotlin.whenever
 import java.nio.file.Files
 import java.util.UUID
 
-private val clientSecret = System.getenv("CONFIDENCE_CLIENT_SECRET") ?: ""
+private val clientSecret = System.getenv("CONFIDENCE_CLIENT_SECRET")!!
 private val mockContext: Context = mock()
 
 class ConfidenceIntegrationTests {
@@ -26,7 +25,6 @@ class ConfidenceIntegrationTests {
 
     @Before
     fun setup() {
-        Assume.assumeTrue("CONFIDENCE_CLIENT_SECRET not set, skipping integration tests", clientSecret.isNotEmpty())
         whenever(mockContext.filesDir).thenReturn(Files.createTempDirectory("tmpTests").toFile())
         whenever(mockContext.getDir(any(), any())).thenReturn(Files.createTempDirectory("events").toFile())
         whenever(mockContext.getSharedPreferences(SHARED_PREFS_NAME, Context.MODE_PRIVATE)).thenReturn(InMemorySharedPreferences())
