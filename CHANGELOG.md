@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.9](https://github.com/spotify/confidence-sdk-android/compare/0.6.8...0.6.9) (2026-05-25)
+
+
+### ✨ New Features
+
+* migrate integration tests to new Confidence workspace ([#248](https://github.com/spotify/confidence-sdk-android/issues/248)) ([96002eb](https://github.com/spotify/confidence-sdk-android/commit/96002eba0dbe6036ea5197343e03e37cebf3d110))
+
+
+### 🧹 Chore
+
+* fail loudly on missing CONFIDENCE_CLIENT_SECRET ([#250](https://github.com/spotify/confidence-sdk-android/issues/250)) ([49208e6](https://github.com/spotify/confidence-sdk-android/commit/49208e612ac24bcba58885ba79d8be1b0e915d69))
+
 ## [0.6.8](https://github.com/spotify/confidence-sdk-android/compare/0.6.7...0.6.8) (2026-05-04)
 
 
