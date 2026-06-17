@@ -17,7 +17,7 @@ fun <T> FlagResolution?.getEvaluation(
         )
     }
     requireNotNull(this)
-    val resolvedFlag = this.flags.firstOrNull { it.flag == parsedKey.flagName }
+    val resolvedFlag = this.resolvedFlag(parsedKey.flagName)
         ?: return Evaluation(
             value = defaultValue,
             reason = ResolveReason.ERROR,
