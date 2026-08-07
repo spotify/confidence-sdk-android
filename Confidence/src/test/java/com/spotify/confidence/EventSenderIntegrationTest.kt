@@ -2,7 +2,6 @@ package com.spotify.confidence
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.spotify.confidence.ConfidenceError.InvalidContextInMessage
 import com.spotify.confidence.client.SdkMetadata
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -43,15 +42,29 @@ class EventSenderIntegrationTest {
         }
     }
 
-    @Test(expected = InvalidContextInMessage::class)
-    fun context_in_message_throws() = runTest {
+    @Test
+    fun context_in_message_overrides_evaluation_context() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val confidence = ConfidenceFactory.create(
             mockContext,
             clientSecret,
             dispatcher = testDispatcher
         )
-        confidence.track("test", mapOf("context" to ConfidenceValue.Integer(1)))
+        confidence.track(
+            eventName = "test",
+            data = mapOf("context" to ConfidenceValue.String("override")),
+            eventContext = mapOf("a" to ConfidenceValue.Integer(1))
+        )
+        advanceUntilIdle()
+        val eventStorage = EventStorageImpl(mockContext)
+        val files = directory.walkFiles().toList()
+        Assert.assertEquals(1, files.size)
+        val events = eventStorage.eventsFor(files.first())
+        Assert.assertEquals(1, events.size)
+        Assert.assertEquals(
+            ConfidenceValue.String("override"),
+            events.first().payload["context"]
+        )
     }
 
     @Test

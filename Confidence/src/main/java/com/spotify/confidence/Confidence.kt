@@ -254,7 +254,15 @@ class Confidence internal constructor(
         eventName: String,
         data: ConfidenceFieldsType
     ) {
-        eventSenderEngine.emit(eventName, data, getContext())
+        track(eventName, data, getContext())
+    }
+
+    override fun track(
+        eventName: String,
+        data: ConfidenceFieldsType,
+        eventContext: Map<String, ConfidenceValue>
+    ) {
+        eventSenderEngine.emit(eventName, data, eventContext)
     }
 
     override fun flush() {

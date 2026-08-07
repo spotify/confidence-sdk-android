@@ -12,6 +12,16 @@ interface EventSender : Contextual {
     )
 
     /**
+     * Store a custom event to be tracked with an explicit evaluation context.
+     * @param eventContext evaluation context for this event only; does not mutate session context.
+     */
+    fun track(
+        eventName: String,
+        data: ConfidenceFieldsType,
+        eventContext: Map<String, ConfidenceValue>
+    )
+
+    /**
      * Track Android-specific events like activities or Track Context updates.
      * Please note that this method is collecting data in a coroutine scope and will be
      * executed on the dispatcher that was defined with the creation of the Confidence instance.
