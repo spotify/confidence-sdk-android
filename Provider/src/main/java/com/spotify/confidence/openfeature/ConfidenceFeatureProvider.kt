@@ -53,6 +53,7 @@ class ConfidenceFeatureProvider private constructor(
     }
 
     override fun shutdown() {
+        confidence.flush()
     }
 
     override suspend fun onContextSet(

@@ -8,10 +8,14 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import java.io.File
 
@@ -30,7 +34,8 @@ internal class EventSenderEngineImpl(
     private val clock: Clock = Clock.CalendarBacked.systemUTC(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val sdkMetadata: SdkMetadata,
-    private val debugLogger: DebugLogger?
+    private val debugLogger: DebugLogger?,
+    private val flushIntervalMillis: Long? = null
 ) : EventSenderEngine {
     private val writeReqChannel: Channel<EngineEvent> = Channel()
     private val sendChannel: Channel<String> = Channel()
@@ -43,13 +48,15 @@ internal class EventSenderEngineImpl(
             debugLogger?.logMessage(message = "EventSenderEngine error: $e", isWarning = true)
         }
     }
+    private var flushIntervalJob: Job? = null
+    @Volatile
+    private var isStopped = false
 
     init {
         flushPolicies.add(ManualFlushPolicy)
         coroutineScope.launch(exceptionHandler) {
             for (event in writeReqChannel) {
                 if (event.eventDefinition != manualFlushEvent.eventDefinition) {
-                    // skip storing manual flush event
                     eventStorage.writeEvent(event)
                     debugLogger?.logEvent(action = "DiskWrite ", event = event)
                 }
@@ -69,35 +76,23 @@ internal class EventSenderEngineImpl(
             }
         }
 
-        // upload might throw exceptions
         coroutineScope.launch(exceptionHandler) {
             for (flush in sendChannel) {
-                eventStorage.rollover()
-                val readyFiles = eventStorage.batchReadyFiles()
-                for (readyFile in readyFiles) {
-                    val events = eventStorage.eventsFor(readyFile)
-                        .map { e ->
-                            EngineEvent(
-                                "eventDefinitions/${e.eventDefinition}",
-                                e.eventTime,
-                                e.payload
-                            )
-                        }
-                    val batch = EventBatchRequest(
-                        clientSecret = clientSecret,
-                        events = events,
-                        sendTime = clock.currentTime(),
-                        sdk = Sdk(sdkMetadata.sdkId, sdkMetadata.sdkVersion)
-                    )
-                    runCatching {
-                        val shouldCleanup = uploader.upload(batch)
-                        debugLogger?.logMessage(message = "Uploading events")
-                        if (shouldCleanup) {
-                            readyFile.delete()
-                        }
-                    }
+                uploadReadyBatches(sealCurrentBatch = true)
+            }
+        }
+
+        if (flushIntervalMillis != null && flushIntervalMillis > 0) {
+            flushIntervalJob = coroutineScope.launch(exceptionHandler) {
+                while (isActive) {
+                    delay(flushIntervalMillis)
+                    flush()
                 }
             }
+        }
+
+        coroutineScope.launch(exceptionHandler) {
+            uploadReadyBatches(sealCurrentBatch = false)
         }
     }
 
@@ -111,6 +106,9 @@ internal class EventSenderEngineImpl(
         data: ConfidenceFieldsType,
         context: Map<String, ConfidenceValue>
     ) {
+        if (isStopped) {
+            return
+        }
         coroutineScope.launch {
             val payload = payloadMerger(context, data)
             val event = EngineEvent(
@@ -124,6 +122,9 @@ internal class EventSenderEngineImpl(
     }
 
     override fun flush() {
+        if (isStopped) {
+            return
+        }
         coroutineScope.launch {
             writeReqChannel.send(manualFlushEvent)
             debugLogger?.logEvent(action = "Flush ", event = manualFlushEvent)
@@ -131,9 +132,44 @@ internal class EventSenderEngineImpl(
     }
 
     override fun stop() {
+        isStopped = true
+        flushIntervalJob?.cancel()
+        runBlocking(dispatcher) {
+            uploadReadyBatches(sealCurrentBatch = true)
+        }
         coroutineScope.cancel()
         eventStorage.stop()
         debugLogger?.logMessage(message = "EventSenderEngine closed ")
+    }
+
+    private suspend fun uploadReadyBatches(sealCurrentBatch: Boolean) {
+        if (sealCurrentBatch) {
+            eventStorage.rollover()
+        }
+        val readyFiles = eventStorage.batchReadyFiles()
+        for (readyFile in readyFiles) {
+            val events = eventStorage.eventsFor(readyFile)
+                .map { e ->
+                    EngineEvent(
+                        "eventDefinitions/${e.eventDefinition}",
+                        e.eventTime,
+                        e.payload
+                    )
+                }
+            val batch = EventBatchRequest(
+                clientSecret = clientSecret,
+                events = events,
+                sendTime = clock.currentTime(),
+                sdk = Sdk(sdkMetadata.sdkId, sdkMetadata.sdkVersion)
+            )
+            runCatching {
+                val shouldCleanup = uploader.upload(batch)
+                debugLogger?.logMessage(message = "Uploading events")
+                if (shouldCleanup) {
+                    readyFile.delete()
+                }
+            }
+        }
     }
 
     companion object {
@@ -145,7 +181,8 @@ internal class EventSenderEngineImpl(
             sdkMetadata: SdkMetadata,
             flushPolicies: List<FlushPolicy> = listOf(),
             dispatcher: CoroutineDispatcher = Dispatchers.IO,
-            debugLogger: DebugLogger?
+            debugLogger: DebugLogger?,
+            flushIntervalMillis: Long? = null
         ): EventSenderEngine {
             return Instance ?: run {
                 EventSenderEngineImpl(
@@ -155,8 +192,11 @@ internal class EventSenderEngineImpl(
                     flushPolicies = flushPolicies.toMutableList(),
                     dispatcher = dispatcher,
                     sdkMetadata = sdkMetadata,
-                    debugLogger = debugLogger
-                )
+                    debugLogger = debugLogger,
+                    flushIntervalMillis = flushIntervalMillis
+                ).also {
+                    Instance = it
+                }
             }
         }
     }
