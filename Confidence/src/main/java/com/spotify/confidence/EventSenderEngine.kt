@@ -49,6 +49,7 @@ internal class EventSenderEngineImpl(
         }
     }
     private var flushIntervalJob: Job? = null
+
     @Volatile
     private var isStopped = false
 
