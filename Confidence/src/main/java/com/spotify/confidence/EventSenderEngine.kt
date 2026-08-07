@@ -195,9 +195,7 @@ internal class EventSenderEngineImpl(
                     sdkMetadata = sdkMetadata,
                     debugLogger = debugLogger,
                     flushIntervalMillis = flushIntervalMillis
-                ).also {
-                    Instance = it
-                }
+                )
             }
         }
     }
