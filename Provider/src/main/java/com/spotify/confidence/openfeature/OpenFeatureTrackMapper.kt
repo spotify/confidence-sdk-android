@@ -20,9 +20,10 @@ internal fun EvaluationContext?.toTrackContextMap(): Map<String, ConfidenceValue
     }
     val map = mutableMapOf<String, ConfidenceValue>()
     val targetingKey = getTargetingKey()
-    if (targetingKey.isNotEmpty() && !asMap().containsKey("targeting_key")) {
+    if (targetingKey.isNotEmpty()) {
         map["targeting_key"] = ConfidenceValue.String(targetingKey)
     }
+    // Explicit attributes win over the injected targeting key
     map.putAll(asMap().mapValues { it.value.toConfidenceValue() })
     return map
 }
@@ -38,6 +39,12 @@ internal fun TrackingEventDetails?.toTrackingData(): Map<String, ConfidenceValue
 
 private fun Number.toConfidenceValue(): ConfidenceValue = when (this) {
     is Int -> ConfidenceValue.Integer(this)
+    is Long -> if (this in Int.MIN_VALUE..Int.MAX_VALUE) {
+        ConfidenceValue.Integer(toInt())
+    } else {
+        ConfidenceValue.Double(toDouble())
+    }
     is Double -> ConfidenceValue.Double(this)
+    is Float -> ConfidenceValue.Double(toDouble())
     else -> ConfidenceValue.Null
 }

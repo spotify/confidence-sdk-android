@@ -1,6 +1,10 @@
 package com.spotify.confidence
 
+import com.spotify.confidence.client.SdkMetadata
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -12,7 +16,7 @@ import java.util.Date
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class EventSenderEngineReliabilityTest {
-    private lateinit var testDispatcher: UnconfinedTestDispatcher
+    private lateinit var testDispatcher: TestDispatcher
     private lateinit var uploader: RecordingEventUploader
     private lateinit var storage: RecordingEventStorage
 
@@ -23,6 +27,20 @@ class EventSenderEngineReliabilityTest {
         storage = RecordingEventStorage()
     }
 
+    private fun engine(
+        dispatcher: CoroutineDispatcher = testDispatcher,
+        flushIntervalMillis: Long? = null
+    ) = EventSenderEngineImpl(
+        eventStorage = storage,
+        clientSecret = "secret",
+        uploader = uploader,
+        flushPolicies = mutableListOf(),
+        dispatcher = dispatcher,
+        sdkMetadata = SdkMetadata("id", "1.0"),
+        debugLogger = null,
+        flushIntervalMillis = flushIntervalMillis
+    )
+
     @Test
     fun startupUploadsPendingReadyBatchesWithoutSealingCurrentBatch() = runTest(testDispatcher) {
         storage.readyEvents["pending.batch"] = listOf(
@@ -32,93 +50,113 @@ class EventSenderEngineReliabilityTest {
             EngineEvent("current", Date(), mapOf())
         )
 
-        EventSenderEngineImpl(
-            eventStorage = storage,
-            clientSecret = "secret",
-            uploader = uploader,
-            flushPolicies = mutableListOf(),
-            dispatcher = testDispatcher,
-            sdkMetadata = com.spotify.confidence.client.SdkMetadata("id", "1.0"),
-            debugLogger = null
-        )
+        engine()
 
         advanceUntilIdle()
 
         assertEquals(listOf("pending"), uploader.uploadedEventNames)
         assertEquals(listOf("current"), storage.currentEvents.map { it.eventDefinition })
+        assertTrue(storage.readyEvents.isEmpty())
     }
 
     @Test
     fun stopUploadsCurrentBatch() = runTest(testDispatcher) {
-        val engine = EventSenderEngineImpl(
-            eventStorage = storage,
-            clientSecret = "secret",
-            uploader = uploader,
-            flushPolicies = mutableListOf(),
-            dispatcher = testDispatcher,
-            sdkMetadata = com.spotify.confidence.client.SdkMetadata("id", "1.0"),
-            debugLogger = null
-        )
+        val engine = engine()
 
         engine.emit("session-end", mapOf(), mapOf())
         advanceUntilIdle()
         engine.stop()
 
-        assertTrue(uploader.uploadedEventNames.contains("session-end"))
+        assertEquals(listOf("session-end"), uploader.uploadedEventNames)
     }
 
     @Test
-    fun periodicFlushIntervalUploadsEvents() = runTest(testDispatcher) {
-        val engine = EventSenderEngineImpl(
-            eventStorage = storage,
-            clientSecret = "secret",
-            uploader = uploader,
-            flushPolicies = mutableListOf(),
-            dispatcher = testDispatcher,
-            sdkMetadata = com.spotify.confidence.client.SdkMetadata("id", "1.0"),
-            debugLogger = null,
-            flushIntervalMillis = 100
-        )
+    fun stopDrainsQueuedEventsBeforeUploading() {
+        val engine = engine(dispatcher = Dispatchers.IO)
 
-        engine.emit("interval-event", mapOf(), mapOf())
-        advanceUntilIdle()
-        testScheduler.advanceTimeBy(150)
-        advanceUntilIdle()
+        repeat(50) { engine.emit("event-$it", mapOf(), mapOf()) }
         engine.stop()
 
-        assertTrue(uploader.uploadedEventNames.contains("interval-event"))
+        assertEquals(50, uploader.uploadedEventNames.size)
+    }
+
+    @Test
+    fun emitAfterStopIsIgnored() = runTest(testDispatcher) {
+        val engine = engine()
+
+        engine.stop()
+        engine.emit("late-event", mapOf(), mapOf())
+        advanceUntilIdle()
+
+        assertTrue(uploader.uploadedEventNames.isEmpty())
+    }
+
+    @Test
+    fun periodicFlushIntervalUploadsEventsExactlyOnce() = runTest(testDispatcher) {
+        val engine = engine(flushIntervalMillis = 100)
+
+        engine.emit("interval-event", mapOf(), mapOf())
+        testScheduler.runCurrent()
+        // advanceUntilIdle would spin forever on the self-rescheduling interval job
+        testScheduler.advanceTimeBy(150)
+        testScheduler.runCurrent()
+        engine.stop()
+
+        assertEquals(listOf("interval-event"), uploader.uploadedEventNames)
+    }
+
+    @Test
+    fun periodicFlushWithoutEventsDoesNotUpload() = runTest(testDispatcher) {
+        val engine = engine(flushIntervalMillis = 100)
+
+        testScheduler.advanceTimeBy(350)
+        testScheduler.runCurrent()
+        engine.stop()
+
+        assertTrue(uploader.uploadedEventNames.isEmpty())
     }
 
     private class RecordingEventUploader : EventSenderUploader {
         val uploadedEventNames = mutableListOf<String>()
 
         override suspend fun upload(events: EventBatchRequest): Boolean {
-            uploadedEventNames.addAll(events.events.map { it.eventDefinition.removePrefix("eventDefinitions/") })
+            synchronized(uploadedEventNames) {
+                uploadedEventNames.addAll(
+                    events.events.map { it.eventDefinition.removePrefix("eventDefinitions/") }
+                )
+            }
             return true
         }
     }
 
+    // Mimics EventStorageImpl: rollover always seals the current batch (even when
+    // empty) and uploaded batches disappear when their file is deleted.
     private class RecordingEventStorage : EventStorage {
         val currentEvents = mutableListOf<EngineEvent>()
         val readyEvents = mutableMapOf<String, List<EngineEvent>>()
+        private var batchCounter = 0
 
-        override suspend fun rollover() {
-            if (currentEvents.isNotEmpty()) {
-                readyEvents["batch-${readyEvents.size}"] = currentEvents.toList()
-                currentEvents.clear()
-            }
+        override suspend fun rollover(): Unit = synchronized(this) {
+            readyEvents["batch-${batchCounter++}"] = currentEvents.toList()
+            currentEvents.clear()
         }
 
-        override suspend fun writeEvent(event: EngineEvent) {
+        override suspend fun writeEvent(event: EngineEvent): Unit = synchronized(this) {
             currentEvents.add(event)
         }
 
-        override suspend fun batchReadyFiles(): List<java.io.File> {
-            return readyEvents.keys.map { java.io.File(it) }
+        override suspend fun batchReadyFiles(): List<java.io.File> = synchronized(this) {
+            readyEvents.keys.map { name ->
+                object : java.io.File(name) {
+                    override fun delete(): Boolean = synchronized(this@RecordingEventStorage) {
+                        readyEvents.remove(name) != null
+                    }
+                }
+            }
         }
 
-        override suspend fun eventsFor(file: java.io.File): List<EngineEvent> {
-            return readyEvents[file.name].orEmpty()
+        override suspend fun eventsFor(file: java.io.File): List<EngineEvent> = synchronized(this) {
+            readyEvents[file.name].orEmpty()
         }
 
         override fun onLowMemoryChannel() = kotlinx.coroutines.channels.Channel<List<java.io.File>>()

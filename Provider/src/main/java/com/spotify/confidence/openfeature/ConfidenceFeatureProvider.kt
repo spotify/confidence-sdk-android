@@ -52,6 +52,11 @@ class ConfidenceFeatureProvider private constructor(
         }
     }
 
+    /**
+     * Triggers a best-effort flush of tracked events: delivery is asynchronous
+     * and not guaranteed before process death. Undelivered batches are retried
+     * on the next SDK startup.
+     */
     override fun shutdown() {
         confidence.flush()
     }

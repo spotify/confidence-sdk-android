@@ -451,6 +451,9 @@ object ConfidenceFactory {
         resolveBaseUrl: HttpUrl?,
         eventFlushIntervalMillis: Long? = null
     ): Confidence {
+        require(eventFlushIntervalMillis == null || eventFlushIntervalMillis > 0) {
+            "eventFlushIntervalMillis must be positive, or null to disable periodic flushing"
+        }
         val debugLogger: DebugLogger? = if (loggingLevel == LoggingLevel.NONE) {
             null
         } else {

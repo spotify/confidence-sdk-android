@@ -37,6 +37,9 @@ class EventSenderIntegrationTest {
         whenever(mockSharedPrefsEdit.putString(any(), any())).thenReturn(mockSharedPrefsEdit)
         doNothing().whenever(mockSharedPrefsEdit).apply()
         eventSender = null
+        // minBatchSizeFlushPolicy is a shared singleton: reset its count so
+        // events emitted by earlier tests can't trigger a flush in this one
+        minBatchSizeFlushPolicy.reset()
         for (file in directory.walkFiles()) {
             file.delete()
         }
@@ -57,9 +60,7 @@ class EventSenderIntegrationTest {
         )
         advanceUntilIdle()
         val eventStorage = EventStorageImpl(mockContext)
-        val files = directory.walkFiles().toList()
-        Assert.assertEquals(1, files.size)
-        val events = eventStorage.eventsFor(files.first())
+        val events = directory.walkFiles().toList().flatMap { eventStorage.eventsFor(it) }
         Assert.assertEquals(1, events.size)
         Assert.assertEquals(
             ConfidenceValue.String("override"),

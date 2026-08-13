@@ -37,6 +37,18 @@ class OpenFeatureTrackMapperTest {
     }
 
     @Test
+    fun trackingDetailsLongAndFloatValuesArePreserved() {
+        val longDetails = TrackingEventDetails(499L, ImmutableStructure())
+        assertEquals(ConfidenceValue.Integer(499), longDetails.toTrackingData()["value"])
+
+        val bigLongDetails = TrackingEventDetails(10_000_000_000L, ImmutableStructure())
+        assertEquals(ConfidenceValue.Double(1.0E10), bigLongDetails.toTrackingData()["value"])
+
+        val floatDetails = TrackingEventDetails(1.5f, ImmutableStructure())
+        assertEquals(ConfidenceValue.Double(1.5), floatDetails.toTrackingData()["value"])
+    }
+
+    @Test
     fun trackContextMapIncludesTargetingKey() {
         val context = ImmutableContext(
             targetingKey = "user-1",
