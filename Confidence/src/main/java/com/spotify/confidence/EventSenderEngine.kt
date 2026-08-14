@@ -41,8 +41,18 @@ internal class EventSenderEngineImpl(
     private val debugLogger: DebugLogger?,
     private val flushIntervalMillis: Long? = null
 ) : EventSenderEngine {
-    // Buffered so emit()/flush() can enqueue synchronously: every event accepted
-    // before stop() is drained to disk by the final flush.
+    // Main used Channel() (rendezvous, capacity 0) with suspending send() inside
+    // coroutineScope.launch. stop() only cancelled the scope, so in-flight emits
+    // could be lost.
+    //
+    // emit()/flush() now use trySend() on the caller thread so an event is either
+    // queued or rejected before stop() sets isStopped. stop() then closes this
+    // channel and joins writeJob to drain every queued event to disk.
+    //
+    // trySend on a rendezvous channel fails unless the consumer is already waiting,
+    // which would silently drop events whenever the writer is busy with disk I/O.
+    // UNLIMITED buffering guarantees trySend succeeds for all events accepted
+    // before stop(); see stopDrainsQueuedEventsBeforeUploading.
     private val writeReqChannel: Channel<EngineEvent> = Channel(Channel.UNLIMITED)
     private val sendChannel: Channel<String> = Channel()
     private val payloadMerger: PayloadMerger = PayloadMergerImpl(debugLogger)
