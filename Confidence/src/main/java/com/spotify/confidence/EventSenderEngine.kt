@@ -54,6 +54,7 @@ internal class EventSenderEngineImpl(
     // UNLIMITED buffering guarantees trySend succeeds for all events accepted
     // before stop(); see stopDrainsQueuedEventsBeforeUploading.
     private val writeReqChannel: Channel<EngineEvent> = Channel(Channel.UNLIMITED)
+
     // Conflated + trySend so the writer never suspends while signaling flush. A
     // rendezvous sendChannel.send() blocks the write loop during slow uploads
     // (uploadMutex held), preventing writeReqChannel drain before stop() times out.
