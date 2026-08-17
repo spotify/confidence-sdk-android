@@ -54,7 +54,12 @@ internal class EventSenderEngineImpl(
     // UNLIMITED buffering guarantees trySend succeeds for all events accepted
     // before stop(); see stopDrainsQueuedEventsBeforeUploading.
     private val writeReqChannel: Channel<EngineEvent> = Channel(Channel.UNLIMITED)
-    private val sendChannel: Channel<String> = Channel()
+    // Conflated + trySend so the writer never suspends while signaling flush. A
+    // rendezvous sendChannel.send() blocks the write loop during slow uploads
+    // (uploadMutex held), preventing writeReqChannel drain before stop() times out.
+    // Duplicate flush signals are harmless: uploadReadyBatches processes all
+    // ready files per invocation.
+    private val sendChannel: Channel<String> = Channel(Channel.CONFLATED)
     private val payloadMerger: PayloadMerger = PayloadMergerImpl(debugLogger)
 
     // Serializes read-upload-delete of ready files across the flush consumer,
@@ -93,7 +98,7 @@ internal class EventSenderEngineImpl(
                             message = "Flush policy $policy triggered to flush. Flushing."
                         )
                     }
-                    sendChannel.send(SEND_SIG)
+                    sendChannel.trySend(SEND_SIG)
                 }
             }
         }

@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.delay
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -78,6 +79,40 @@ class EventSenderEngineReliabilityTest {
         engine.stop()
 
         assertEquals(50, uploader.uploadedEventNames.size)
+    }
+
+    @Test
+    fun stopDrainsAllEventsWhenFlushPolicyBlocksWriter() {
+        val slowUploader = SlowEventUploader(uploadDelayMillis = 3_000)
+        val batchFlush = object : FlushPolicy {
+            private var count = 0
+            override fun reset() {
+                count = 0
+            }
+            override fun hit(event: EngineEvent) {
+                count++
+            }
+            override fun shouldFlush(): Boolean = count > 4
+        }
+        val engine = EventSenderEngineImpl(
+            eventStorage = storage,
+            clientSecret = "secret",
+            uploader = slowUploader,
+            flushPolicies = mutableListOf(batchFlush),
+            dispatcher = Dispatchers.IO,
+            sdkMetadata = SdkMetadata("id", "1.0"),
+            debugLogger = null
+        )
+
+        repeat(12) { engine.emit("event-$it", mapOf(), mapOf()) }
+        Thread.sleep(100)
+        engine.stop()
+
+        assertEquals(
+            "All 12 events should be written to storage before stop() returns",
+            12,
+            storage.storedEventCount()
+        )
     }
 
     @Test
@@ -162,6 +197,19 @@ class EventSenderEngineReliabilityTest {
         override fun onLowMemoryChannel() = kotlinx.coroutines.channels.Channel<List<java.io.File>>()
 
         override fun stop() {
+        }
+
+        fun storedEventCount(): Int = synchronized(this) {
+            currentEvents.size + readyEvents.values.sumOf { it.size }
+        }
+    }
+
+    private class SlowEventUploader(
+        private val uploadDelayMillis: Long
+    ) : EventSenderUploader {
+        override suspend fun upload(events: EventBatchRequest): Boolean {
+            delay(uploadDelayMillis)
+            return true
         }
     }
 }
