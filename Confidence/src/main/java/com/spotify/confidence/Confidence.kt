@@ -24,6 +24,7 @@ import kotlinx.coroutines.yield
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
+import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
@@ -386,6 +387,55 @@ object ConfidenceFactory {
         loggingLevel: LoggingLevel = LoggingLevel.WARN,
         timeoutMillis: Long = 10000,
         visitorIdContextKey: String = VISITOR_ID_CONTEXT_KEY
+    ): Confidence = create(
+        context = context,
+        clientSecret = clientSecret,
+        initialContext = initialContext,
+        region = region,
+        dispatcher = dispatcher,
+        loggingLevel = loggingLevel,
+        timeoutMillis = timeoutMillis,
+        visitorIdContextKey = visitorIdContextKey,
+        resolveBaseUrl = null
+    )
+
+    /**
+     * Create a Factory Confidence instance using a custom base URL for resolve and apply requests.
+     * The SDK appends `/v1/flags:resolve` and `/v1/flags:apply` to [resolveBaseUrl].
+     * Event tracking continues to use the Confidence events endpoint.
+     */
+    fun create(
+        context: Context,
+        clientSecret: String,
+        resolveBaseUrl: String,
+        initialContext: Map<String, ConfidenceValue> = mapOf(),
+        region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
+        dispatcher: CoroutineDispatcher = Dispatchers.IO,
+        loggingLevel: LoggingLevel = LoggingLevel.WARN,
+        timeoutMillis: Long = 10000,
+        visitorIdContextKey: String = VISITOR_ID_CONTEXT_KEY
+    ): Confidence = create(
+        context = context,
+        clientSecret = clientSecret,
+        initialContext = initialContext,
+        region = region,
+        dispatcher = dispatcher,
+        loggingLevel = loggingLevel,
+        timeoutMillis = timeoutMillis,
+        visitorIdContextKey = visitorIdContextKey,
+        resolveBaseUrl = getResolveBaseUrl(region, resolveBaseUrl)
+    )
+
+    private fun create(
+        context: Context,
+        clientSecret: String,
+        initialContext: Map<String, ConfidenceValue>,
+        region: ConfidenceRegion,
+        dispatcher: CoroutineDispatcher,
+        loggingLevel: LoggingLevel,
+        timeoutMillis: Long,
+        visitorIdContextKey: String,
+        resolveBaseUrl: HttpUrl?
     ): Confidence {
         val debugLogger: DebugLogger? = if (loggingLevel == LoggingLevel.NONE) {
             null
@@ -406,7 +456,8 @@ object ConfidenceFactory {
             clientSecret,
             telemetry,
             region,
-            dispatcher
+            dispatcher,
+            resolveBaseUrl
         )
         val flagResolver = RemoteFlagResolver(
             clientSecret = clientSecret,
@@ -417,6 +468,7 @@ object ConfidenceFactory {
                 .build(),
             dispatcher = dispatcher,
             telemetry = telemetry,
+            baseUrl = resolveBaseUrl,
             debugLogger = debugLogger
         )
 

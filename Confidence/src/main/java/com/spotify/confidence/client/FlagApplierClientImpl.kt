@@ -6,6 +6,7 @@ import com.spotify.confidence.Telemetry
 import com.spotify.confidence.client.network.ApplyFlagsInteractor
 import com.spotify.confidence.client.network.ApplyFlagsInteractorImpl
 import com.spotify.confidence.client.network.ApplyFlagsRequest
+import com.spotify.confidence.getResolveBaseUrl
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import okhttp3.Headers
@@ -16,7 +17,7 @@ internal class FlagApplierClientImpl : FlagApplierClient {
     private val clientSecret: String
     private val telemetry: Telemetry
     private val okHttpClient: OkHttpClient
-    private val baseUrl: String
+    private val baseUrl: HttpUrl
     private val headers: Headers
     private val clock: Clock
     private val dispatcher: CoroutineDispatcher
@@ -26,7 +27,8 @@ internal class FlagApplierClientImpl : FlagApplierClient {
         clientSecret: String,
         telemetry: Telemetry,
         region: ConfidenceRegion,
-        dispatcher: CoroutineDispatcher = Dispatchers.IO
+        dispatcher: CoroutineDispatcher = Dispatchers.IO,
+        resolveBaseUrl: HttpUrl? = null
     ) {
         this.clientSecret = clientSecret
         this.telemetry = telemetry
@@ -37,11 +39,7 @@ internal class FlagApplierClientImpl : FlagApplierClient {
             "Accept",
             "application/json"
         )
-        baseUrl = when (region) {
-            ConfidenceRegion.GLOBAL -> "https://resolver.confidence.dev"
-            ConfidenceRegion.EUROPE -> "https://resolver.eu.confidence.dev"
-            ConfidenceRegion.USA -> "https://resolver.us.confidence.dev"
-        }
+        baseUrl = getResolveBaseUrl(region, resolveBaseUrl?.toString())
         this.clock = Clock.CalendarBacked.systemUTC()
         this.dispatcher = dispatcher
 
@@ -68,13 +66,13 @@ internal class FlagApplierClientImpl : FlagApplierClient {
             "Accept",
             "application/json"
         )
-        this.baseUrl = baseUrl.toString()
+        this.baseUrl = baseUrl
         this.clock = clock
         this.dispatcher = dispatcher
 
         this.applyInteractor = ApplyFlagsInteractorImpl(
             httpClient = okHttpClient,
-            baseUrl = baseUrl.toString(),
+            baseUrl = baseUrl,
             dispatcher = dispatcher
         )
     }

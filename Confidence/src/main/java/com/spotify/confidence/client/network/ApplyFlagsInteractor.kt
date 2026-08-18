@@ -3,12 +3,14 @@ package com.spotify.confidence.client.network
 import com.spotify.confidence.client.AppliedFlag
 import com.spotify.confidence.client.Sdk
 import com.spotify.confidence.client.await
+import com.spotify.confidence.resolveEndpoint
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.Headers
+import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -21,7 +23,7 @@ internal interface ApplyFlagsInteractor {
 
 internal class ApplyFlagsInteractorImpl(
     private val httpClient: OkHttpClient,
-    private val baseUrl: String,
+    private val baseUrl: HttpUrl,
     private val dispatcher: CoroutineDispatcher
 ) : ApplyFlagsInteractor {
 
@@ -36,7 +38,7 @@ internal class ApplyFlagsInteractorImpl(
     override suspend fun invoke(request: ApplyFlagsRequest, extraHeaders: Map<String, String>): Response =
         withContext(dispatcher) {
             val requestBuilder = Request.Builder()
-                .url("$baseUrl/v1/flags:apply")
+                .url(baseUrl.resolveEndpoint("apply"))
                 .headers(headers)
                 .post(Json.encodeToString(request).toRequestBody())
 
