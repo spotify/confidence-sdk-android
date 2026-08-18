@@ -851,3 +851,4 @@ public final class com/spotify/confidence/serializers/ConfidenceValueSerializer 
 	public static final field INSTANCE Lcom/spotify/confidence/serializers/ConfidenceValueSerializer;
 	public synthetic fun selectDeserializer (Lkotlinx/serialization/json/JsonElement;)Lkotlinx/serialization/DeserializationStrategy;
 }
+
