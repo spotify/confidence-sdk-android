@@ -41,6 +41,8 @@ jobs:
         run: ./gradlew lintDebug
       - name: Run Ktlint
         run: ./gradlew ktlintCheck
+      - name: Run API check
+        run: ./gradlew apiCheck
 
       - name: Run build debug
         run: ./gradlew assembleDebug
