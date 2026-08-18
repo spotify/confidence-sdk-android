@@ -48,7 +48,7 @@ internal class RemoteFlagResolver(
         val response = withContext(dispatcher) {
             val jsonRequest = Json.encodeToString(request)
             val requestBuilder = Request.Builder()
-                .url(resolveBaseUrl.resolveEndpoint("resolve"))
+                .url(resolveBaseUrl.resolveEndpoint())
                 .headers(headers)
                 .post(jsonRequest.toRequestBody())
 

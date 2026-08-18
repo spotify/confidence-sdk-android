@@ -1,9 +1,9 @@
 package com.spotify.confidence.client.network
 
+import com.spotify.confidence.applyEndpoint
 import com.spotify.confidence.client.AppliedFlag
 import com.spotify.confidence.client.Sdk
 import com.spotify.confidence.client.await
-import com.spotify.confidence.resolveEndpoint
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -38,7 +38,7 @@ internal class ApplyFlagsInteractorImpl(
     override suspend fun invoke(request: ApplyFlagsRequest, extraHeaders: Map<String, String>): Response =
         withContext(dispatcher) {
             val requestBuilder = Request.Builder()
-                .url(baseUrl.resolveEndpoint("apply"))
+                .url(baseUrl.applyEndpoint())
                 .headers(headers)
                 .post(Json.encodeToString(request).toRequestBody())
 

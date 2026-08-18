@@ -15,7 +15,11 @@ internal fun getResolveBaseUrl(
     return baseUrl.trimEnd('/').toHttpUrl()
 }
 
-internal fun HttpUrl.resolveEndpoint(operation: String): HttpUrl =
+internal fun HttpUrl.resolveEndpoint(): HttpUrl = flagEndpoint("resolve")
+
+internal fun HttpUrl.applyEndpoint(): HttpUrl = flagEndpoint("apply")
+
+private fun HttpUrl.flagEndpoint(operation: String): HttpUrl =
     newBuilder()
         .addPathSegments("v1/flags:$operation")
         .build()

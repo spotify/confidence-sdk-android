@@ -56,13 +56,11 @@ Configure a custom resolve base URL to send flag resolve and apply requests to a
 val confidence = ConfidenceFactory.create(
     context = app.applicationContext,
     clientSecret = "<MY_SECRET>",
-    resolveBaseUrl = "http://10.0.2.2:8090"
+    resolveBaseUrl = "<my-custom-url>"
 )
 ```
 
 The SDK appends `/v1/flags:resolve` and `/v1/flags:apply` to this URL. Event tracking is not supported by the sidecar resolver and continues to use `https://events.confidence.dev/v1/events:publish`.
-
-`10.0.2.2` connects an Android emulator to a resolver running on the development machine. Local plain HTTP connections may also require an [Android network security configuration](https://developer.android.com/privacy-and-security/security-config) that permits cleartext traffic.
 
 #### Initialization strategy
 `initialisationStrategy` is a way to decide how Confidence should act when the provider is being set.
