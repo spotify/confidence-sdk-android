@@ -78,6 +78,7 @@ class EventSenderEngineReliabilityTest {
         repeat(50) { engine.emit("event-$it", mapOf(), mapOf()) }
         engine.stop()
 
+        awaitCondition { uploader.uploadedEventNames.size == 50 }
         assertEquals(50, uploader.uploadedEventNames.size)
     }
 
@@ -106,13 +107,40 @@ class EventSenderEngineReliabilityTest {
 
         repeat(12) { engine.emit("event-$it", mapOf(), mapOf()) }
         Thread.sleep(100)
+        val stopStartedAt = System.nanoTime()
         engine.stop()
 
+        val stopDurationMillis = (System.nanoTime() - stopStartedAt) / 1_000_000
+        assertTrue("stop() blocked for ${stopDurationMillis}ms", stopDurationMillis < 500)
+        awaitCondition { storage.storedEventCount() == 12 }
         assertEquals(
-            "All 12 events should be written to storage before stop() returns",
+            "All 12 events should be written to storage after stop() starts shutdown",
             12,
             storage.storedEventCount()
         )
+    }
+
+    @Test
+    fun stopDoesNotTimeOutDiskDrain() {
+        storage = RecordingEventStorage(writeDelayMillis = 2_100)
+        val engine = EventSenderEngineImpl(
+            eventStorage = storage,
+            clientSecret = "secret",
+            uploader = RetainingEventUploader(),
+            flushPolicies = mutableListOf(),
+            dispatcher = Dispatchers.IO,
+            sdkMetadata = SdkMetadata("id", "1.0"),
+            debugLogger = null
+        )
+
+        engine.emit("slow-write", mapOf(), mapOf())
+        val stopStartedAt = System.nanoTime()
+        engine.stop()
+
+        val stopDurationMillis = (System.nanoTime() - stopStartedAt) / 1_000_000
+        assertTrue("stop() blocked for ${stopDurationMillis}ms", stopDurationMillis < 500)
+        awaitCondition { storage.isStopped }
+        assertEquals(1, storage.storedEventCount())
     }
 
     @Test
@@ -166,18 +194,29 @@ class EventSenderEngineReliabilityTest {
 
     // Mimics EventStorageImpl: rollover always seals the current batch (even when
     // empty) and uploaded batches disappear when their file is deleted.
-    private class RecordingEventStorage : EventStorage {
+    private class RecordingEventStorage(
+        private val writeDelayMillis: Long = 0
+    ) : EventStorage {
         val currentEvents = mutableListOf<EngineEvent>()
         val readyEvents = mutableMapOf<String, List<EngineEvent>>()
         private var batchCounter = 0
+
+        @Volatile
+        var isStopped = false
+            private set
 
         override suspend fun rollover(): Unit = synchronized(this) {
             readyEvents["batch-${batchCounter++}"] = currentEvents.toList()
             currentEvents.clear()
         }
 
-        override suspend fun writeEvent(event: EngineEvent): Unit = synchronized(this) {
-            currentEvents.add(event)
+        override suspend fun writeEvent(event: EngineEvent) {
+            if (writeDelayMillis > 0) {
+                delay(writeDelayMillis)
+            }
+            synchronized(this) {
+                currentEvents.add(event)
+            }
         }
 
         override suspend fun batchReadyFiles(): List<java.io.File> = synchronized(this) {
@@ -197,6 +236,7 @@ class EventSenderEngineReliabilityTest {
         override fun onLowMemoryChannel() = kotlinx.coroutines.channels.Channel<List<java.io.File>>()
 
         override fun stop() {
+            isStopped = true
         }
 
         fun storedEventCount(): Int = synchronized(this) {
@@ -211,5 +251,20 @@ class EventSenderEngineReliabilityTest {
             delay(uploadDelayMillis)
             return true
         }
+    }
+
+    private class RetainingEventUploader : EventSenderUploader {
+        override suspend fun upload(events: EventBatchRequest): Boolean = false
+    }
+
+    private fun awaitCondition(
+        timeoutMillis: Long = 5_000,
+        condition: () -> Boolean
+    ) {
+        val deadline = System.nanoTime() + timeoutMillis * 1_000_000
+        while (!condition() && System.nanoTime() < deadline) {
+            Thread.sleep(10)
+        }
+        assertTrue("Condition was not met within ${timeoutMillis}ms", condition())
     }
 }

@@ -12,7 +12,7 @@ internal class PayloadMergerImpl(
                 message = "Event data contains a 'context' field: it replaces the evaluation context for this event",
                 isWarning = true
             )
-            message
+            message.toMap()
         } else {
             message + mapOf("context" to ConfidenceValue.Struct(context))
         }

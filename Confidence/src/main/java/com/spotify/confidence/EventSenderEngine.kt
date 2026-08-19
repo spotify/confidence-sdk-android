@@ -16,7 +16,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
@@ -41,25 +40,14 @@ internal class EventSenderEngineImpl(
     private val debugLogger: DebugLogger?,
     private val flushIntervalMillis: Long? = null
 ) : EventSenderEngine {
-    // Main used Channel() (rendezvous, capacity 0) with suspending send() inside
-    // coroutineScope.launch. stop() only cancelled the scope, so in-flight emits
-    // could be lost.
-    //
-    // emit()/flush() now use trySend() on the caller thread so an event is either
-    // queued or rejected before stop() sets isStopped. stop() then closes this
-    // channel and joins writeJob to drain every queued event to disk.
-    //
-    // trySend on a rendezvous channel fails unless the consumer is already waiting,
-    // which would silently drop events whenever the writer is busy with disk I/O.
-    // UNLIMITED buffering guarantees trySend succeeds for all events accepted
-    // before stop(); see stopDrainsQueuedEventsBeforeUploading.
+    // Buffering lets emit()/flush() enqueue without waiting for the disk writer.
+    // stop() closes the channel and the shutdown coroutine drains every accepted
+    // event before closing storage.
     private val writeReqChannel: Channel<EngineEvent> = Channel(Channel.UNLIMITED)
 
-    // Conflated + trySend so the writer never suspends while signaling flush. A
-    // rendezvous sendChannel.send() blocks the write loop during slow uploads
-    // (uploadMutex held), preventing writeReqChannel drain before stop() times out.
-    // Duplicate flush signals are harmless: uploadReadyBatches processes all
-    // ready files per invocation.
+    // Conflation preserves a flush signal while an upload is in progress without
+    // making the disk writer wait. Duplicate signals are unnecessary because each
+    // upload pass processes every ready batch.
     private val sendChannel: Channel<String> = Channel(Channel.CONFLATED)
     private val payloadMerger: PayloadMerger = PayloadMergerImpl(debugLogger)
 
@@ -157,22 +145,31 @@ internal class EventSenderEngineImpl(
         }
     }
 
+    @Synchronized
     override fun stop() {
+        if (isStopped) {
+            return
+        }
         isStopped = true
         flushIntervalJob?.cancel()
-        // Best effort: drain queued events to disk and attempt one final upload,
-        // bounded so stop() can never block the caller indefinitely. Batches that
-        // don't make it are sealed on disk and retried at next startup.
-        runBlocking(dispatcher) {
-            withTimeoutOrNull(STOP_TIMEOUT_MILLIS) {
-                writeReqChannel.close()
+        writeReqChannel.close()
+        // Shutdown stays on the engine dispatcher so callers, including Android's
+        // main thread, are not blocked by disk or network I/O.
+        coroutineScope.launch(exceptionHandler) {
+            try {
+                // Disk persistence is not timed out: every event accepted before
+                // stop() is sealed for delivery in this or a later session.
                 writeJob.join()
-                uploadReadyBatches(sealCurrentBatch = true)
+                eventStorage.rollover()
+                withTimeoutOrNull(STOP_UPLOAD_TIMEOUT_MILLIS) {
+                    uploadReadyBatches(sealCurrentBatch = false)
+                }
+            } finally {
+                coroutineScope.cancel()
+                eventStorage.stop()
+                debugLogger?.logMessage(message = "EventSenderEngine closed ")
             }
         }
-        coroutineScope.cancel()
-        eventStorage.stop()
-        debugLogger?.logMessage(message = "EventSenderEngine closed ")
     }
 
     private suspend fun uploadReadyBatches(sealCurrentBatch: Boolean) = uploadMutex.withLock {
@@ -218,7 +215,7 @@ internal class EventSenderEngineImpl(
 
     companion object {
         private const val SEND_SIG = "FLUSH"
-        private const val STOP_TIMEOUT_MILLIS = 2_000L
+        private const val STOP_UPLOAD_TIMEOUT_MILLIS = 2_000L
         private var Instance: EventSenderEngine? = null
         fun instance(
             context: Context,
