@@ -48,6 +48,20 @@ OpenFeatureAPI.setProviderAndWait(provider)
 Where `MY_SECRET` is an API key that can be generated in the [Confidence UI](https://confidence.spotify.com/console).
 The `loggingLevel` sets the verbosity level for logging to console. This can be useful while testing your integration with the Confidence SDK.
 
+#### Using a self-hosted local resolver SDK or sidecar resolver
+
+Configure a custom resolve base URL to send flag resolve and apply requests to a [Confidence local resolver](https://confidence.spotify.com/docs/flags/local-resolver) or self-hosted sidecar resolver:
+
+```kotlin
+val confidence = ConfidenceFactory.create(
+    context = app.applicationContext,
+    clientSecret = "<MY_SECRET>",
+    resolveBaseUrl = "<my-custom-url>"
+)
+```
+
+The SDK appends `/v1/flags:resolve` and `/v1/flags:apply` to this URL. Event tracking is not supported by the sidecar resolver and continues to use `https://events.confidence.dev/v1/events:publish`.
+
 #### Initialization strategy
 `initialisationStrategy` is a way to decide how Confidence should act when the provider is being set.
 - `ActivateAndFetchAsync` will make the last fetched flags available immediately and then trigger a background fetch to update the flags for future sessions.

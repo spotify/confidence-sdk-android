@@ -34,6 +34,7 @@ internal class RemoteFlagResolver(
     private val baseUrl: HttpUrl? = null,
     private val debugLogger: DebugLogger? = null
 ) : FlagResolver {
+    private val resolveBaseUrl = baseUrl ?: getResolveBaseUrl(region)
     private val headers = Headers.headersOf(
         "Content-Type",
         "application/json",
@@ -47,7 +48,7 @@ internal class RemoteFlagResolver(
         val response = withContext(dispatcher) {
             val jsonRequest = Json.encodeToString(request)
             val requestBuilder = Request.Builder()
-                .url("${baseUrl()}/v1/flags:resolve")
+                .url(resolveBaseUrl.resolveEndpoint())
                 .headers(headers)
                 .post(jsonRequest.toRequestBody())
 
@@ -97,12 +98,6 @@ internal class RemoteFlagResolver(
                 Result.Success(FlagResolution.EMPTY)
             }
         }
-    }
-
-    private fun baseUrl() = baseUrl ?: when (region) {
-        ConfidenceRegion.GLOBAL -> "https://resolver.confidence.dev"
-        ConfidenceRegion.EUROPE -> "https://resolver.eu.confidence.dev"
-        ConfidenceRegion.USA -> "https://resolver.us.confidence.dev"
     }
 
     private fun Response.toResolveFlags(): ResolveResponse {
