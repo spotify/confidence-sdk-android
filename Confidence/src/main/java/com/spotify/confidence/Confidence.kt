@@ -254,7 +254,15 @@ class Confidence internal constructor(
         eventName: String,
         data: ConfidenceFieldsType
     ) {
-        eventSenderEngine.emit(eventName, data, getContext())
+        track(eventName, data, getContext())
+    }
+
+    override fun track(
+        eventName: String,
+        data: ConfidenceFieldsType,
+        eventContext: Map<String, ConfidenceValue>
+    ) {
+        eventSenderEngine.emit(eventName, data, eventContext)
     }
 
     override fun flush() {
@@ -377,6 +385,7 @@ object ConfidenceFactory {
      * @param loggingLevel allows to print warnings or debugging information to the local console.
      * @param timeoutMillis sets a timeout for completing an HTTP call. Defaults to 10 seconds
      * @param visitorIdContextKey key to use for the visitor id in the context. Defaults to "visitor_id".
+     * @param eventFlushIntervalMillis optional periodic flush interval in milliseconds. Disabled by default.
      */
     fun create(
         context: Context,
@@ -386,7 +395,8 @@ object ConfidenceFactory {
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
         loggingLevel: LoggingLevel = LoggingLevel.WARN,
         timeoutMillis: Long = 10000,
-        visitorIdContextKey: String = VISITOR_ID_CONTEXT_KEY
+        visitorIdContextKey: String = VISITOR_ID_CONTEXT_KEY,
+        eventFlushIntervalMillis: Long? = null
     ): Confidence = create(
         context = context,
         clientSecret = clientSecret,
@@ -396,7 +406,8 @@ object ConfidenceFactory {
         loggingLevel = loggingLevel,
         timeoutMillis = timeoutMillis,
         visitorIdContextKey = visitorIdContextKey,
-        resolveBaseUrl = null
+        resolveBaseUrl = null,
+        eventFlushIntervalMillis = eventFlushIntervalMillis
     )
 
     /**
@@ -413,7 +424,8 @@ object ConfidenceFactory {
         dispatcher: CoroutineDispatcher = Dispatchers.IO,
         loggingLevel: LoggingLevel = LoggingLevel.WARN,
         timeoutMillis: Long = 10000,
-        visitorIdContextKey: String = VISITOR_ID_CONTEXT_KEY
+        visitorIdContextKey: String = VISITOR_ID_CONTEXT_KEY,
+        eventFlushIntervalMillis: Long? = null
     ): Confidence = create(
         context = context,
         clientSecret = clientSecret,
@@ -423,7 +435,8 @@ object ConfidenceFactory {
         loggingLevel = loggingLevel,
         timeoutMillis = timeoutMillis,
         visitorIdContextKey = visitorIdContextKey,
-        resolveBaseUrl = getResolveBaseUrl(region, resolveBaseUrl)
+        resolveBaseUrl = getResolveBaseUrl(region, resolveBaseUrl),
+        eventFlushIntervalMillis = eventFlushIntervalMillis
     )
 
     private fun create(
@@ -435,8 +448,12 @@ object ConfidenceFactory {
         loggingLevel: LoggingLevel,
         timeoutMillis: Long,
         visitorIdContextKey: String,
-        resolveBaseUrl: HttpUrl?
+        resolveBaseUrl: HttpUrl?,
+        eventFlushIntervalMillis: Long? = null
     ): Confidence {
+        require(eventFlushIntervalMillis == null || eventFlushIntervalMillis > 0) {
+            "eventFlushIntervalMillis must be positive, or null to disable periodic flushing"
+        }
         val debugLogger: DebugLogger? = if (loggingLevel == LoggingLevel.NONE) {
             null
         } else {
@@ -450,7 +467,8 @@ object ConfidenceFactory {
             flushPolicies = listOf(minBatchSizeFlushPolicy),
             sdkMetadata = sdkMetadata,
             dispatcher = dispatcher,
-            debugLogger = debugLogger
+            debugLogger = debugLogger,
+            flushIntervalMillis = eventFlushIntervalMillis
         )
         val flagApplierClient = FlagApplierClientImpl(
             clientSecret,

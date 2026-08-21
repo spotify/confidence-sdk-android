@@ -2,7 +2,6 @@ package com.spotify.confidence
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.spotify.confidence.ConfidenceError.InvalidContextInMessage
 import com.spotify.confidence.client.SdkMetadata
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -38,20 +37,35 @@ class EventSenderIntegrationTest {
         whenever(mockSharedPrefsEdit.putString(any(), any())).thenReturn(mockSharedPrefsEdit)
         doNothing().whenever(mockSharedPrefsEdit).apply()
         eventSender = null
+        // minBatchSizeFlushPolicy is a shared singleton: reset its count so
+        // events emitted by earlier tests can't trigger a flush in this one
+        minBatchSizeFlushPolicy.reset()
         for (file in directory.walkFiles()) {
             file.delete()
         }
     }
 
-    @Test(expected = InvalidContextInMessage::class)
-    fun context_in_message_throws() = runTest {
+    @Test
+    fun context_in_message_overrides_evaluation_context() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val confidence = ConfidenceFactory.create(
             mockContext,
             clientSecret,
             dispatcher = testDispatcher
         )
-        confidence.track("test", mapOf("context" to ConfidenceValue.Integer(1)))
+        confidence.track(
+            eventName = "test",
+            data = mapOf("context" to ConfidenceValue.String("override")),
+            eventContext = mapOf("a" to ConfidenceValue.Integer(1))
+        )
+        advanceUntilIdle()
+        val eventStorage = EventStorageImpl(mockContext)
+        val events = directory.walkFiles().toList().flatMap { eventStorage.eventsFor(it) }
+        Assert.assertEquals(1, events.size)
+        Assert.assertEquals(
+            ConfidenceValue.String("override"),
+            events.first().payload["context"]
+        )
     }
 
     @Test
