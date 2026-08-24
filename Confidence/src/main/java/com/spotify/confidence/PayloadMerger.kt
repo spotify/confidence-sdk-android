@@ -12,9 +12,19 @@ internal class PayloadMergerImpl(
                 message = "Event data contains a 'context' field: it replaces the evaluation context for this event",
                 isWarning = true
             )
-            message.toMap()
+            message.snapshot()
         } else {
-            message.toMap() + mapOf("context" to ConfidenceValue.Struct(context.toMap()))
+            message.snapshot() + mapOf("context" to ConfidenceValue.Struct(context.snapshot()))
         }
     }
+}
+
+private fun ConfidenceStruct.snapshot(): ConfidenceStruct = mapValues { (_, value) -> value.snapshot() }
+
+private fun ConfidenceValue.snapshot(): ConfidenceValue = when (this) {
+    is ConfidenceValue.Struct -> ConfidenceValue.Struct(map.snapshot())
+    is ConfidenceValue.List -> ConfidenceValue.List(list.map { it.snapshot() })
+    is ConfidenceValue.Date -> ConfidenceValue.Date(java.util.Date(date.time))
+    is ConfidenceValue.Timestamp -> ConfidenceValue.Timestamp(java.util.Date(dateTime.time))
+    else -> this
 }
