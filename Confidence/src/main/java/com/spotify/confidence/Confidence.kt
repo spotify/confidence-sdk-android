@@ -257,7 +257,7 @@ class Confidence internal constructor(
         track(eventName, data, getContext())
     }
 
-    override fun track(
+    fun track(
         eventName: String,
         data: ConfidenceFieldsType,
         eventContext: Map<String, ConfidenceValue>
