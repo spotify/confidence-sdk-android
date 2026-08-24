@@ -42,4 +42,25 @@ class PayloadMergerTest {
             )
         )
     }
+
+    @Test
+    fun `merged payload snapshots message and context`() {
+        val payloadMerger = PayloadMergerImpl()
+        val context: MutableMap<String, ConfidenceValue> = mutableMapOf("a" to ConfidenceValue.Integer(1))
+        val message: MutableMap<String, ConfidenceValue> = mutableMapOf("b" to ConfidenceValue.Integer(2))
+        val result = payloadMerger(context, message)
+        context["a"] = ConfidenceValue.Integer(3)
+        context["new"] = ConfidenceValue.String("late context")
+        message["b"] = ConfidenceValue.Integer(4)
+        message["new"] = ConfidenceValue.String("late message")
+
+        assert(
+            result == mapOf(
+                "b" to ConfidenceValue.Integer(2),
+                "context" to ConfidenceValue.Struct(
+                    mapOf("a" to ConfidenceValue.Integer(1))
+                )
+            )
+        )
+    }
 }

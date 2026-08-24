@@ -14,7 +14,7 @@ internal class PayloadMergerImpl(
             )
             message.toMap()
         } else {
-            message + mapOf("context" to ConfidenceValue.Struct(context))
+            message.toMap() + mapOf("context" to ConfidenceValue.Struct(context.toMap()))
         }
     }
 }
