@@ -16,6 +16,15 @@ import org.junit.Test
 
 class ConfidenceFeatureProviderTrackTest {
     @Test
+    fun shutdownStopsConfidence() {
+        val confidence = mockk<Confidence>(relaxed = true)
+
+        ConfidenceFeatureProvider.create(confidence).shutdown()
+
+        verify(exactly = 1) { confidence.stop() }
+    }
+
+    @Test
     fun trackForwardsMergedContextAndMappedData() {
         val confidence = mockk<Confidence>(relaxed = true)
         every { confidence.getContext() } returns mapOf("plan" to ConfidenceValue.String("free"))
