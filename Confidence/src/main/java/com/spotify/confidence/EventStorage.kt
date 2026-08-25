@@ -14,6 +14,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
 import java.io.File
+import java.io.FileOutputStream
 import java.io.OutputStream
 
 internal interface EventStorage {
@@ -115,7 +116,8 @@ internal class EventStorageImpl(
         outputStream?.close()
         currentFile = latestWriteFile()
             ?: getFileWithName("events-${System.currentTimeMillis()}")
-        outputStream = currentFile.outputStream()
+        // Append so events persisted by a previous session are not truncated
+        outputStream = FileOutputStream(currentFile, true)
     }
     private fun getFileWithName(name: String): File {
         val directory = context.getDir(DIRECTORY, Context.MODE_PRIVATE)

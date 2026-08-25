@@ -27,5 +27,9 @@ class ConfidenceError {
         override val message: String
     ) : Error(message)
 
+    @Deprecated(
+        "No longer thrown: a 'context' field in event data now overrides the " +
+            "evaluation context for that event instead of failing"
+    )
     class InvalidContextInMessage : Error("Field 'context' is not allowed in event's data")
 }

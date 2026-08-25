@@ -53,6 +53,7 @@ class ConfidenceFeatureProvider private constructor(
     }
 
     override fun shutdown() {
+        confidence.stop()
     }
 
     override suspend fun onContextSet(
@@ -113,7 +114,15 @@ class ConfidenceFeatureProvider private constructor(
     }
 
     override fun track(trackingEventName: String, context: EvaluationContext?, details: TrackingEventDetails?) {
-        confidence.track(trackingEventName, details?.toConfidenceValue() ?: emptyMap())
+        val eventContext = mergeEventContext(
+            sessionContext = confidence.getContext(),
+            openFeatureContext = context.toTrackContextMap()
+        )
+        confidence.track(
+            eventName = trackingEventName,
+            data = details.toTrackingData(),
+            eventContext = eventContext
+        )
     }
 
     private fun <T> generateEvaluation(
@@ -155,16 +164,6 @@ class ConfidenceFeatureProvider private constructor(
             )
         }
     }
-}
-
-private fun TrackingEventDetails.toConfidenceValue(): Map<String, ConfidenceValue> = mapOf(
-    "value" to (this.value?.toConfidenceValue() ?: ConfidenceValue.Null)
-) + this.structure.asMap().mapValues { it.value.toConfidenceValue() }
-
-private fun Number.toConfidenceValue(): ConfidenceValue = when (this) {
-    is Int -> ConfidenceValue.Integer(this)
-    is Double -> ConfidenceValue.Double(this)
-    else -> ConfidenceValue.Null
 }
 
 internal fun Value.toConfidenceValue(): ConfidenceValue = when (this) {
