@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.10](https://github.com/spotify/confidence-sdk-android/compare/0.6.9...0.6.10) (2026-08-25)
+
+
+### ✨ New Features
+
+* OpenFeature track and event delivery reliability ([#252](https://github.com/spotify/confidence-sdk-android/issues/252)) ([6fdd5b4](https://github.com/spotify/confidence-sdk-android/commit/6fdd5b4ab7d84a0ba5b6284f60ccda8b6c31836b))
+
 ## [0.6.9](https://github.com/spotify/confidence-sdk-android/compare/0.6.8...0.6.9) (2026-08-19)
 
 
