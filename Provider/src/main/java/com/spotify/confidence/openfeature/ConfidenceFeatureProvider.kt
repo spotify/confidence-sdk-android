@@ -18,7 +18,12 @@ import dev.openfeature.kotlin.sdk.ProviderMetadata
 import dev.openfeature.kotlin.sdk.Reason
 import dev.openfeature.kotlin.sdk.TrackingEventDetails
 import dev.openfeature.kotlin.sdk.Value
+import dev.openfeature.kotlin.sdk.events.OpenFeatureProviderEvents
 import dev.openfeature.kotlin.sdk.exceptions.OpenFeatureError
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import java.util.Date
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -35,20 +40,32 @@ class ConfidenceFeatureProvider private constructor(
     private val initialisationStrategy: InitialisationStrategy,
     private val confidence: Confidence
 ) : FeatureProvider {
+    private val providerEvents = MutableSharedFlow<OpenFeatureProviderEvents>(replay = 1)
 
     override suspend fun initialize(initialContext: EvaluationContext?) {
-        initialContext?.toConfidenceContext()?.let {
-            confidence.putContextLocal(it.map)
-        }
+        try {
+            initialContext?.toConfidenceContext()?.let {
+                confidence.putContextLocal(it.map)
+            }
 
-        when (initialisationStrategy) {
-            InitialisationStrategy.ActivateAndFetchAsync -> {
-                confidence.activate()
-                confidence.asyncFetch()
+            when (initialisationStrategy) {
+                InitialisationStrategy.ActivateAndFetchAsync -> {
+                    confidence.activate()
+                    confidence.asyncFetch()
+                }
+                InitialisationStrategy.FetchAndActivate -> {
+                    confidence.fetchAndActivate()
+                }
             }
-            InitialisationStrategy.FetchAndActivate -> {
-                confidence.fetchAndActivate()
-            }
+            providerEvents.emit(OpenFeatureProviderEvents.ProviderReady())
+        } catch (e: OpenFeatureError) {
+            providerEvents.emit(e.toProviderErrorEvent())
+            throw e
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            providerEvents.emit(e.toProviderErrorEvent())
+            throw e
         }
     }
 
@@ -56,14 +73,33 @@ class ConfidenceFeatureProvider private constructor(
         confidence.stop()
     }
 
+    override fun observe(): Flow<OpenFeatureProviderEvents> = providerEvents.asSharedFlow()
+
     override suspend fun onContextSet(
         oldContext: EvaluationContext?,
         newContext: EvaluationContext
     ) {
-        val context = newContext.toConfidenceContext()
-        val removedKeys = oldContext?.asMap()?.keys?.minus(newContext.asMap().keys) ?: emptySet()
-        confidence.putContext(context.map, removedKeys.toList())
-        confidence.awaitReconciliation()
+        try {
+            val context = newContext.toConfidenceContext()
+            val removedKeys = oldContext?.asMap()?.keys?.minus(newContext.asMap().keys) ?: emptySet()
+            when (val result = confidence.putContextAndWait(context.map, removedKeys.toList())) {
+                is com.spotify.confidence.Result.Success -> {
+                    // This should be ContextChanged once the Kotlin SDK exposes that event.
+                    providerEvents.emit(OpenFeatureProviderEvents.ProviderReady())
+                }
+                is com.spotify.confidence.Result.Failure -> {
+                    providerEvents.emit(result.error.toProviderStaleEvent())
+                }
+            }
+        } catch (e: OpenFeatureError) {
+            providerEvents.emit(e.toProviderErrorEvent())
+            throw e
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            providerEvents.emit(e.toProviderErrorEvent())
+            throw e
+        }
     }
 
     override fun getBooleanEvaluation(
@@ -228,6 +264,29 @@ private fun ErrorCode?.toOFErrorCode() = when (this) {
     ErrorCode.FLAG_NOT_FOUND -> dev.openfeature.kotlin.sdk.exceptions.ErrorCode.FLAG_NOT_FOUND
     ErrorCode.INVALID_CONTEXT -> dev.openfeature.kotlin.sdk.exceptions.ErrorCode.INVALID_CONTEXT
     else -> dev.openfeature.kotlin.sdk.exceptions.ErrorCode.PROVIDER_NOT_READY
+}
+
+private fun OpenFeatureError.toProviderErrorEvent(): OpenFeatureProviderEvents.ProviderError {
+    return OpenFeatureProviderEvents.ProviderError(
+        eventDetails = OpenFeatureProviderEvents.EventDetails(
+            message = message,
+            errorCode = errorCode()
+        ),
+        error = this
+    )
+}
+
+private fun Exception.toProviderErrorEvent(): OpenFeatureProviderEvents.ProviderError {
+    val error = OpenFeatureError.GeneralError(message ?: "Unknown error")
+    return error.toProviderErrorEvent()
+}
+
+private fun Throwable.toProviderStaleEvent(): OpenFeatureProviderEvents.ProviderStale {
+    return OpenFeatureProviderEvents.ProviderStale(
+        eventDetails = OpenFeatureProviderEvents.EventDetails(
+            message = message
+        )
+    )
 }
 
 sealed interface InitialisationStrategy {

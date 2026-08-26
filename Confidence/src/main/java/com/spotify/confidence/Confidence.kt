@@ -43,7 +43,8 @@ class Confidence internal constructor(
     private val parent: ConfidenceContextProvider? = null,
     private val region: ConfidenceRegion = ConfidenceRegion.GLOBAL,
     private val debugLogger: DebugLogger?,
-    internal val telemetry: Telemetry = Telemetry(SDK_ID, Telemetry.Library.CONFIDENCE, SDK_VERSION)
+    internal val telemetry: Telemetry = Telemetry(SDK_ID, Telemetry.Library.CONFIDENCE, SDK_VERSION),
+    private val reconciliationTimeoutMillis: Long = 10000
 ) : Contextual, EventSender {
     private val removedKeys = mutableListOf<String>()
     private val contextMap = MutableStateFlow(initialContext)
@@ -67,7 +68,7 @@ class Confidence internal constructor(
         }
     }
 
-    suspend fun awaitReconciliation(timeoutMillis: Long = 5000) {
+    suspend fun awaitReconciliation(timeoutMillis: Long = reconciliationTimeoutMillis) {
         if (timeoutMillis <= 0) error("timeoutMillis need to be larger than 0")
         debugLogger?.logMessage("reconciliation started")
         yield() // will make sure that we respect other coroutine scopes triggered before this
@@ -144,20 +145,14 @@ class Confidence internal constructor(
 
     @Synchronized
     override fun putContext(key: String, value: ConfidenceValue) {
-        val map = contextMap.value.toMutableMap()
-        map[key] = value
-        contextMap.value = map
+        updateContext(mapOf(key to value), emptyList(), "PutContext")
         triggerNewFlagFetch()
-        debugLogger?.logContext("PutContext", contextMap.value)
     }
 
     @Synchronized
     override fun putContext(context: Map<String, ConfidenceValue>) {
-        val map = contextMap.value.toMutableMap()
-        map += context
-        contextMap.value = map
+        updateContext(context, emptyList(), "PutContext")
         triggerNewFlagFetch()
-        debugLogger?.logContext("PutContext", contextMap.value)
     }
 
     /**
@@ -167,11 +162,8 @@ class Confidence internal constructor(
      */
     @Synchronized
     fun putContextLocal(context: Map<String, ConfidenceValue>) {
-        val map = contextMap.value.toMutableMap()
-        map += context
-        contextMap.value = map
+        updateContext(context, emptyList(), "putContextLocal")
         // No triggering of new flag fetch
-        debugLogger?.logContext("putContextLocal", contextMap.value)
     }
 
     /**
@@ -186,6 +178,16 @@ class Confidence internal constructor(
      */
     @Synchronized
     fun putContext(context: Map<String, ConfidenceValue>, removedKeys: List<String>) {
+        updateContext(context, removedKeys, "PutContext")
+        triggerNewFlagFetch()
+    }
+
+    @Synchronized
+    private fun updateContext(
+        context: Map<String, ConfidenceValue>,
+        removedKeys: Collection<String>,
+        logAction: String
+    ) {
         val map = contextMap.value.toMutableMap()
         map += context
         for (key in removedKeys) {
@@ -193,8 +195,60 @@ class Confidence internal constructor(
         }
         this.removedKeys.addAll(removedKeys)
         contextMap.value = map
-        triggerNewFlagFetch()
-        debugLogger?.logContext("PutContext", contextMap.value)
+        debugLogger?.logContext(logAction, contextMap.value)
+    }
+
+    /**
+     * Mutates context, waits for flags to be fetched for the updated context, and activates them.
+     *
+     * Returns [Result.Failure] when reconciliation fails or times out. Any previously activated cached
+     * flags remain available for stale evaluation.
+     */
+    suspend fun putContextAndWait(
+        context: Map<String, ConfidenceValue>,
+        removedKeys: List<String> = emptyList(),
+        timeoutMillis: Long = reconciliationTimeoutMillis
+    ): Result<Unit> = updateContextAndWait(context, removedKeys, "PutContext", timeoutMillis)
+
+    /**
+     * Removes context keys, waits for flags to be fetched for the updated context, and activates them.
+     *
+     * Returns [Result.Failure] when reconciliation fails or times out. Any previously activated cached
+     * flags remain available for stale evaluation.
+     */
+    suspend fun removeContextAndWait(
+        keys: Collection<String>,
+        timeoutMillis: Long = reconciliationTimeoutMillis
+    ): Result<Unit> = updateContextAndWait(emptyMap(), keys, "RemoveContext", timeoutMillis)
+
+    private suspend fun updateContextAndWait(
+        context: Map<String, ConfidenceValue>,
+        removedKeys: Collection<String>,
+        logAction: String,
+        timeoutMillis: Long
+    ): Result<Unit> = kotlinx.coroutines.withContext(dispatcher) {
+        if (timeoutMillis <= 0) error("timeoutMillis need to be larger than 0")
+        currentFetchJob?.cancel().also {
+            currentFetchJob = null
+        }
+        updateContext(context, removedKeys, logAction)
+        val fetchResult = try {
+            withTimeout(timeoutMillis) {
+                fetchAndStore(failOnStaleResponse = true)
+            }
+        } catch (e: TimeoutCancellationException) {
+            debugLogger?.logMessage("timed out after $timeoutMillis")
+            Result.Failure(e)
+        }
+        try {
+            activate()
+            fetchResult
+        } catch (e: Exception) {
+            when (fetchResult) {
+                is Result.Success -> Result.Failure(e)
+                is Result.Failure -> fetchResult
+            }
+        }
     }
 
     private fun triggerNewFlagFetch() {
@@ -213,14 +267,8 @@ class Confidence internal constructor(
 
     @Synchronized
     override fun removeContext(keys: Collection<String>) {
-        val map = contextMap.value.toMutableMap()
-        for (key in keys) {
-            map.remove(key)
-        }
-        removedKeys.addAll(keys)
-        contextMap.value = map
+        updateContext(emptyMap(), keys, "RemoveContext")
         triggerNewFlagFetch()
-        debugLogger?.logContext("RemoveContext", contextMap.value)
     }
 
     override fun getContext(): Map<String, ConfidenceValue> =
@@ -234,18 +282,19 @@ class Confidence internal constructor(
     }
 
     override fun withContext(context: Map<String, ConfidenceValue>): EventSender = Confidence(
-        clientSecret,
-        dispatcher,
-        eventSenderEngine,
-        diskStorage,
-        flagResolver,
-        cache,
-        mapOf(),
-        flagApplierClient,
-        this,
-        region,
-        debugLogger,
-        telemetry
+        clientSecret = clientSecret,
+        dispatcher = dispatcher,
+        eventSenderEngine = eventSenderEngine,
+        diskStorage = diskStorage,
+        flagResolver = flagResolver,
+        cache = cache,
+        initialContext = mapOf(),
+        flagApplierClient = flagApplierClient,
+        parent = this,
+        region = region,
+        debugLogger = debugLogger,
+        telemetry = telemetry,
+        reconciliationTimeoutMillis = reconciliationTimeoutMillis
     ).also {
         it.putContext(context)
     }
@@ -276,29 +325,49 @@ class Confidence internal constructor(
         }
     }
 
-    private fun fetch(): Job = coroutineScope.launch(networkExceptionHandler) {
+    private suspend fun fetchAndStore(failOnStaleResponse: Boolean = false): Result<Unit> {
         try {
-            val resolveResponse = resolve(listOf())
-            if (resolveResponse is Result.Success) {
-                // we store the flag anyways except when the response was not modified
-                if (resolveResponse.data != FlagResolution.EMPTY) {
-                    // Discard stale responses: if context changed during the
-                    // in-flight request, the response is for an outdated context
-                    if (resolveResponse.data.context == getContext()) {
-                        diskStorage.store(resolveResponse.data)
-                    } else {
-                        debugLogger?.logMessage(
-                            "Discarding stale resolve response: " +
-                                "context changed during in-flight request",
-                            isWarning = true
-                        )
+            return when (val resolveResponse = resolve(listOf())) {
+                is Result.Success -> {
+                    val staleResponse = resolveResponse.data != FlagResolution.EMPTY &&
+                        resolveResponse.data.context != getContext()
+                    when {
+                        resolveResponse.data == FlagResolution.EMPTY -> Result.Success(Unit)
+                        staleResponse -> {
+                            val message = "Discarding stale resolve response: " +
+                                "context changed during in-flight request"
+                            debugLogger?.logMessage(message, isWarning = true)
+                            if (failOnStaleResponse) {
+                                Result.Failure(IllegalStateException(message))
+                            } else {
+                                Result.Success(Unit)
+                            }
+                        }
+                        else -> {
+                            diskStorage.store(resolveResponse.data)
+                            Result.Success(Unit)
+                        }
                     }
                 }
+                is Result.Failure -> resolveResponse
             }
         } catch (e: ParseError) {
-            throw ParseError(e.message)
+            return Result.Failure(e)
         } catch (e: HttpError) {
+            return Result.Failure(e)
+        } catch (e: java.util.concurrent.CancellationException) {
             throw e
+        } catch (e: Exception) {
+            return Result.Failure(e)
+        }
+    }
+
+    private fun fetch(): Job = coroutineScope.launch(networkExceptionHandler) {
+        when (val result = fetchAndStore()) {
+            is Result.Success -> Unit
+            is Result.Failure -> {
+                throw result.error
+            }
         }
     }
 
@@ -568,7 +637,8 @@ object ConfidenceFactory {
             diskStorage = FileDiskStorage.create(context),
             flagApplierClient = flagApplierClient,
             debugLogger = debugLogger,
-            telemetry = telemetry
+            telemetry = telemetry,
+            reconciliationTimeoutMillis = timeoutMillis
         )
     }
 }

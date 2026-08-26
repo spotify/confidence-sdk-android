@@ -15,7 +15,7 @@ okHttp = "4.12.0"
 kotlinxSerialization = "1.6.0"
 
 # Provider
-openFeatureSDK = "0.6.2"
+openFeatureSDK = "0.8.0"
 
 # Sample app
 activityCompose = "1.3.1"
