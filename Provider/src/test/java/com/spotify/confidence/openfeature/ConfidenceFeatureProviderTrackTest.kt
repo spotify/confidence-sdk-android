@@ -6,13 +6,21 @@ import dev.openfeature.kotlin.sdk.ImmutableContext
 import dev.openfeature.kotlin.sdk.ImmutableStructure
 import dev.openfeature.kotlin.sdk.TrackingEventDetails
 import dev.openfeature.kotlin.sdk.Value
+import dev.openfeature.kotlin.sdk.events.OpenFeatureProviderEvents
+import dev.openfeature.kotlin.sdk.exceptions.ErrorCode
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
+import com.spotify.confidence.Result as ConfidenceResult
 
 class ConfidenceFeatureProviderTrackTest {
     @Test
@@ -22,6 +30,99 @@ class ConfidenceFeatureProviderTrackTest {
         ConfidenceFeatureProvider.create(confidence).shutdown()
 
         verify(exactly = 1) { confidence.stop() }
+    }
+
+    @Test
+    fun initializeEmitsProviderReady() = runTest {
+        val confidence = mockk<Confidence>(relaxed = true)
+        val provider = ConfidenceFeatureProvider.create(confidence)
+
+        provider.initialize(
+            ImmutableContext(
+                targetingKey = "user-1",
+                attributes = mapOf("country" to Value.String("SE"))
+            )
+        )
+
+        assertTrue(provider.observe().first() is OpenFeatureProviderEvents.ProviderReady)
+        verify {
+            confidence.putContextLocal(
+                match {
+                    it["targeting_key"] == ConfidenceValue.String("user-1") &&
+                        it["country"] == ConfidenceValue.String("SE")
+                }
+            )
+        }
+        coVerify { confidence.fetchAndActivate() }
+    }
+
+    @Test
+    fun initializeEmitsProviderErrorBeforeThrowing() = runTest {
+        val confidence = mockk<Confidence>(relaxed = true)
+        val error = IllegalStateException("boom")
+        coEvery { confidence.fetchAndActivate() } throws error
+        val provider = ConfidenceFeatureProvider.create(confidence)
+
+        try {
+            provider.initialize(null)
+            fail("Expected initialization to throw")
+        } catch (e: IllegalStateException) {
+            assertEquals(error, e)
+        }
+
+        val event = provider.observe().first()
+        assertTrue(event is OpenFeatureProviderEvents.ProviderError)
+        event as OpenFeatureProviderEvents.ProviderError
+        assertEquals("boom", event.eventDetails!!.message)
+        assertEquals(ErrorCode.GENERAL, event.eventDetails!!.errorCode)
+    }
+
+    @Test
+    fun onContextSetEmitsProviderReadyAfterReconciliation() = runTest {
+        val confidence = mockk<Confidence>(relaxed = true)
+        coEvery { confidence.putContextAndWait(any(), any()) } returns ConfidenceResult.Success(Unit)
+        val provider = ConfidenceFeatureProvider.create(confidence)
+
+        provider.onContextSet(
+            oldContext = ImmutableContext(attributes = mapOf("plan" to Value.String("free"))),
+            newContext = ImmutableContext(
+                targetingKey = "user-1",
+                attributes = mapOf("country" to Value.String("SE"))
+            )
+        )
+
+        assertTrue(provider.observe().first() is OpenFeatureProviderEvents.ProviderReady)
+        coVerify {
+            confidence.putContextAndWait(
+                match {
+                    it["targeting_key"] == ConfidenceValue.String("user-1") &&
+                        it["country"] == ConfidenceValue.String("SE")
+                },
+                listOf("plan")
+            )
+        }
+    }
+
+    @Test
+    fun onContextSetEmitsProviderStaleWhenReconciliationFails() = runTest {
+        val confidence = mockk<Confidence>(relaxed = true)
+        coEvery {
+            confidence.putContextAndWait(any(), any())
+        } returns ConfidenceResult.Failure(IllegalStateException("fetch failed"))
+        val provider = ConfidenceFeatureProvider.create(confidence)
+
+        provider.onContextSet(
+            oldContext = ImmutableContext(attributes = mapOf("plan" to Value.String("free"))),
+            newContext = ImmutableContext(
+                targetingKey = "user-1",
+                attributes = mapOf("country" to Value.String("SE"))
+            )
+        )
+
+        val event = provider.observe().first()
+        assertTrue(event is OpenFeatureProviderEvents.ProviderStale)
+        event as OpenFeatureProviderEvents.ProviderStale
+        assertEquals("fetch failed", event.eventDetails!!.message)
     }
 
     @Test

@@ -253,4 +253,147 @@ internal class ActivateAndFetchAsyncRaceConditionTest {
             storedResolution
         )
     }
+
+    @Test
+    fun testPutContextAndWaitReturnsSuccessAndActivatesFetchedFlags() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val context = mapOf("targeting_key" to ConfidenceValue.String("user-new"))
+
+        val flagResolver = object : FlagResolver {
+            override suspend fun resolve(
+                flags: List<String>,
+                context: Map<String, ConfidenceValue>
+            ): Result<FlagResolution> {
+                return Result.Success(
+                    FlagResolution(
+                        context,
+                        listOf(
+                            ResolvedFlag(
+                                "test-flag",
+                                "flags/test-flag/variants/variant-1",
+                                mutableMapOf("mystring" to ConfidenceValue.String("value-new")),
+                                ResolveReason.RESOLVE_REASON_MATCH,
+                                shouldApply = true
+                            )
+                        ),
+                        "token1"
+                    )
+                )
+            }
+        }
+
+        val confidence = getConfidence(
+            testDispatcher,
+            flagResolver = flagResolver
+        )
+        whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
+
+        val result = confidence.putContextAndWait(context)
+
+        TestCase.assertTrue(result is Result.Success)
+        val eval = confidence.getFlag("test-flag.mystring", "default")
+        TestCase.assertEquals("value-new", eval.value)
+        TestCase.assertEquals(ResolveReason.RESOLVE_REASON_MATCH, eval.reason)
+    }
+
+    @Test
+    fun testPutContextAndWaitReturnsFailureAndKeepsStaleCacheWhenFetchFails() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val context1 = mapOf("targeting_key" to ConfidenceValue.String("user-old"))
+        val context2 = mapOf("targeting_key" to ConfidenceValue.String("user-new"))
+
+        val flagResolver = object : FlagResolver {
+            override suspend fun resolve(
+                flags: List<String>,
+                context: Map<String, ConfidenceValue>
+            ): Result<FlagResolution> {
+                if (context["targeting_key"] == ConfidenceValue.String("user-new")) {
+                    return Result.Failure(IllegalStateException("fetch failed"))
+                }
+                return Result.Success(
+                    FlagResolution(
+                        context,
+                        listOf(
+                            ResolvedFlag(
+                                "test-flag",
+                                "flags/test-flag/variants/variant-1",
+                                mutableMapOf("mystring" to ConfidenceValue.String("value-old")),
+                                ResolveReason.RESOLVE_REASON_MATCH,
+                                shouldApply = true
+                            )
+                        ),
+                        "token1"
+                    )
+                )
+            }
+        }
+
+        val confidence = getConfidence(
+            testDispatcher,
+            flagResolver = flagResolver,
+            initialContext = context1
+        )
+        whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
+
+        confidence.fetchAndActivate()
+
+        val result = confidence.putContextAndWait(context2)
+
+        TestCase.assertTrue(result is Result.Failure)
+        val eval = confidence.getFlag("test-flag.mystring", "default")
+        TestCase.assertEquals("value-old", eval.value)
+        TestCase.assertEquals(ResolveReason.RESOLVE_REASON_STALE, eval.reason)
+    }
+
+    @Test
+    fun testRemoveContextAndWaitRemovesKeysBeforeFetch() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val initialContext = mapOf(
+            "targeting_key" to ConfidenceValue.String("user-1"),
+            "plan" to ConfidenceValue.String("free")
+        )
+
+        val flagResolver = object : FlagResolver {
+            override suspend fun resolve(
+                flags: List<String>,
+                context: Map<String, ConfidenceValue>
+            ): Result<FlagResolution> {
+                val resolvedValue = if (context.containsKey("plan")) {
+                    "plan-present"
+                } else {
+                    "plan-removed"
+                }
+                return Result.Success(
+                    FlagResolution(
+                        context,
+                        listOf(
+                            ResolvedFlag(
+                                "test-flag",
+                                "flags/test-flag/variants/variant-1",
+                                mutableMapOf("mystring" to ConfidenceValue.String(resolvedValue)),
+                                ResolveReason.RESOLVE_REASON_MATCH,
+                                shouldApply = true
+                            )
+                        ),
+                        "token1"
+                    )
+                )
+            }
+        }
+
+        val confidence = getConfidence(
+            testDispatcher,
+            flagResolver = flagResolver,
+            initialContext = initialContext
+        )
+        whenever(flagApplierClient.apply(any(), any())).thenReturn(Result.Success(Unit))
+
+        val result = confidence.removeContextAndWait(listOf("plan"))
+
+        TestCase.assertTrue(result is Result.Success)
+        TestCase.assertFalse(confidence.getContext().containsKey("plan"))
+        val eval = confidence.getFlag("test-flag.mystring", "default")
+        TestCase.assertEquals("plan-removed", eval.value)
+        TestCase.assertEquals(ResolveReason.RESOLVE_REASON_MATCH, eval.reason)
+    }
 }
