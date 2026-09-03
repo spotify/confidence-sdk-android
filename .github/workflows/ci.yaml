@@ -50,5 +50,16 @@ jobs:
         env:
           CONFIDENCE_CLIENT_SECRET: ${{ secrets.CONFIDENCE_CLIENT_SECRET }}
         run: ./gradlew :Provider:testDebugUnitTest --no-daemon --stacktrace --info
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run E2E app
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 29
+          arch: x86_64
+          script: ./gradlew :E2EApp:connectedDebugAndroidTest --no-daemon --stacktrace
       - name: Run build release
         run: ./gradlew assembleRelease
