@@ -19,6 +19,15 @@ data class FlagResolution(
     val flags: List<ResolvedFlag>,
     val resolveToken: String
 ) {
+    // O(1) lookup index built once per resolution and queried on every evaluation.
+    // Declared in the class body (not the primary constructor) so it is excluded
+    // from kotlinx.serialization, equals/hashCode/toString and copy().
+    private val flagIndex: Map<String, ResolvedFlag> by lazy {
+        flags.associateBy { it.flag }
+    }
+
+    fun resolvedFlag(name: String): ResolvedFlag? = flagIndex[name]
+
     companion object {
         val EMPTY = FlagResolution(mapOf(), listOf(), "")
     }
