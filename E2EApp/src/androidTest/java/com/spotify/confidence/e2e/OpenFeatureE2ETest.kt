@@ -18,6 +18,8 @@ import dev.openfeature.kotlin.sdk.Reason
 import dev.openfeature.kotlin.sdk.TrackingEventDetails
 import dev.openfeature.kotlin.sdk.Value
 import dev.openfeature.kotlin.sdk.events.OpenFeatureProviderEvents
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -27,6 +29,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -51,16 +55,7 @@ class OpenFeatureE2ETest {
 
     @Test
     fun confidenceProviderSupportsTheOpenFeatureApi() = runBlocking {
-        val confidence = ConfidenceFactory.create(
-            context = context,
-            clientSecret = "e2e-client-secret",
-            resolveBaseUrl = backend.baseUrl,
-            loggingLevel = LoggingLevel.NONE
-        )
-        val provider = ConfidenceFeatureProvider.create(
-            confidence = confidence,
-            initialisationStrategy = InitialisationStrategy.FetchAndActivate
-        )
+        val provider = createProvider()
 
         assertEquals(OpenFeatureStatus.NotReady, OpenFeatureAPI.getStatus())
         OpenFeatureAPI.setProviderAndWait(
@@ -105,18 +100,6 @@ class OpenFeatureE2ETest {
         assertNull(details.errorCode)
         assertNull(details.errorMessage)
 
-        OpenFeatureAPI.setEvaluationContextAndWait(
-            ImmutableContext(
-                targetingKey = "updated-user",
-                attributes = mapOf("country" to Value.String("NO"))
-            )
-        )
-        assertTrue(
-            backend.requests
-                .filter { it.path == "/v1/flags:resolve" }
-                .any { it.body.clone().readUtf8().contains("updated-user") }
-        )
-
         client.track(
             "openfeature-e2e-event",
             TrackingEventDetails(
@@ -125,6 +108,67 @@ class OpenFeatureE2ETest {
             )
         )
         assertTrue(awaitEventPersisted(context))
+    }
+
+    @Test
+    fun settingEvaluationContextsFetchesFlagsForEachContext() = runBlocking {
+        OpenFeatureAPI.setProviderAndWait(
+            createProvider(),
+            ImmutableContext(targetingKey = "initial-user")
+        )
+
+        listOf("second-user", "third-user").forEach { targetingKey ->
+            OpenFeatureAPI.setEvaluationContextAndWait(
+                ImmutableContext(targetingKey = targetingKey)
+            )
+        }
+
+        val resolveBodies = backend.awaitRequests("/v1/flags:resolve", 3)
+            .map { it.body.clone().readUtf8() }
+        assertTrue(resolveBodies[0].contains("initial-user"))
+        assertTrue(resolveBodies[1].contains("second-user"))
+        assertTrue(resolveBodies[2].contains("third-user"))
+    }
+
+    @Test
+    fun latestContextResponseWinsWhenResponsesArriveOutOfOrder() = runBlocking {
+        val initialContext = ImmutableContext(targetingKey = "initial-user")
+        val slowContext = ImmutableContext(targetingKey = "slow-user")
+        val winningContext = ImmutableContext(targetingKey = "winning-user")
+        val slowRequestStarted = CountDownLatch(1)
+        val releaseSlowResponse = CountDownLatch(1)
+        val provider = createProvider()
+
+        OpenFeatureAPI.setProviderAndWait(provider, initialContext)
+        backend.resolveValue = { request ->
+            val body = request.body.clone().readUtf8()
+            when {
+                body.contains("slow-user") -> {
+                    slowRequestStarted.countDown()
+                    releaseSlowResponse.await(5, TimeUnit.SECONDS)
+                    "slow-response"
+                }
+                body.contains("winning-user") -> "winning-response"
+                else -> "initial-response"
+            }
+        }
+
+        val slowUpdate = async(Dispatchers.Default) {
+            provider.onContextSet(initialContext, slowContext)
+        }
+        assertTrue(slowRequestStarted.await(5, TimeUnit.SECONDS))
+        try {
+            provider.onContextSet(slowContext, winningContext)
+        } finally {
+            releaseSlowResponse.countDown()
+        }
+        slowUpdate.await()
+
+        backend.awaitRequests("/v1/flags:resolve", 3)
+        assertEquals(
+            "winning-response",
+            OpenFeatureAPI.getClient().getStringValue("e2e-flag.string", "fallback")
+        )
     }
 
     @Test
@@ -149,4 +193,14 @@ class OpenFeatureE2ETest {
         confidence.fetchAndActivate()
         assertEquals("hello", OpenFeatureAPI.getClient().getStringValue("e2e-flag.string", "fallback"))
     }
+
+    private fun createProvider() = ConfidenceFeatureProvider.create(
+        confidence = ConfidenceFactory.create(
+            context = context,
+            clientSecret = "e2e-client-secret",
+            resolveBaseUrl = backend.baseUrl,
+            loggingLevel = LoggingLevel.NONE
+        ),
+        initialisationStrategy = InitialisationStrategy.FetchAndActivate
+    )
 }

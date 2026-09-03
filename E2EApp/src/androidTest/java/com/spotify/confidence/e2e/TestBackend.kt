@@ -11,6 +11,9 @@ internal class TestBackend : AutoCloseable {
     private val server = MockWebServer()
     val requests = CopyOnWriteArrayList<RecordedRequest>()
 
+    @Volatile
+    var resolveValue: (RecordedRequest) -> String = { "hello" }
+
     val baseUrl: String
         get() = server.url("/").toString()
 
@@ -19,10 +22,7 @@ internal class TestBackend : AutoCloseable {
             override fun dispatch(request: RecordedRequest): MockResponse {
                 requests += request
                 return when (request.path) {
-                    "/v1/flags:resolve" -> MockResponse()
-                        .setResponseCode(200)
-                        .setHeader("Content-Type", "application/json")
-                        .setBody(RESOLVE_RESPONSE)
+                    "/v1/flags:resolve" -> resolveResponse(resolveValue(request))
                     "/v1/flags:apply" -> MockResponse().setResponseCode(200).setBody("{}")
                     else -> MockResponse().setResponseCode(404)
                 }
@@ -40,12 +40,23 @@ internal class TestBackend : AutoCloseable {
         error("No request received for $path. Received: ${requests.map { it.path }}")
     }
 
+    fun awaitRequests(path: String, count: Int, timeoutMillis: Long = 5_000): List<RecordedRequest> {
+        val deadline = System.currentTimeMillis() + timeoutMillis
+        while (System.currentTimeMillis() < deadline) {
+            requests.filter { it.path == path }.takeIf { it.size >= count }?.let { return it }
+            Thread.sleep(10)
+        }
+        error("Expected $count requests for $path. Received: ${requests.map { it.path }}")
+    }
+
     override fun close() {
         server.shutdown()
     }
 
-    private companion object {
-        val RESOLVE_RESPONSE =
+    private fun resolveResponse(stringValue: String) = MockResponse()
+        .setResponseCode(200)
+        .setHeader("Content-Type", "application/json")
+        .setBody(
             """
             {
               "resolvedFlags": [
@@ -54,7 +65,7 @@ internal class TestBackend : AutoCloseable {
                   "variant": "flags/e2e-flag/variants/enabled",
                   "value": {
                     "boolean": true,
-                    "string": "hello",
+                    "string": "$stringValue",
                     "integer": 42,
                     "double": 3.14,
                     "object": {
@@ -85,7 +96,7 @@ internal class TestBackend : AutoCloseable {
               "resolveToken": "e2e-resolve-token"
             }
             """.trimIndent()
-    }
+        )
 }
 
 internal fun awaitEventPersisted(context: Context, timeoutMillis: Long = 5_000): Boolean {
