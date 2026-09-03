@@ -34,6 +34,9 @@ jobs:
       - name: Grant Permission for Gradlew to Execute
         run: chmod +x gradlew
 
+      - name: Run persistence tests
+        run: ./gradlew :Confidence:testDebugUnitTest --tests com.spotify.confidence.PersistedDataRetryTest --no-daemon --stacktrace
+
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
