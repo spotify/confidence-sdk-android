@@ -49,6 +49,6 @@ jobs:
       - name: Run Tests
         env:
           CONFIDENCE_CLIENT_SECRET: ${{ secrets.CONFIDENCE_CLIENT_SECRET }}
-        run: ./gradlew :Provider:testDebugUnitTest --no-daemon --stacktrace --info
+        run: ./gradlew :Confidence:testDebugUnitTest :Provider:testDebugUnitTest --no-daemon --stacktrace --info
       - name: Run build release
         run: ./gradlew assembleRelease

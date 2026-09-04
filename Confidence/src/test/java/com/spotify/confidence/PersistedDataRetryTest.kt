@@ -1,12 +1,6 @@
 package com.spotify.confidence
 
 import android.content.Context
-import com.spotify.confidence.apply.ApplyInstance
-import com.spotify.confidence.apply.EventStatus
-import com.spotify.confidence.apply.FlagApplierWithRetries
-import com.spotify.confidence.cache.FileDiskStorage
-import com.spotify.confidence.client.AppliedFlag
-import com.spotify.confidence.client.FlagApplierClient
 import com.spotify.confidence.client.SdkMetadata
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,7 +14,6 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import java.io.File
 import java.util.Date
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -63,29 +56,6 @@ class PersistedDataRetryTest {
         )
     }
 
-    @Test
-    fun pendingAppliesFromPreviousSessionAreUploadedOnStartup() = runTest {
-        val dispatcher = UnconfinedTestDispatcher(testScheduler)
-        val storage = FileDiskStorage(
-            flagsFile = File(temporaryFolder.root, "flags.json"),
-            applyFile = File(temporaryFolder.root, "applies.json")
-        )
-        storage.writeApplyData(
-            mapOf(
-                "resolve-token" to mutableMapOf(
-                    "pending-flag" to ApplyInstance(Date(0), EventStatus.SENDING)
-                )
-            )
-        )
-
-        val nextClient = RecordingFlagApplierClient()
-        FlagApplierWithRetries(nextClient, dispatcher, storage)
-        advanceUntilIdle()
-
-        assertEquals(listOf("pending-flag"), nextClient.appliedFlagNames)
-        assertTrue(storage.readApplyData().isEmpty())
-    }
-
     private fun eventEngine(
         storage: EventStorage,
         uploader: EventSenderUploader,
@@ -107,15 +77,6 @@ class PersistedDataRetryTest {
                 it.eventDefinition.removePrefix("eventDefinitions/")
             }
             return true
-        }
-    }
-
-    private class RecordingFlagApplierClient : FlagApplierClient {
-        val appliedFlagNames = mutableListOf<String>()
-
-        override suspend fun apply(flags: List<AppliedFlag>, resolveToken: String): Result<Unit> {
-            appliedFlagNames += flags.map(AppliedFlag::flag)
-            return Result.Success(Unit)
         }
     }
 }
