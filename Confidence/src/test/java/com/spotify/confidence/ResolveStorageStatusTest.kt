@@ -45,6 +45,17 @@ class ResolveStorageStatusTest {
     }
 
     @Test
+    fun futureFetchTimeIsFresh() {
+        val check = MaxAgeStorageCheck(1_000, clock)
+        val lastFetchedAt = Date(11_000)
+
+        assertEquals(
+            ResolveStorageStatus.Fresh(lastFetchedAt),
+            check.check(resolveStorageMetadata(lastFetchedAt = lastFetchedAt))
+        )
+    }
+
+    @Test
     fun emptyStorageIsEmpty() {
         val check = MaxAgeStorageCheck(1_000, clock)
 
