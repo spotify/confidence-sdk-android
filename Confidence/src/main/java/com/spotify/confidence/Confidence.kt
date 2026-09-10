@@ -339,7 +339,7 @@ class Confidence internal constructor(
     private suspend fun fetchAndStore(failOnStaleResponse: Boolean = false): Result<Unit> {
         try {
             // Empty/not-modified responses do not carry their context, so retain the context used for the request.
-            val resolveContext = getContext()
+            val resolveContext = getContext().snapshot()
             return when (val resolveResponse = resolve(listOf(), resolveContext)) {
                 is Result.Success -> {
                     val staleResponse = resolveResponse.data != FlagResolution.EMPTY &&
