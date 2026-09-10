@@ -17,6 +17,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.nio.file.Files
 import java.time.Instant
+import java.util.Date
 
 class StorageFileCacheTests {
     private val instant = Instant.parse("2023-03-01T14:01:46.999Z")
@@ -107,6 +108,39 @@ class StorageFileCacheTests {
         TestCase.assertEquals(ResolveReason.RESOLVE_REASON_MATCH, evalObject.reason)
         TestCase.assertEquals(ResolveReason.RESOLVE_REASON_MATCH, evalNested.reason)
         TestCase.assertEquals(ResolveReason.RESOLVE_REASON_MATCH, evalNull.reason)
+    }
+
+    @Test
+    fun testStorageProvidesEmptyMetadataToStorageCheck() {
+        val confidence = getConfidence(UnconfinedTestDispatcher())
+        var metadata: ResolveStorageMetadata? = null
+
+        val status = confidence.getStorageStatus { receivedMetadata ->
+            metadata = receivedMetadata
+            ResolveStorageStatus.Empty
+        }
+
+        TestCase.assertEquals(ResolveStorageStatus.Empty, status)
+        TestCase.assertEquals(ResolveStorageMetadata(isEmpty = true, lastFetchedAt = null), metadata)
+    }
+
+    @Test
+    fun testSuccessfulFetchStoresLastFetchedAt() = runTest {
+        val context = mapOf("user_id" to ConfidenceValue.String("user1"))
+        val confidence = getConfidence(UnconfinedTestDispatcher(), initialContext = context)
+        whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
+            Result.Success(FlagResolution(context, resolvedFlags.list, "token1"))
+        )
+
+        confidence.fetchAndActivate()
+        var lastFetchedAt: Date? = null
+        val status = confidence.getStorageStatus {
+            lastFetchedAt = it.lastFetchedAt
+            ResolveStorageStatus.Fresh(it.lastFetchedAt)
+        }
+
+        TestCase.assertNotNull(lastFetchedAt)
+        TestCase.assertEquals(ResolveStorageStatus.Fresh(lastFetchedAt), status)
     }
 
     private fun getConfidence(

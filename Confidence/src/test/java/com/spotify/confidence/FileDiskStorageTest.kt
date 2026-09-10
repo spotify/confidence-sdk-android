@@ -3,6 +3,7 @@ package com.spotify.confidence
 import com.spotify.confidence.apply.ApplyInstance
 import com.spotify.confidence.apply.EventStatus
 import com.spotify.confidence.cache.FileDiskStorage
+import com.spotify.confidence.client.Clock
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -17,6 +18,7 @@ class FileDiskStorageTest {
     private lateinit var diskStorage: FileDiskStorage
     private lateinit var flagsFile: File
     private lateinit var applyFile: File
+    private lateinit var resolveMetadataFile: File
 
     val badFile = "{\"context\":{\"name\":\"emu64a\",\"version\":\"1.0\",\"density\":2.625,\"height\":1857.0,\"width\":1080,\"namespace\":\"com.example.confidencedemoapp\",\"build\":\"1\",\"manufacturer\":\"Google\",\"model\":\"sdk_gphone64_arm64\",\"type\":\"android\",\"targeting_key\":\"a98a4291-53b0-49d9-bae8-73d3f5da2070\"},\"flags\":[{\"flag\":\"hatten\",\"variant\":\"\",\"reason\":\"RESOLVE_REASON_NO_SEGMENT_MATCH\"}],\"resolveToken\":\"meh\"}"
     val badApply = "{\"apply\":{\"apply\":\"apply\"}"
@@ -25,7 +27,9 @@ class FileDiskStorageTest {
     fun setup() {
         flagsFile = Files.createTempFile("flags", ".txt").toFile()
         applyFile = Files.createTempFile("apply", ".txt").toFile()
-        diskStorage = FileDiskStorage(flagsFile, applyFile)
+        resolveMetadataFile = Files.createTempFile("resolve-metadata", ".txt").toFile()
+        resolveMetadataFile.delete()
+        diskStorage = FileDiskStorage(flagsFile, applyFile, resolveMetadataFile)
     }
 
     @Test
@@ -206,5 +210,46 @@ class FileDiskStorageTest {
         // Then: Read returns empty
         val result = diskStorage.read()
         Assert.assertEquals(FlagResolution.EMPTY, result)
+    }
+
+    @Test
+    fun testLastFetchedAtIsPersisted() {
+        val fetchedAt = Date(1_234)
+        diskStorage = FileDiskStorage(
+            flagsFile,
+            applyFile,
+            resolveMetadataFile,
+            object : Clock {
+                override fun currentTime(): Date = fetchedAt
+            }
+        )
+
+        diskStorage.markFetched()
+
+        Assert.assertEquals(fetchedAt, diskStorage.getLastFetchedAt())
+    }
+
+    @Test
+    fun testMissingOrInvalidLastFetchedAtReturnsNull() {
+        Assert.assertNull(diskStorage.getLastFetchedAt())
+        resolveMetadataFile.writeText("not-json")
+
+        Assert.assertNull(diskStorage.getLastFetchedAt())
+    }
+
+    @Test
+    fun testUnknownMetadataFieldsAreIgnored() {
+        resolveMetadataFile.writeText("""{"lastFetchedAtMillis":1234,"futureField":true}""")
+
+        Assert.assertEquals(Date(1_234), diskStorage.getLastFetchedAt())
+    }
+
+    @Test
+    fun testClearRemovesLastFetchedAt() {
+        diskStorage.markFetched()
+
+        diskStorage.clear()
+
+        Assert.assertNull(diskStorage.getLastFetchedAt())
     }
 }

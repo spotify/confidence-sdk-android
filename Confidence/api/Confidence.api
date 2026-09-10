@@ -8,6 +8,7 @@ public final class com/spotify/confidence/Confidence : com/spotify/confidence/Co
 	public fun flush ()V
 	public fun getContext ()Ljava/util/Map;
 	public final fun getFlag (Ljava/lang/String;Ljava/lang/Object;)Lcom/spotify/confidence/Evaluation;
+	public final fun getStorageStatus (Lcom/spotify/confidence/ResolveStorageCheck;)Lcom/spotify/confidence/ResolveStorageStatus;
 	public final fun getValue (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
 	public final fun isStorageEmpty ()Z
 	public fun putContext (Ljava/lang/String;Lcom/spotify/confidence/ConfidenceValue;)V
@@ -472,6 +473,12 @@ public final class com/spotify/confidence/LoggingLevel : java/lang/Enum {
 	public static fun values ()[Lcom/spotify/confidence/LoggingLevel;
 }
 
+public final class com/spotify/confidence/MaxAgeStorageCheck : com/spotify/confidence/ResolveStorageCheck {
+	public fun <init> (J)V
+	public fun check (Lcom/spotify/confidence/ResolveStorageMetadata;)Lcom/spotify/confidence/ResolveStorageStatus;
+	public final fun getMaxAgeMillis ()J
+}
+
 public abstract interface class com/spotify/confidence/Producer {
 	public abstract fun stop ()V
 	public abstract fun updates ()Lkotlinx/coroutines/flow/Flow;
@@ -495,6 +502,52 @@ public final class com/spotify/confidence/ResolveReason : java/lang/Enum {
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lcom/spotify/confidence/ResolveReason;
 	public static fun values ()[Lcom/spotify/confidence/ResolveReason;
+}
+
+public abstract interface class com/spotify/confidence/ResolveStorageCheck {
+	public abstract fun check (Lcom/spotify/confidence/ResolveStorageMetadata;)Lcom/spotify/confidence/ResolveStorageStatus;
+}
+
+public final class com/spotify/confidence/ResolveStorageMetadata {
+	public fun <init> (ZLjava/util/Date;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Ljava/util/Date;
+	public final fun copy (ZLjava/util/Date;)Lcom/spotify/confidence/ResolveStorageMetadata;
+	public static synthetic fun copy$default (Lcom/spotify/confidence/ResolveStorageMetadata;ZLjava/util/Date;ILjava/lang/Object;)Lcom/spotify/confidence/ResolveStorageMetadata;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLastFetchedAt ()Ljava/util/Date;
+	public fun hashCode ()I
+	public final fun isEmpty ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/spotify/confidence/ResolveStorageStatus {
+}
+
+public final class com/spotify/confidence/ResolveStorageStatus$Empty : com/spotify/confidence/ResolveStorageStatus {
+	public static final field INSTANCE Lcom/spotify/confidence/ResolveStorageStatus$Empty;
+}
+
+public final class com/spotify/confidence/ResolveStorageStatus$Fresh : com/spotify/confidence/ResolveStorageStatus {
+	public fun <init> (Ljava/util/Date;)V
+	public final fun component1 ()Ljava/util/Date;
+	public final fun copy (Ljava/util/Date;)Lcom/spotify/confidence/ResolveStorageStatus$Fresh;
+	public static synthetic fun copy$default (Lcom/spotify/confidence/ResolveStorageStatus$Fresh;Ljava/util/Date;ILjava/lang/Object;)Lcom/spotify/confidence/ResolveStorageStatus$Fresh;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLastFetchedAt ()Ljava/util/Date;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/spotify/confidence/ResolveStorageStatus$Stale : com/spotify/confidence/ResolveStorageStatus {
+	public fun <init> (Ljava/util/Date;)V
+	public final fun component1 ()Ljava/util/Date;
+	public final fun copy (Ljava/util/Date;)Lcom/spotify/confidence/ResolveStorageStatus$Stale;
+	public static synthetic fun copy$default (Lcom/spotify/confidence/ResolveStorageStatus$Stale;Ljava/util/Date;ILjava/lang/Object;)Lcom/spotify/confidence/ResolveStorageStatus$Stale;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLastFetchedAt ()Ljava/util/Date;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract class com/spotify/confidence/Result {

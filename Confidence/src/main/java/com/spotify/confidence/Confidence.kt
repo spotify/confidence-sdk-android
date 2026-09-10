@@ -6,6 +6,8 @@ import com.spotify.confidence.ConfidenceError.ParseError
 import com.spotify.confidence.apply.FlagApplierWithRetries
 import com.spotify.confidence.cache.DiskStorage
 import com.spotify.confidence.cache.FileDiskStorage
+import com.spotify.confidence.cache.ResolveStorageMetadataStorage
+import com.spotify.confidence.cache.getResolveStorageMetadata
 import com.spotify.confidence.client.FlagApplierClient
 import com.spotify.confidence.client.FlagApplierClientImpl
 import com.spotify.confidence.client.SdkMetadata
@@ -59,12 +61,15 @@ class Confidence internal constructor(
         diskStorage = diskStorage
     )
 
-    private suspend fun resolve(flags: List<String>): Result<FlagResolution> {
+    private suspend fun resolve(
+        flags: List<String>,
+        resolveContext: Map<String, ConfidenceValue>
+    ): Result<FlagResolution> {
         debugLogger?.let {
-            debugLogger.logFlag("Resolve", "${getContext()}")
+            debugLogger.logFlag("Resolve", "$resolveContext")
         }
-        return flagResolver.resolve(flags, getContext()).also {
-            debugLogger?.logFlag("Resolve Completed", "${getContext()}")
+        return flagResolver.resolve(flags, resolveContext).also {
+            debugLogger?.logFlag("Resolve Completed", "$resolveContext")
         }
     }
 
@@ -170,6 +175,12 @@ class Confidence internal constructor(
      * Check if cache is empty
      */
     fun isStorageEmpty(): Boolean = diskStorage.read() == FlagResolution.EMPTY
+
+    /**
+     * Returns the status of the cached flag resolution according to [check].
+     */
+    fun getStorageStatus(check: ResolveStorageCheck): ResolveStorageStatus =
+        check.check(diskStorage.getResolveStorageMetadata())
 
     /**
      * Mutate context by adding an entry and removing another
@@ -327,12 +338,19 @@ class Confidence internal constructor(
 
     private suspend fun fetchAndStore(failOnStaleResponse: Boolean = false): Result<Unit> {
         try {
-            return when (val resolveResponse = resolve(listOf())) {
+            // Empty/not-modified responses do not carry their context, so retain the context used for the request.
+            val resolveContext = getContext()
+            return when (val resolveResponse = resolve(listOf(), resolveContext)) {
                 is Result.Success -> {
                     val staleResponse = resolveResponse.data != FlagResolution.EMPTY &&
                         resolveResponse.data.context != getContext()
                     when {
-                        resolveResponse.data == FlagResolution.EMPTY -> Result.Success(Unit)
+                        resolveResponse.data == FlagResolution.EMPTY -> {
+                            if (resolveContext == getContext()) {
+                                markStorageFetched()
+                            }
+                            Result.Success(Unit)
+                        }
                         staleResponse -> {
                             val message = "Discarding stale resolve response: " +
                                 "context changed during in-flight request"
@@ -345,6 +363,7 @@ class Confidence internal constructor(
                         }
                         else -> {
                             diskStorage.store(resolveResponse.data)
+                            markStorageFetched()
                             Result.Success(Unit)
                         }
                     }
@@ -359,6 +378,14 @@ class Confidence internal constructor(
             throw e
         } catch (e: Exception) {
             return Result.Failure(e)
+        }
+    }
+
+    private fun markStorageFetched() {
+        try {
+            (diskStorage as? ResolveStorageMetadataStorage)?.markFetched()
+        } catch (e: Exception) {
+            debugLogger?.logMessage("Failed to store resolve timestamp", isWarning = true, throwable = e)
         }
     }
 
