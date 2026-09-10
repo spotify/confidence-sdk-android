@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.11](https://github.com/spotify/confidence-sdk-android/compare/0.6.10...0.6.11) (2026-09-10)
+
+
+### ✨ New Features
+
+* expose resolve storage status ([#261](https://github.com/spotify/confidence-sdk-android/issues/261)) ([12ece40](https://github.com/spotify/confidence-sdk-android/commit/12ece4063325f14a0338d32b8ae5bdb757552cdf))
+* upgrade OpenFeature SDK to 0.8.0 ([#258](https://github.com/spotify/confidence-sdk-android/issues/258)) ([6caaa1d](https://github.com/spotify/confidence-sdk-android/commit/6caaa1d7cf24c2e7f041f87904d7e323534123e2))
+
 ## [0.6.10](https://github.com/spotify/confidence-sdk-android/compare/0.6.9...0.6.10) (2026-08-25)
 
 
