@@ -120,7 +120,21 @@ val provider = ConfidenceFeatureProvider.create(
 )
 ```
 
-`MaxAgeStorageCheck` reports cached data with an unknown fetch time as stale. For custom staleness rules, pass your own `ResolveStorageCheck` implementation to `getStorageStatus`.
+`MaxAgeStorageCheck` reports cached data with an unknown fetch time as stale. For custom staleness rules, pass your own `ResolveStorageCheck` implementation to `getStorageStatus`. The check receives `ResolveStorageMetadata`, containing whether the storage is empty, when it was last fetched, and the evaluation context used for the cached resolve:
+
+```kotlin
+val expectedTargetingKey = ConfidenceValue.String("user-123")
+val contextAwareCheck = ResolveStorageCheck { metadata ->
+    when {
+        metadata.isEmpty -> ResolveStorageStatus.Empty
+        metadata.context["targeting_key"] != expectedTargetingKey ->
+            ResolveStorageStatus.Stale(metadata.lastFetchedAt)
+        else -> MaxAgeStorageCheck(TimeUnit.HOURS.toMillis(24)).check(metadata)
+    }
+}
+
+val storageStatus = confidence.getStorageStatus(contextAwareCheck)
+```
 
 
 ### Setting the context
