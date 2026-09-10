@@ -18,7 +18,7 @@ class ResolveStorageStatusTest {
 
         assertEquals(
             ResolveStorageStatus.Stale(null),
-            check.check(ResolveStorageMetadata(isEmpty = false, lastFetchedAt = null))
+            check.check(resolveStorageMetadata(lastFetchedAt = null))
         )
     }
 
@@ -29,7 +29,7 @@ class ResolveStorageStatusTest {
 
         assertEquals(
             ResolveStorageStatus.Fresh(lastFetchedAt),
-            check.check(ResolveStorageMetadata(isEmpty = false, lastFetchedAt = lastFetchedAt))
+            check.check(resolveStorageMetadata(lastFetchedAt = lastFetchedAt))
         )
     }
 
@@ -40,7 +40,7 @@ class ResolveStorageStatusTest {
 
         assertEquals(
             ResolveStorageStatus.Stale(lastFetchedAt),
-            check.check(ResolveStorageMetadata(isEmpty = false, lastFetchedAt = lastFetchedAt))
+            check.check(resolveStorageMetadata(lastFetchedAt = lastFetchedAt))
         )
     }
 
@@ -50,7 +50,7 @@ class ResolveStorageStatusTest {
 
         assertEquals(
             ResolveStorageStatus.Empty,
-            check.check(ResolveStorageMetadata(isEmpty = true, lastFetchedAt = null))
+            check.check(resolveStorageMetadata(isEmpty = true, lastFetchedAt = null))
         )
     }
 
@@ -60,4 +60,13 @@ class ResolveStorageStatusTest {
             MaxAgeStorageCheck(0)
         }
     }
+
+    private fun resolveStorageMetadata(
+        isEmpty: Boolean = false,
+        lastFetchedAt: Date?
+    ) = ResolveStorageMetadata(
+        isEmpty = isEmpty,
+        lastFetchedAt = lastFetchedAt,
+        context = emptyMap()
+    )
 }

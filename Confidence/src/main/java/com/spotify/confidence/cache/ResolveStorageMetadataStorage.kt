@@ -16,7 +16,11 @@ internal interface ResolveStorageMetadataStorage {
     fun getLastFetchedAt(): Date?
 }
 
-internal fun DiskStorage.getResolveStorageMetadata(): ResolveStorageMetadata = ResolveStorageMetadata(
-    isEmpty = read() == FlagResolution.EMPTY,
-    lastFetchedAt = (this as? ResolveStorageMetadataStorage)?.getLastFetchedAt()?.let { Date(it.time) }
-)
+internal fun DiskStorage.getResolveStorageMetadata(): ResolveStorageMetadata {
+    val resolution = read()
+    return ResolveStorageMetadata(
+        isEmpty = resolution == FlagResolution.EMPTY,
+        lastFetchedAt = (this as? ResolveStorageMetadataStorage)?.getLastFetchedAt()?.let { Date(it.time) },
+        context = resolution.context.toMap()
+    )
+}

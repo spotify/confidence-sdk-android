@@ -17,7 +17,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.nio.file.Files
 import java.time.Instant
-import java.util.Date
 
 class StorageFileCacheTests {
     private val instant = Instant.parse("2023-03-01T14:01:46.999Z")
@@ -121,7 +120,10 @@ class StorageFileCacheTests {
         }
 
         TestCase.assertEquals(ResolveStorageStatus.Empty, status)
-        TestCase.assertEquals(ResolveStorageMetadata(isEmpty = true, lastFetchedAt = null), metadata)
+        TestCase.assertEquals(
+            ResolveStorageMetadata(isEmpty = true, lastFetchedAt = null, context = emptyMap()),
+            metadata
+        )
     }
 
     @Test
@@ -133,14 +135,15 @@ class StorageFileCacheTests {
         )
 
         confidence.fetchAndActivate()
-        var lastFetchedAt: Date? = null
+        var metadata: ResolveStorageMetadata? = null
         val status = confidence.getStorageStatus {
-            lastFetchedAt = it.lastFetchedAt
+            metadata = it
             ResolveStorageStatus.Fresh(it.lastFetchedAt)
         }
 
-        TestCase.assertNotNull(lastFetchedAt)
-        TestCase.assertEquals(ResolveStorageStatus.Fresh(lastFetchedAt), status)
+        TestCase.assertNotNull(metadata?.lastFetchedAt)
+        TestCase.assertEquals(context, metadata?.context)
+        TestCase.assertEquals(ResolveStorageStatus.Fresh(metadata?.lastFetchedAt), status)
     }
 
     private fun getConfidence(

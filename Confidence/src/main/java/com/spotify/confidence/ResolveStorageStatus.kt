@@ -24,7 +24,8 @@ fun interface ResolveStorageCheck {
 /** Metadata available when checking resolve storage. */
 data class ResolveStorageMetadata(
     val isEmpty: Boolean,
-    val lastFetchedAt: Date?
+    val lastFetchedAt: Date?,
+    val context: Map<String, ConfidenceValue>
 )
 
 /** Considers resolve storage stale when its fetch time is unknown or at least [maxAgeMillis] old. */

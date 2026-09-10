@@ -509,12 +509,14 @@ public abstract interface class com/spotify/confidence/ResolveStorageCheck {
 }
 
 public final class com/spotify/confidence/ResolveStorageMetadata {
-	public fun <init> (ZLjava/util/Date;)V
+	public fun <init> (ZLjava/util/Date;Ljava/util/Map;)V
 	public final fun component1 ()Z
 	public final fun component2 ()Ljava/util/Date;
-	public final fun copy (ZLjava/util/Date;)Lcom/spotify/confidence/ResolveStorageMetadata;
-	public static synthetic fun copy$default (Lcom/spotify/confidence/ResolveStorageMetadata;ZLjava/util/Date;ILjava/lang/Object;)Lcom/spotify/confidence/ResolveStorageMetadata;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun copy (ZLjava/util/Date;Ljava/util/Map;)Lcom/spotify/confidence/ResolveStorageMetadata;
+	public static synthetic fun copy$default (Lcom/spotify/confidence/ResolveStorageMetadata;ZLjava/util/Date;Ljava/util/Map;ILjava/lang/Object;)Lcom/spotify/confidence/ResolveStorageMetadata;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContext ()Ljava/util/Map;
 	public final fun getLastFetchedAt ()Ljava/util/Date;
 	public fun hashCode ()I
 	public final fun isEmpty ()Z
