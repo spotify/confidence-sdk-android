@@ -109,18 +109,81 @@ class StorageFileCacheTests {
         TestCase.assertEquals(ResolveReason.RESOLVE_REASON_MATCH, evalNull.reason)
     }
 
+    @Test
+    fun testStorageProvidesEmptyMetadataToStorageCheck() {
+        val confidence = getConfidence(UnconfinedTestDispatcher())
+        var metadata: ResolveStorageMetadata? = null
+
+        val status = confidence.getStorageStatus { receivedMetadata ->
+            metadata = receivedMetadata
+            ResolveStorageStatus.Empty
+        }
+
+        TestCase.assertEquals(ResolveStorageStatus.Empty, status)
+        TestCase.assertEquals(
+            ResolveStorageMetadata(isEmpty = true, lastFetchedAt = null, context = emptyMap()),
+            metadata
+        )
+    }
+
+    @Test
+    fun testSuccessfulFetchStoresLastFetchedAt() = runTest {
+        val context = mapOf("user_id" to ConfidenceValue.String("user1"))
+        val confidence = getConfidence(UnconfinedTestDispatcher(), initialContext = context)
+        whenever(flagResolverClient.resolve(eq(listOf()), any())).thenReturn(
+            Result.Success(FlagResolution(context, resolvedFlags.list, "token1"))
+        )
+
+        confidence.fetchAndActivate()
+        var metadata: ResolveStorageMetadata? = null
+        val status = confidence.getStorageStatus {
+            metadata = it
+            ResolveStorageStatus.Fresh(it.lastFetchedAt)
+        }
+
+        TestCase.assertNotNull(metadata?.lastFetchedAt)
+        TestCase.assertEquals(context, metadata?.context)
+        TestCase.assertEquals(ResolveStorageStatus.Fresh(metadata?.lastFetchedAt), status)
+    }
+
+    @Test
+    fun testFetchUsesDeepContextSnapshot() = runTest {
+        val nestedContext = mutableMapOf<String, ConfidenceValue>(
+            "plan" to ConfidenceValue.String("free")
+        )
+        val resolver = object : FlagResolver {
+            override suspend fun resolve(
+                flags: List<String>,
+                context: Map<String, ConfidenceValue>
+            ): Result<FlagResolution> {
+                nestedContext["plan"] = ConfidenceValue.String("premium")
+                val resolvedPlan = ((context["user"] as ConfidenceValue.Struct).map["plan"])
+                TestCase.assertEquals(ConfidenceValue.String("free"), resolvedPlan)
+                return Result.Success(FlagResolution(context, emptyList(), "token"))
+            }
+        }
+        val confidence = getConfidence(
+            dispatcher = UnconfinedTestDispatcher(),
+            initialContext = mapOf("user" to ConfidenceValue.Struct(nestedContext)),
+            flagResolver = resolver
+        )
+
+        confidence.fetchAndActivate()
+    }
+
     private fun getConfidence(
         dispatcher: CoroutineDispatcher,
         cache: ProviderCache = mock(),
         initialContext: Map<String, ConfidenceValue> = mapOf(),
-        debugLogger: DebugLoggerFake = DebugLoggerFake()
+        debugLogger: DebugLoggerFake = DebugLoggerFake(),
+        flagResolver: FlagResolver = flagResolverClient
     ) = Confidence(
         clientSecret = "",
         dispatcher = dispatcher,
         eventSenderEngine = mock(),
         cache = cache,
         initialContext = initialContext,
-        flagResolver = flagResolverClient,
+        flagResolver = flagResolver,
         flagApplierClient = mock(),
         diskStorage = FileDiskStorage.create(mockContext),
         region = ConfidenceRegion.EUROPE,

@@ -29,6 +29,7 @@ class MainActivity : ComponentActivity() {
             val msgState = vm.message.observeAsState()
             val colorState = vm.color.observeAsState()
             val surfaceText = vm.surfaceText.observeAsState()
+            val initialisationInfo = vm.initialisationInfo.observeAsState()
 
             MyApplicationTheme {
                 Surface(
@@ -37,6 +38,10 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Column {
                         Greeting(msgState.value.toString())
+                        Text(
+                            text = initialisationInfo.value ?: "N/A",
+                            modifier = Modifier.padding(8.dp)
+                        )
                         Button(onClick = {
                             vm.refreshUi()
 

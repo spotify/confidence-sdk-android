@@ -15,6 +15,7 @@ import com.spotify.confidence.openfeature.InitialisationStrategy
 import dev.openfeature.kotlin.sdk.*
 import kotlinx.coroutines.launch
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -22,14 +23,17 @@ class MainVm(app: Application) : AndroidViewModel(app) {
 
     companion object {
         private val TAG = MainVm::class.java.simpleName
+        private val resolveStorageMaxAgeMillis = TimeUnit.MINUTES.toMillis(1)
     }
 
     private val _message: MutableLiveData<String> = MutableLiveData("initial")
     private val _color: MutableLiveData<Color> = MutableLiveData(Color.Gray)
     private val _surfaceText: MutableLiveData<String> = MutableLiveData("This is a surface text")
+    private val _initialisationInfo: MutableLiveData<String> = MutableLiveData("Checking resolve storage")
     val message: LiveData<String> = _message
     val color: LiveData<Color> = _color
     val surfaceText: LiveData<String> = _surfaceText
+    val initialisationInfo: LiveData<String> = _initialisationInfo
 
     init {
         val start = System.currentTimeMillis()
@@ -50,9 +54,20 @@ class MainVm(app: Application) : AndroidViewModel(app) {
             ConfidenceRegion.EUROPE,
             loggingLevel = LoggingLevel.VERBOSE
         )
+        val storageStatus = confidence.getStorageStatus(
+            MaxAgeStorageCheck(resolveStorageMaxAgeMillis)
+        )
+        val initialisationStrategy = when (storageStatus) {
+            ResolveStorageStatus.Empty,
+            is ResolveStorageStatus.Stale -> InitialisationStrategy.FetchAndActivate
+            is ResolveStorageStatus.Fresh -> InitialisationStrategy.ActivateAndFetchAsync
+        }
+        _initialisationInfo.value =
+            "Resolve storage: ${storageStatus.description()}\n" +
+            "Strategy: ${initialisationStrategy.description()}"
         val provider = ConfidenceFeatureProvider.create(
             confidence,
-            initialisationStrategy = InitialisationStrategy.FetchAndActivate
+            initialisationStrategy = initialisationStrategy
         )
 
         viewModelScope.launch {
@@ -115,6 +130,17 @@ class MainVm(app: Application) : AndroidViewModel(app) {
         Log.d(TAG, "clearing context")
         OpenFeatureAPI.setEvaluationContext(ImmutableContext())
     }
+}
+
+private fun ResolveStorageStatus.description(): String = when (this) {
+    ResolveStorageStatus.Empty -> "empty"
+    is ResolveStorageStatus.Fresh -> "fresh (last fetched $lastFetchedAt)"
+    is ResolveStorageStatus.Stale -> "stale (last fetched $lastFetchedAt)"
+}
+
+private fun InitialisationStrategy.description(): String = when (this) {
+    InitialisationStrategy.FetchAndActivate -> "FetchAndActivate"
+    InitialisationStrategy.ActivateAndFetchAsync -> "ActivateAndFetchAsync"
 }
 
 private fun <String> FlagEvaluationDetails<String>.toComposeColor(): Color {
