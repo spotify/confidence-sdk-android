@@ -158,6 +158,7 @@ private fun Value.friendlyString(): String {
     return when (this) {
         is Value.String -> this.string
         is Value.Integer -> this.integer.toString()
+        is Value.Long -> this.long.toString()
         is Value.Double -> this.double.toString()
         is Value.Boolean -> this.boolean.toString()
         is Value.Instant -> this.instant.toString()
