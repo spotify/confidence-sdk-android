@@ -126,14 +126,37 @@ class ConfidenceFeatureProvider private constructor(
         return generateEvaluation(key, defaultValue)
     }
 
+    override fun getLongEvaluation(
+        key: String,
+        defaultValue: Long,
+        context: EvaluationContext?
+    ): ProviderEvaluation<Long> {
+        val evaluation = generateEvaluation<Any>(key, defaultValue)
+        return ProviderEvaluation(
+            value = when (val value = evaluation.value) {
+                is Int -> value.toLong()
+                is Long -> value
+                else -> throw OpenFeatureError.ParseError("Flag value is not an integer")
+            },
+            reason = evaluation.reason,
+            variant = evaluation.variant,
+            errorCode = evaluation.errorCode,
+            errorMessage = evaluation.errorMessage
+        )
+    }
+
     override fun getObjectEvaluation(
         key: String,
         defaultValue: Value,
         context: EvaluationContext?
     ): ProviderEvaluation<Value> {
-        val evaluation = generateEvaluation(key, defaultValue.toConfidenceValue())
+        val evaluation = generateEvaluation<Any>(key, defaultValue)
         return ProviderEvaluation(
-            value = evaluation.value.toValue(),
+            value = when (val value = evaluation.value) {
+                is Value -> value
+                is ConfidenceValue -> value.toValue()
+                else -> throw OpenFeatureError.ParseError("Flag value is not an object")
+            },
             reason = evaluation.reason,
             variant = evaluation.variant,
             errorCode = evaluation.errorCode,
@@ -207,6 +230,7 @@ internal fun Value.toConfidenceValue(): ConfidenceValue = when (this) {
     is Value.Boolean -> ConfidenceValue.Boolean(this.boolean)
     is Value.Double -> ConfidenceValue.Double(this.double)
     is Value.Integer -> ConfidenceValue.Integer(this.integer)
+    is Value.Long -> this.long.toConfidenceValue()
     is Value.List -> {
         // if types are different, return an empty list
         if (this.list.map { it.javaClass.simpleName }.groupBy { it }.size > 1) {
@@ -271,8 +295,7 @@ private fun OpenFeatureError.toProviderErrorEvent(): OpenFeatureProviderEvents.P
         eventDetails = OpenFeatureProviderEvents.EventDetails(
             message = message,
             errorCode = errorCode()
-        ),
-        error = this
+        )
     )
 }
 
