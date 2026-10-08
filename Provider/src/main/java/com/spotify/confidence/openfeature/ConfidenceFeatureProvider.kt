@@ -150,9 +150,13 @@ class ConfidenceFeatureProvider private constructor(
         defaultValue: Value,
         context: EvaluationContext?
     ): ProviderEvaluation<Value> {
-        val evaluation = generateEvaluation(key, defaultValue.toConfidenceValue())
+        val evaluation = generateEvaluation<Any>(key, defaultValue)
         return ProviderEvaluation(
-            value = evaluation.value.toValue(),
+            value = when (val value = evaluation.value) {
+                is Value -> value
+                is ConfidenceValue -> value.toValue()
+                else -> throw OpenFeatureError.ParseError("Flag value is not an object")
+            },
             reason = evaluation.reason,
             variant = evaluation.variant,
             errorCode = evaluation.errorCode,
