@@ -4,6 +4,7 @@ import com.spotify.confidence.apply.ApplyInstance
 import com.spotify.confidence.apply.EventStatus
 import com.spotify.confidence.cache.FileDiskStorage
 import com.spotify.confidence.client.Clock
+import kotlinx.serialization.json.Json
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -51,6 +52,20 @@ class FileDiskStorageTest {
 
         diskStorage.writeApplyData(mutableMapOf("apply" to mutableMapOf("apply" to ApplyInstance(Date(), EventStatus.CREATED))))
         Assert.assertTrue(applyFile.exists())
+    }
+
+    @Test
+    fun corruptApplyFileIsNotDeletedAndReturnsEmptyState() {
+        applyFile.writeText(badApply)
+
+        val read = diskStorage.readApplyData()
+
+        Assert.assertEquals(emptyMap<String, MutableMap<String, ApplyInstance>>(), read)
+        // A decode failure can no longer be a torn read (atomic writes + locking), so
+        // the corrupt file must not be deleted: silently discarding it would destroy
+        // persisted apply state.
+        Assert.assertTrue(applyFile.exists())
+        Assert.assertEquals(badApply, applyFile.readText())
     }
 
     @Test
@@ -144,6 +159,73 @@ class FileDiskStorageTest {
         // And: File should contain valid data from one of the writers
         val finalResult = diskStorage.read()
         Assert.assertNotEquals(FlagResolution.EMPTY, finalResult)
+    }
+
+    @Test
+    fun testRawReaderNeverObservesTornCacheFile() {
+        // Reproduces the production crash reported against confidence-sdk-flutter:
+        // an external reader reads the cache files raw, without the storage's read
+        // lock, while the SDK rewrites them. Atomic writes must guarantee that such
+        // a reader only ever observes complete documents.
+        flagsFile.delete()
+        applyFile.delete()
+
+        val errors = mutableListOf<String>()
+        val writer = thread {
+            repeat(500) { iteration ->
+                diskStorage.store(
+                    FlagResolution(
+                        mapOf("writer" to ConfidenceValue.String("$iteration")),
+                        listOf(),
+                        "token-$iteration"
+                    )
+                )
+                diskStorage.writeApplyData(
+                    mutableMapOf(
+                        "token-$iteration" to mutableMapOf(
+                            "flag-$iteration" to ApplyInstance(Date(iteration.toLong()), EventStatus.CREATED)
+                        )
+                    )
+                )
+            }
+        }
+
+        // Reads the files directly, bypassing the storage lock - this is what the
+        // flutter plugin's readAllFlags effectively does.
+        val reader = thread {
+            var reads = 0
+            while (writer.isAlive && reads < 100_000) {
+                reads++
+                if (flagsFile.exists()) {
+                    val text = flagsFile.readText()
+                    if (text.isEmpty()) {
+                        synchronized(errors) { errors.add("flags cache observed empty mid-write") }
+                    } else {
+                        try {
+                            Json.decodeFromString<FlagResolution>(text)
+                        } catch (e: Throwable) {
+                            synchronized(errors) { errors.add("torn flags read: ${e.message}") }
+                        }
+                    }
+                }
+                if (applyFile.exists()) {
+                    val text = applyFile.readText()
+                    if (text.isEmpty()) {
+                        synchronized(errors) { errors.add("apply cache observed empty mid-write") }
+                    } else {
+                        try {
+                            Json.decodeFromString<Map<String, MutableMap<String, ApplyInstance>>>(text)
+                        } catch (e: Throwable) {
+                            synchronized(errors) { errors.add("torn apply read: ${e.message}") }
+                        }
+                    }
+                }
+            }
+        }
+
+        writer.join(30_000)
+        reader.join(30_000)
+        Assert.assertTrue("Raw reader observed invalid cache content: $errors", errors.isEmpty())
     }
 
     @Test
