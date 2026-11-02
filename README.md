@@ -288,6 +288,10 @@ val messageValue = messageFlag.value
 // message and messageValue are the same
 ```
 
+#### List/array flag properties (deprecated)
+
+List/array properties in flag schemas, and reading list-typed flag values (for example `ConfidenceValue.List`), are deprecated. Runtime behavior has not changed. Model new flags with structs or primitive properties instead. This deprecation covers flag schemas only: `ConfidenceValue.List` and helpers such as `ConfidenceValue.stringList(...)` remain fully supported for context and event data.
+
 ### Logging
 By default, the Confidence SDK will log errors and warnings. You can change the preferred log level by passing a `loggingLevel` to the `Confidence.create()` function.
 

@@ -33,6 +33,15 @@ sealed interface ConfidenceValue {
         override fun toString() = map.toString()
     }
 
+    /**
+     * A list of [ConfidenceValue]s.
+     *
+     * Lists remain fully supported as context and event data.
+     *
+     * Using list/array properties in flag schemas is deprecated, and so is reading list-typed flag
+     * values (for example `getValue<ConfidenceValue.List>` on a flag property). Runtime behavior has
+     * not changed. Model new flags with structs or primitive properties instead.
+     */
     @Serializable
     data class List(val list: kotlin.collections.List<ConfidenceValue>) :
         ConfidenceValue {
@@ -55,6 +64,10 @@ sealed interface ConfidenceValue {
         override fun toString() = "null"
     }
 
+    /**
+     * Helpers for building [List] values. They are intended for context and event data and are
+     * not deprecated. See [List] for the deprecation of list-typed flag schema properties.
+     */
     companion object {
         fun stringList(list: kotlin.collections.List<kotlin.String>) =
             List(list.map(ConfidenceValue::String))
