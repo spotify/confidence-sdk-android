@@ -13,6 +13,8 @@ import java.nio.file.Files
 import java.util.Date
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.CyclicBarrier
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
 class FileDiskStorageTest {
@@ -167,65 +169,56 @@ class FileDiskStorageTest {
         // an external reader reads the cache files raw, without the storage's read
         // lock, while the SDK rewrites them. Atomic writes must guarantee that such
         // a reader only ever observes complete documents.
-        flagsFile.delete()
-        applyFile.delete()
-
-        val errors = mutableListOf<String>()
-        val writer = thread {
-            repeat(500) { iteration ->
-                diskStorage.store(
-                    FlagResolution(
-                        mapOf("writer" to ConfidenceValue.String("$iteration")),
-                        listOf(),
-                        "token-$iteration"
+        // Exceed the 8192-character boundary observed in the production crash.
+        val payload = "x".repeat(16_384)
+        fun writeCaches(iteration: Int) {
+            diskStorage.store(
+                FlagResolution(
+                    mapOf("payload" to ConfidenceValue.String(payload)),
+                    listOf(),
+                    "token-$iteration"
+                )
+            )
+            diskStorage.writeApplyData(
+                mapOf(
+                    "token-$iteration" to mutableMapOf(
+                        payload to ApplyInstance(Date(iteration.toLong()), EventStatus.CREATED)
                     )
                 )
-                diskStorage.writeApplyData(
-                    mutableMapOf(
-                        "token-$iteration" to mutableMapOf(
-                            "flag-$iteration" to ApplyInstance(Date(iteration.toLong()), EventStatus.CREATED)
-                        )
-                    )
-                )
-            }
+            )
         }
+        writeCaches(0)
 
-        // Reads the files directly, bypassing the storage lock - this is what the
-        // flutter plugin's readAllFlags effectively does.
-        val reader = thread {
-            var reads = 0
-            while (writer.isAlive && reads < 100_000) {
-                reads++
-                if (flagsFile.exists()) {
-                    val text = flagsFile.readText()
-                    if (text.isEmpty()) {
-                        synchronized(errors) { errors.add("flags cache observed empty mid-write") }
-                    } else {
-                        try {
-                            Json.decodeFromString<FlagResolution>(text)
-                        } catch (e: Throwable) {
-                            synchronized(errors) { errors.add("torn flags read: ${e.message}") }
-                        }
-                    }
-                }
-                if (applyFile.exists()) {
-                    val text = applyFile.readText()
-                    if (text.isEmpty()) {
-                        synchronized(errors) { errors.add("apply cache observed empty mid-write") }
-                    } else {
-                        try {
-                            Json.decodeFromString<Map<String, MutableMap<String, ApplyInstance>>>(text)
-                        } catch (e: Throwable) {
-                            synchronized(errors) { errors.add("torn apply read: ${e.message}") }
-                        }
-                    }
+        val barrier = CyclicBarrier(2)
+        val executor = Executors.newFixedThreadPool(2)
+        try {
+            val writer = executor.submit {
+                repeat(500) { iteration ->
+                    barrier.await(10, TimeUnit.SECONDS)
+                    writeCaches(iteration)
+                    barrier.await(10, TimeUnit.SECONDS)
                 }
             }
-        }
+            val reader = executor.submit {
+                repeat(500) {
+                    barrier.await(10, TimeUnit.SECONDS)
+                    // Bypass the storage lock, just like Flutter's raw reader.
+                    val flags = Json.decodeFromString<FlagResolution>(flagsFile.readText())
+                    Assert.assertEquals(ConfidenceValue.String(payload), flags.context["payload"])
+                    val applies = Json.decodeFromString<Map<String, MutableMap<String, ApplyInstance>>>(applyFile.readText())
+                    Assert.assertTrue(applies.values.single().containsKey(payload))
+                    // Neither worker can finish a round without both files being read.
+                    barrier.await(10, TimeUnit.SECONDS)
+                }
+            }
 
-        writer.join(30_000)
-        reader.join(30_000)
-        Assert.assertTrue("Raw reader observed invalid cache content: $errors", errors.isEmpty())
+            // Unlike Thread.join(), get() propagates every worker failure to JUnit.
+            reader.get(30, TimeUnit.SECONDS)
+            writer.get(30, TimeUnit.SECONDS)
+        } finally {
+            executor.shutdownNow()
+            Assert.assertTrue("Cache workers did not terminate", executor.awaitTermination(5, TimeUnit.SECONDS))
+        }
     }
 
     @Test
