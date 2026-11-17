@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.12](https://github.com/spotify/confidence-sdk-android/compare/0.6.11...0.6.12) (2026-11-17)
+
+
+### 🧹 Chore
+
+* delete CODEOWNERS file ([#266](https://github.com/spotify/confidence-sdk-android/issues/266)) ([e682988](https://github.com/spotify/confidence-sdk-android/commit/e682988caa9a2ee03a8bc1d4e8e98f6c1f5b4c1a))
+
 ## [0.6.11](https://github.com/spotify/confidence-sdk-android/compare/0.6.10...0.6.11) (2026-09-10)
 
 
