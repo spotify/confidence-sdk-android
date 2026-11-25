@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.kotlinxSerialization)
     implementation(libs.coroutines)
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
     testImplementation(libs.coroutines)
     testImplementation(libs.kotlinMockito)
     testImplementation(libs.mockWebServer)
