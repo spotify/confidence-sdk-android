@@ -2,7 +2,9 @@ package com.spotify.confidence.openfeature
 
 import com.spotify.confidence.ConfidenceValue
 import dev.openfeature.kotlin.sdk.Value
+import dev.openfeature.kotlin.sdk.exceptions.OpenFeatureError
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class ValueMappingsTest {
@@ -33,6 +35,15 @@ class ValueMappingsTest {
         val value = Value.Integer(42)
         val confidenceValue: ConfidenceValue = value.toConfidenceValue()
         assertEquals(42, confidenceValue.asInteger()?.integer)
+    }
+
+    @Test
+    fun openFeatureLongValueToConfidenceValue() {
+        assertEquals(ConfidenceValue.Integer(42), Value.Long(42).toConfidenceValue())
+        assertEquals(ConfidenceValue.Double(3_000_000_000.0), Value.Long(3_000_000_000).toConfidenceValue())
+        assertThrows(OpenFeatureError.ParseError::class.java) {
+            Value.Long(9_007_199_254_740_993L).toConfidenceValue()
+        }
     }
 
     @Test

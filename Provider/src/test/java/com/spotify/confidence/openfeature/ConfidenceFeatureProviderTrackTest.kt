@@ -2,12 +2,15 @@ package com.spotify.confidence.openfeature
 
 import com.spotify.confidence.Confidence
 import com.spotify.confidence.ConfidenceValue
+import com.spotify.confidence.Evaluation
+import com.spotify.confidence.ResolveReason
 import dev.openfeature.kotlin.sdk.ImmutableContext
 import dev.openfeature.kotlin.sdk.ImmutableStructure
 import dev.openfeature.kotlin.sdk.TrackingEventDetails
 import dev.openfeature.kotlin.sdk.Value
 import dev.openfeature.kotlin.sdk.events.OpenFeatureProviderEvents
 import dev.openfeature.kotlin.sdk.exceptions.ErrorCode
+import dev.openfeature.kotlin.sdk.exceptions.OpenFeatureError
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -23,6 +26,31 @@ import org.junit.Test
 import com.spotify.confidence.Result as ConfidenceResult
 
 class ConfidenceFeatureProviderTrackTest {
+    @Test
+    fun longEvaluationWidensIntegerFlagValueAndPreservesLongDefault() {
+        val confidence = mockk<Confidence>(relaxed = true)
+        every { confidence.getFlag<Any>("size", any()) } returns
+            Evaluation(42, reason = ResolveReason.RESOLVE_REASON_MATCH)
+        every { confidence.getFlag<Any>("missing", any()) } answers
+            { Evaluation(secondArg(), reason = ResolveReason.ERROR) }
+        val provider = ConfidenceFeatureProvider.create(confidence)
+
+        assertEquals(42L, provider.getLongEvaluation("size", 0L, null).value)
+        assertEquals(Long.MAX_VALUE, provider.getLongEvaluation("missing", Long.MAX_VALUE, null).value)
+    }
+
+    @Test
+    fun longEvaluationRejectsDoubleFlagValue() {
+        val confidence = mockk<Confidence>(relaxed = true)
+        every { confidence.getFlag<Any>("size", any()) } returns
+            Evaluation(42.0, reason = ResolveReason.RESOLVE_REASON_MATCH)
+        val provider = ConfidenceFeatureProvider.create(confidence)
+
+        org.junit.Assert.assertThrows(OpenFeatureError.ParseError::class.java) {
+            provider.getLongEvaluation("size", 0L, null)
+        }
+    }
+
     @Test
     fun shutdownStopsConfidence() {
         val confidence = mockk<Confidence>(relaxed = true)
