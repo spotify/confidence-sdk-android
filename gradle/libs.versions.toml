@@ -29,6 +29,7 @@ protobufPlugin = "0.9.4"
 
 # Test libs
 androidXJunitTest = "1.1.3"
+androidXTestRunner = "1.4.0"
 mockWebServer = "4.9.1"
 espresso = "3.4.0"
 junit = "4.13.2"
@@ -46,6 +47,7 @@ core = { group = "androidx.core", name = "core-ktx", version.ref = "core" }
 coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 espresso = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
 jUnitTest = { group = "androidx.test.ext", name = "junit", version.ref = "androidXJunitTest" }
+androidXTestRunner = { group = "androidx.test", name = "runner", version.ref = "androidXTestRunner" }
 jUnitUiTest = { group = "androidx.compose.ui", name = "ui-test-junit4", version.ref = "composeUi" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 kotlinMockito = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "kotlinMockito" }
